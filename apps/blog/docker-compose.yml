@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  blog:
+    container_name: blog_container
+    build:
+      # Context is monorepo root (two levels up from apps/{app}/)
+      context: ../..
+      dockerfile: docker/blog.Dockerfile
+    ports:
+      - "3002:3000"
+    restart: unless-stopped
+    networks:
+      - blog_network
+networks:
+  blog_network:
+    driver: bridge

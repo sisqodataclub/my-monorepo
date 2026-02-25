@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  saas-dashboard:
+    container_name: saas-dashboard_container
+    build:
+      # Context is monorepo root (two levels up from apps/{app}/)
+      context: ../..
+      dockerfile: docker/saas-dashboard.Dockerfile
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    networks:
+      - saas-dashboard_network
+networks:
+  saas-dashboard_network:
+    driver: bridge

@@ -1,0 +1,12 @@
+{
+  "name": "@my-monorepo/saas-dashboard",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'No build step' && exit 0",
+    "test": "echo 'No tests yet' && exit 0",
+    "dev": "echo 'No dev step' && exit 0",
+    "start": "node index.js"
+  },
+  "private": true
+}

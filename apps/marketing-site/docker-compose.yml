@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  marketing-site:
+    container_name: marketing-site_container
+    build:
+      # Context is monorepo root (two levels up from apps/{app}/)
+      context: ../..
+      dockerfile: docker/marketing-site.Dockerfile
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - marketing-site_network
+networks:
+  marketing-site_network:
+    driver: bridge

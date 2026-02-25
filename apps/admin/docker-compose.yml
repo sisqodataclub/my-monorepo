@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  admin:
+    container_name: admin_container
+    build:
+      # Context is monorepo root (two levels up from apps/{app}/)
+      context: ../..
+      dockerfile: docker/admin.Dockerfile
+    ports:
+      - "3003:3000"
+    restart: unless-stopped
+    networks:
+      - admin_network
+networks:
+  admin_network:
+    driver: bridge
