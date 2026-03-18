@@ -1,0 +1,11 @@
+# robots.txt for https://www.ddeepcleaningservices.com/
+
+User-agent: *
+
+# Block non-public internal routes (future-proof)
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /form
+
+# Sitemap
+Sitemap: https://www.ddeepcleaningservices.com/sitemap.xml

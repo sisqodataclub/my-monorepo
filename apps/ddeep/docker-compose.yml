@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  dcs:
+    build:
+      context: ../..
+      dockerfile: docker/ddeep.Dockerfile
+    container_name: dcs       # Accessible inside network as http://dcs:80
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - proxy_network
+
+networks:
+  proxy_network:
+    external: true

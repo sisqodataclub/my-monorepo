@@ -1,0 +1,45 @@
+{
+  "name": "@my-repo/ddeep",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cross-env NODE_ENV=production react-router build",
+    "dev": "react-router dev",
+    "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc"
+  },
+  "dependencies": {
+    "@react-router/fs-routes": "^7.12.0",
+    "@react-router/node": "^7.12.0",
+    "@react-router/serve": "^7.12.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "framer-motion": "^12.26.2",
+    "isbot": "^5.1.17",
+    "match-sorter": "^8.0.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-icons": "^5.5.0",
+    "react-router": "^7.12.0",
+    "react-router-dom": "^7.12.0",
+    "sort-by": "^1.2.0",
+    "tiny-invariant": "^1.3.3"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^7.12.0",
+    "@tailwindcss/cli": "^4.1.18",
+    "@types/node": "^20",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
+    "autoprefixer": "^10.4.23",
+    "cross-env": "^7.0.3",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.4.5",
+    "vite": "^5.4.11",
+    "vite-tsconfig-paths": "^6.0.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
