@@ -1,88 +1,88 @@
-# my-monorepo
+# 🌌 My Agency Monorepo
 
-Monorepo for multiple frontend apps with isolated deployments.
+A modern, high-performance `pnpm` workspace monorepo designed for scale. This repository houses multiple isolated frontend applications and shared packages under a single, unified dependency tree.
 
-## Structure
+## 📂 Project Structure
 
-```
+We follow the **Self-Contained App** architecture. Each app contains its own source code, Dockerfile, and deployment scripts, while heavily utilizing shared packages for maximum code reuse.
+
+```text
 my-monorepo/
-├── apps/          # Deployable applications
-├── packages/      # Shared internal libraries
-├── docker/        # Per-app Dockerfiles
-├── package.json
-├── pnpm-workspace.yaml
-└── .npmrc
+├── apps/                  # Deployable, standalone applications
+│   ├── ddeep/             # Example App (Contains its own Dockerfile & config)
+│   ├── marketing-site/
+│   ├── saas-dashboard/
+│   ├── blog/
+│   └── admin/
+├── packages/              # Shared internal libraries (Zero-friction code sharing)
+│   ├── ui/                # Shared Tailwind components & UI elements
+│   ├── utils/             # Shared helper functions and hooks
+│   └── config/            # Shared ESLint, TS configs, and formatting rules
+├── git_push.sh            # Automated safe-push script
+├── package.json           # Root package defining workspace tools
+├── pnpm-workspace.yaml    # Defines the apps/* and packages/* routing
+└── pnpm-lock.yaml         # The single source of truth for all dependencies
 ```
 
-## Apps
+## 🚀 Getting Started
 
-| App | Host port |
-|-----|-----------|
-| `marketing-site` | 3000 |
-| `saas-dashboard` | 3001 |
-| `blog` | 3002 |
-| `admin` | 3003 |
-
-## Packages
-
-- `packages/ui` → `@my-monorepo/ui`
-- `packages/utils` → `@my-monorepo/utils`
-- `packages/config` → `@my-monorepo/config`
-
-## Getting started
+When a new developer (or AI agent) joins the team, setup is instant. Run this **once** at the root of the project to link all 5 apps and shared packages:
 
 ```bash
-# Install all dependencies
+# 1. Install all dependencies and link packages
 pnpm install
 
-# Build everything
-pnpm build
+# 2. Run a specific app (e.g., ddeep)
+pnpm --filter @my-repo/ddeep dev
 
-# Run all apps in dev mode (parallel)
-pnpm dev
+# OR: Run all apps in parallel
+pnpm -r dev
 ```
 
-## Docker
+## 📦 Active Applications
 
-Each app has its own `docker-compose.yml`. Build and run an app in isolation:
+| App | Scope Name | Local Port |
+|-----|------------|------------|
+| `ddeep` | `@my-repo/ddeep` | 3000 |
+| `marketing-site` | `@my-repo/marketing-site` | 3001 |
+| `saas-dashboard` | `@my-repo/saas-dashboard` | 3002 |
+| `blog` | `@my-repo/blog` | 3003 |
+| `admin` | `@my-repo/admin` | 3004 |
+
+---
+
+## 🏗️ Docker & Production Builds
+
+Docker images must be built from the **root** of the monorepo so they have access to the `packages/` folder and the root `pnpm-lock.yaml`.
 
 ```bash
-cd apps/marketing-site
-docker compose up --build
+# Build the production image for 'ddeep'
+docker build -f apps/ddeep/Dockerfile -t my-ddeep-app .
+
+# Run the container locally to test
+docker run -p 3000:80 my-ddeep-app
 ```
 
-> **Note:** Run `pnpm install` at the monorepo root first to generate
-> `pnpm-lock.yaml`, which is required for `--frozen-lockfile` in Docker.
+## ☁️ Automated Git Workflow
 
+Use the included push script to safely stage, commit, and push your code to GitHub.
 
+```bash
+# Auto-commit with a timestamp
+./git_push.sh
 
-## The packages/ Folder (Zero-Friction Code Sharing)
-- Shared UI: You can build a packages/ui folder with your customized buttons, navbars, and Tailwind configs. All 5 of your apps import the exact same button. If you change the button's color in the package, all 5 apps update instantly.
-- Shared Types/Configs: You can share TypeScript interfaces, ESLint rules, and database schemas across the entire company without having to publish private npm packages.
+# Commit with a custom message
+./git_push.sh "feat: added shared UI button to ddeep app"
+```
 
-## Single Dependency Tree (No Version Hell)
+---
 
-- Notice how you have one pnpm-lock.yaml at the very root of the project?
-If your blog uses React 18, and your admin dashboard uses React 18, pnpm hoists them so they share the exact same installation on your hard drive. You will never run into bugs where "App A works but App B is broken because they are using different versions of the same library."
+## ⚡ Our Monorepo Superpowers
 
-## Atomic Commits (Cross-Project Refactoring)
+This architecture provides massive enterprise-grade benefits for our agency:
 
-- Imagine you change the structure of your database user model. In a multi-repo setup, you have to update the backend repo, make a PR, then go to the frontend repo, make a PR, and hope they deploy at the same time.
-In your monorepo, you can update the shared database type in packages/ and update the ddeep frontend to use the new type in a single Git commit.
-
-## Massive CI/CD Speed Up
-
-- Because everything is in one place, you can use build systems like Turborepo or Nx. If a developer only edits code inside apps/ddeep/src, the build system is smart enough to know that admin, blog, and marketing-site were untouched. Your CI/CD pipeline will only build and test ddeep, saving you massive amounts of server compute time.
-
-# Unified Developer Experience
-
-- When a new developer (or one of your AI agents) joins the team, they run pnpm install exactly once at the root. Instantly, all 5 apps and all shared packages are linked and ready to run locally. They can open the entire company's codebase in a single VS Code window and easily trace a function from the frontend dashboard all the way down to the shared backend logic.
-
-
-
-
-
-
-
-
-
+* **Zero-Friction Code Sharing (`packages/`)**: We build a component (like a Navbar) exactly once in `packages/ui`. If we change its color, all 5 apps update instantly. No copy-pasting code.
+* **Single Dependency Tree (No Version Hell)**: Because we have one `pnpm-lock.yaml` at the root, all apps share the exact same installation of React, Tailwind, etc., on the hard drive.
+* **Atomic Commits**: We can update a shared database schema in `packages/` and update the `admin` frontend to use that new schema in a single, perfectly synced Git commit.
+* **Massive CI/CD Speed Up**: If a developer only edits code inside `apps/ddeep`, the build system knows the other apps were untouched and will *only* test and deploy `ddeep`, saving massive compute time.
+* **Easy App Ejection**: Because we enforce the **"No App-to-App Imports"** rule, if we ever need to sell an app or spin it off into its own repository, we can simply drag the folder out of `apps/`, publish our shared `packages/` to a private NPM registry, and run it instantly.

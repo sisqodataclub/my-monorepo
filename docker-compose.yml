@@ -1,14 +1,21 @@
-version: "3.9"
+version: '3.8'
 
 services:
   ddeep:
     build:
-      context: ../..
+      context: .
       dockerfile: apps/ddeep/Dockerfile
     container_name: ddeep-app
     restart: unless-stopped
-    expose:
-      - "80"
+    networks:
+      - proxy_network
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    container_name: admin-app
+    restart: unless-stopped
     networks:
       - proxy_network
 
