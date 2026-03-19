@@ -1,7 +1,10 @@
 packages:
   - packages/*
   - apps/*
+  - apps/project_3D/frontend
+  - apps/project_3D/backend
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - esbuild
+  - react-vertical-timeline-component
