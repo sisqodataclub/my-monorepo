@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <!-- Public Pages -->
+  <url>
+    <loc>https://www.franciscodes.com/</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/login</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/register</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/logout</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/blog/</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/blog/:id</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/*</loc>
+  </url>
+
+  <!-- Protected Pages -->
+  <url>
+    <loc>https://www.franciscodes.com/profile</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/blog</loc>
+  </url>
+
+  <!-- Booking / Multi-Page Form -->
+  <url>
+    <loc>https://www.franciscodes.com/form</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/form/areass</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/form/quantities</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/form/details</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/form/submit</loc>
+  </url>
+
+  <!-- Dashboards -->
+  <url>
+    <loc>https://www.franciscodes.com/dashboard</loc>
+  </url>
+  <url>
+    <loc>https://www.franciscodes.com/manvan</loc>
+  </url>
+
+</urlset>

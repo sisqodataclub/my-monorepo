@@ -1,0 +1,15 @@
+#quantities-table th, #quantities-table td {
+    padding: 6px;
+    border-bottom: 1px solid #ddd;
+}
+#quantities-table select,
+#quantities-table input {
+    width: 100%;
+}
+.delete-row {
+    background: #c00;
+    color: #fff;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+}

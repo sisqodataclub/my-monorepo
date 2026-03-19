@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build:
+      context: ../..
+      dockerfile: apps/project_3D/frontend/Dockerfile
+    container_name: ddeep-forms
+    restart: always
+    expose:
+      - "80"   # React app built into Nginx runs on port 80 inside the container
+    networks:
+      - proxy_network
+
+networks:
+  proxy_network:
+    external: true

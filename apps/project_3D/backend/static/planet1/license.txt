@@ -1,0 +1,11 @@
+Model Information:
+* title:	Planet
+* source:	https://sketchfab.com/3d-models/planet-4301939824c14678a724a7adb2dcb5f9
+* author:	snowpuffs (https://sketchfab.com/snowpuffs)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Planet" (https://sketchfab.com/3d-models/planet-4301939824c14678a724a7adb2dcb5f9) by snowpuffs (https://sketchfab.com/snowpuffs) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)

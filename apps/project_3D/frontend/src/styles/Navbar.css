@@ -1,0 +1,60 @@
+/* Reset styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Styling the navbar */
+  .navbar {
+    display: grid;
+    grid-template-columns: 1fr auto; /* Logo takes full space, nav links take auto space */
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #333;
+    color: white;
+    grid-gap: 20px; /* Space between logo and nav links */
+  }
+  
+  .navbar .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .nav-links {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 20px;
+  }
+  
+  .nav-links li {
+    list-style: none;
+  }
+  
+  .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+  }
+  
+  .nav-links a:hover {
+    color: #ddd;
+  }
+  
+  /* Media Query for responsiveness */
+  @media (max-width: 768px) {
+    .navbar {
+      grid-template-columns: 1fr; /* Stack logo and nav links */
+      text-align: center;
+    }
+  
+    .nav-links {
+      grid-template-columns: 1fr; /* Stack the links vertically */
+    }
+  
+    .nav-links li {
+      margin: 10px 0;
+    }
+  }
+  

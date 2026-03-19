@@ -1,0 +1,11 @@
+Model Information:
+* title:	Nymphe, statuette en biscuit
+* source:	https://sketchfab.com/3d-models/nymphe-statuette-en-biscuit-24bd3631ed5f45769aca08c0a0fb6c51
+* author:	Alienor.org, Conseil des musées (https://sketchfab.com/alienor.org)
+
+Model License:
+* license type:	CC-BY-NC-ND-4.0 (http://creativecommons.org/licenses/by-nc-nd/4.0/)
+* requirements:	Author must be credited. No commercial use. Modified versions can not be distributed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Nymphe, statuette en biscuit" (https://sketchfab.com/3d-models/nymphe-statuette-en-biscuit-24bd3631ed5f45769aca08c0a0fb6c51) by Alienor.org, Conseil des musées (https://sketchfab.com/alienor.org) licensed under CC-BY-NC-ND-4.0 (http://creativecommons.org/licenses/by-nc-nd/4.0/)
