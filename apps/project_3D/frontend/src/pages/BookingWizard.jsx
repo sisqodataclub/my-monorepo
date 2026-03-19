@@ -15,7 +15,6 @@ import SuccessModal from "../components/SuccessModal";
 const SESSION_ID = getSessionId();
 const SIZED_AREAS = ["Kitchen", "Bedroom"];
 const SPECIAL_SERVICE = "Carpet, Upholstery & Appliances Cleaning ONLY";
-const API_BASE = "https://core.franciscodes.com"; // Added for multi-tenant fetch
 
 // ---------------------------
 // COMPONENT
@@ -132,7 +131,7 @@ export default function BookingWizard() {
       Carpets: carpets,
       Appliances: appliances,
       furnished_fee: furnishedFee,
-      biohazard_fee: details.biohazard === "Yes" ? biohazardFee : 0, // Updated to Version 2's strict check
+      biohazard_fee: details.biohazard ? biohazardFee : 0,
       discount: discount ?? 0,
       booking_date: details.booking_date,
       timeslot: details.timeslot,
@@ -141,94 +140,87 @@ export default function BookingWizard() {
   });
 
   // ---------------------------
-  // SUBMIT (MERGED LOGIC)
+  // SUBMIT
   // ---------------------------
   const handleSubmit = async () => {
     setLoading(true);
-
-    // 1. The £1 Chunking Strategy
-    const checkoutItems = [];
-    const PRODUCT_ID = 1; // Ensure this matches your multi-tenant DB
-
-    let remainingTotal = Math.ceil(finalTotal); // Round to nearest pound
-    let partCounter = 1;
-
-    // Split the dynamic total quote into quantities of 100 max to bypass backend limits
-    while (remainingTotal > 0) {
-      const chunkQty = Math.min(remainingTotal, 100);
-      checkoutItems.push({
-        product_id: PRODUCT_ID,
-        quantity: chunkQty,
-        variant: `Cleaning Quote (Part ${partCounter})`,
-      });
-      remainingTotal -= chunkQty;
-      partCounter++;
-    }
-
-    // 2. Pack extra custom details into the gift_message field
-    const extraDetails = `Areas: ${selectedAreas.join(", ")} | Phone: ${details.phone} | Furnished: ${
-      details.furnished_status
-    } | Biohazard: ${details.biohazard || "No"} | Parking: ${
-      details.parking
-    } | Date: ${details.booking_date} | Time: ${
-      details.timeslot
-    } | Total: £${finalTotal}`;
-
-    // 3. Assemble checkout payload
-    const payload = {
-      items: checkoutItems,
-      customer_email: details.email || "guest@example.com",
-      customer_name: details.name || "Guest User",
-      is_gift: false,
-      gift_message: extraDetails,
-    };
-
-    try {
-      // 4. Hit the Multi-Tenant Backend Endpoint using native fetch
-      const response = await fetch(
-        `${API_BASE}/api/payments/bookings/create_checkout/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-Tenant": "dcs", // Target the DCS database
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.detail || "Submission failed");
+  
+    const normalAreas = selectedAreas.filter((a) => !SIZED_AREAS.includes(a));
+  
+    const sizedAreas = SIZED_AREAS.reduce((acc, area) => {
+      if (selectedAreas.includes(area)) {
+        acc[`${area}_Small`] = quantities[`${area}_Small`] ?? 0;
+        acc[`${area}_Medium`] = quantities[`${area}_Medium`] ?? 0;
+        acc[`${area}_Large`] = quantities[`${area}_Large`] ?? 0;
       }
-
-      const data = await response.json();
-
-      // 5. Fire off the original contact message notification (Optional but recommended)
-      try {
+      return acc;
+    }, {});
+  
+    const allQuantities = {
+      ...sizedAreas,
+      ...carpets,
+      ...appliances,
+      ...normalAreas.reduce((a, k) => {
+        a[k] = quantities[k] ?? 1;
+        return a;
+      }, {}),
+      furnished_fee: furnishedFee,
+      biohazard_fee: details.biohazard ? biohazardFee : 0,
+      discount: discount ?? 0,
+      booking_date: details.booking_date,
+      timeslot: details.timeslot,
+    };
+  
+    try {
+      let paymentlink = null;
+  
+      // If payment method is card, generate payment link first
+      if (details.payment_method === "card") {
+        const payRes = await api.post("/api/payment-link/", {
+          total: finalTotal,
+          // optionally pass user details for the payment API
+          name: details.name,
+          email: details.email,
+        });
+        paymentlink = payRes.data.paymentlink; // get link
+      }
+  
+      // Include paymentlink in booking payload
+      const payload = {
+        session_id: SESSION_ID,
+        ...details,
+        selected_areas: [service, ...normalAreas],
+        quantities: allQuantities,
+        total: finalTotal,
+        paymentlink: paymentlink, // ← added here
+      };
+  
+      // Save booking with paymentlink included
+      const res = await api.post("/api/bookings/", payload);
+  
+      if (res.status === 200 || res.status === 201) {
         await api.post("/api/contact-messages/", {
           name: details.name,
           email: details.email,
           message: `Your cleaning quote total is £${finalTotal}.`,
         });
-      } catch (msgErr) {
-        console.warn("Failed to send contact message alert:", msgErr);
-      }
-
-      // 6. Handle Stripe Redirection
-      if (data && data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
+  
+        if (paymentlink) {
+          // redirect directly
+          window.location.href = paymentlink;
+          return;
+        }
+  
         setShowSuccess(true);
       }
     } catch (err) {
-      console.error("Booking submission error:", err);
-      alert(`Checkout Error: ${err.message || "An unexpected error occurred."}`);
+      console.error(err);
+      alert("Submission failed");
     } finally {
       setLoading(false);
     }
   };
+  
 
   // ---------------------------
   // RENDER
@@ -256,7 +248,7 @@ export default function BookingWizard() {
         setDiscountCode={setDiscountCode}
         totalQuote={finalTotal}
         setCanProceed={setCanProceed}
-        handleSubmit={handleSubmit} // Triggers the newly merged fetch logic
+        handleSubmit={handleSubmit}
       />
 
       <WizardNavigation
