@@ -10,6 +10,20 @@ services:
     networks:
       - proxy_network
 
+  backend:
+    build:
+      # Assuming your backend Dockerfile is also moved into the monorepo structure
+      context: ../..
+      dockerfile: apps/project_3D/backend/Dockerfile
+    container_name: ddeep-backend # Renamed to match ddeep-forms, you can change back to franciscodes-backend if preferred
+    restart: always
+    expose:
+      - "8080"  # Django app internal port
+    env_file:
+      - ./backend/.env # Make sure your specific Stripe keys for this business are in this file
+    networks:
+      - proxy_network
+
 networks:
   proxy_network:
     external: true
