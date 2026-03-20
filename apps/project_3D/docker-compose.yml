@@ -3,23 +3,12 @@ services:
     build:
       context: ../..
       dockerfile: apps/project_3D/frontend/Dockerfile
+      args:
+        - VITE_API_URL=https://api.franciscodes.com
     container_name: ddeep-forms
     restart: always
     expose:
       - "80"   # React app built into Nginx runs on port 80 inside the container
-    networks:
-      - proxy_network
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ddeep-backend # Renamed to match ddeep-forms, you can change back to franciscodes-backend if preferred
-    restart: always
-    expose:
-      - "8080"  # Django app internal port
-    env_file:
-      - ./backend/.env # Make sure your specific Stripe keys for this business are in this file
     networks:
       - proxy_network
 

@@ -20,6 +20,11 @@ RUN pnpm install --frozen-lockfile
 # 4. Copy the rest of the app source code
 COPY apps/project_3D/frontend/ ./apps/project_3D/frontend/
 
+# ---> ADDED THESE TWO LINES <---
+# Accept the build argument from docker-compose and set it for Vite
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # 5. Build the app (running from the root using filter)
 RUN pnpm --filter @my-repo/3d-portfolio build
 
