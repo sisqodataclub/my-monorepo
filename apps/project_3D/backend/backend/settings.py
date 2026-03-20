@@ -49,13 +49,14 @@ ALLOWED_HOSTS = ["*"]
 #]
 
 
-import environ
-env = environ.Env()
 
-# This automatically looks for commas and creates a Python list!
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
-CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# Grab the comma-separated strings from the .env file (or default to empty string)
+cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "")
+csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 
+# Automatically split them into the Python lists Django needs
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(",")] if cors_env else []
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_env.split(",")] if csrf_env else []
 
 
 
