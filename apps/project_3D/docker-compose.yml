@@ -12,9 +12,8 @@ services:
 
   backend:
     build:
-      # Assuming your backend Dockerfile is also moved into the monorepo structure
-      context: ../..
-      dockerfile: apps/project_3D/backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: ddeep-backend # Renamed to match ddeep-forms, you can change back to franciscodes-backend if preferred
     restart: always
     expose:
