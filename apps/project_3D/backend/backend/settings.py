@@ -32,21 +32,32 @@ SECRET_KEY = 'django-insecure-m7_-fo@qfi@=r%3hqocvzu86_d1um)xrp=pgs13kncua0=6xq$
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "https://franciscodes.com",
-    "https://www.franciscodes.com",
-    "http://153.92.208.112:3000",
-    "https://api.franciscodes.com",
-]
+#CSRF_TRUSTED_ORIGINS = [
+#    "http://localhost:5173",
+#    "https://franciscodes.com",
+#    "https://www.franciscodes.com",
+#    "http://153.92.208.112:3000",
+#    "https://api.franciscodes.com",
+#]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "https://franciscodes.com",
-    "https://www.franciscodes.com",
-    "http://153.92.208.112:3000",
-    "https://api.franciscodes.com",
-]
+#CORS_ALLOWED_ORIGINS = [
+#    "http://localhost:5173",
+#    "https://franciscodes.com",
+#    "https://www.franciscodes.com",
+#    "http://153.92.208.112:3000",
+#    "https://api.franciscodes.com",
+#]
+
+
+import environ
+env = environ.Env()
+
+# This automatically looks for commas and creates a Python list!
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
+
+
 
 
 
