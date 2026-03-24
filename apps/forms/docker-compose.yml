@@ -2,7 +2,7 @@ services:
   frontend:
     build:
       context: ../..
-      dockerfile: apps/project_3D/frontend/Dockerfile
+      dockerfile: apps/forms/frontend/Dockerfile
       args:
         - VITE_API_URL=https://api.franciscodes.com
     container_name: ddeep-forms
