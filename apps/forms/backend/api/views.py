@@ -218,6 +218,9 @@ class CommentListCreate(generics.ListCreateAPIView):
 
 
 
+
+
+# ... existing code ...
 from django.core.mail import send_mail
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -230,17 +233,30 @@ def contact_view(request):
     message = request.data.get("message")
 
     try:
+        # 1. Send the lead notification to YOU
         send_mail(
             subject=f"New Contact Form Submission from {name}",
-            message=message,
-            from_email="francis@dataclubcenter.com",
-            recipient_list=["francis@dataclubcenter.com"],  # Or wherever you want to receive
-
+            message=f"You have a new inquiry!\n\nName: {name}\nEmail: {email}\n\nMessage:\n{message}",
+            from_email="clean@ddeepcleaningservices.com",
+            recipient_list=["francis@dataclubcenter.com"],
             fail_silently=False,
         )
-        return Response({"message": "Email sent successfully."}, status=status.HTTP_200_OK)
+
+        # 2. Send a professional Auto-Reply to the CUSTOMER
+        if email:
+            send_mail(
+                subject="Thank you for contacting Ddeep Cleaning Services!",
+                message=f"Hi {name},\n\nThank you for reaching out! We have received your message and will get back to you as soon as possible with a quote.\n\nYour message:\n{message}\n\nBest regards,\nDdeep Cleaning Services\nclean@ddeepcleaningservices.com",
+                from_email="clean@ddeepcleaningservices.com",
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+        return Response({"message": "Emails sent successfully."}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ... existing code ...
 
 
 from .models import Booking
