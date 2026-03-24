@@ -4,12 +4,9 @@ from rest_framework.exceptions import PermissionDenied
 from .models import Note, Blog
 from .serializers import NoteSerializer, BlogSerializer, UserSerializer, UserCreateSerializer
 from django.views.decorators.csrf import csrf_exempt
-
-
 from django.views.generic import TemplateView
 from .models import Booking
 import os
-
 
 class ReactAppView(TemplateView):
     template_name = "index.html"
@@ -18,8 +15,6 @@ class ReactAppView(TemplateView):
 # views.py
 from .models import ContactMessage
 from .serializers import ContactMessageSerializer
-
-
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
 class ContactMessageListCreate(generics.ListCreateAPIView):
@@ -27,7 +22,6 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
     serializer_class = ContactMessageSerializer
     permission_classes = [permissions.AllowAny]
     authentication_classes = []  # ✅ disable token/session requirement
-
 
     def perform_create(self, serializer):
         author = self.request.user if self.request.user.is_authenticated else None
@@ -67,6 +61,10 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
         # ------------------------------------------------------------
         # 🔥 Send Email
         # ------------------------------------------------------------
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        
         subject = 'Enquiry Confirmation!'
         html_message = render_to_string('thankyou.html', context)
         plain_message = strip_tags(html_message)
@@ -80,21 +78,6 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
         )
 
 
-
-#class NoteListCreate(generics.ListCreateAPIView):
-#   serializer_class = NoteSerializer
-#    permission_classes = [permissions.IsAuthenticated]
-#
-#    def get_queryset(self):
-#        return Note.objects.filter(author=self.request.user)
-
-#    def perform_create(self, serializer):
-#        serializer.save(author=self.request.user)
-
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-
 class NoteListCreate(generics.ListCreateAPIView):
     serializer_class = NoteSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -107,6 +90,10 @@ class NoteListCreate(generics.ListCreateAPIView):
 
         # --- Trigger email after creating note ---
         try:
+            from django.core.mail import send_mail
+            from django.template.loader import render_to_string
+            from django.utils.html import strip_tags
+            
             subject = 'New Note Created'
             html_message = render_to_string(
                 'quote.html',  # Template path
@@ -131,8 +118,6 @@ class NoteListCreate(generics.ListCreateAPIView):
         except Exception as e:
             # Log or print error without breaking API
             print(f"Email sending failed: {e}")
-
-
 
 
 class NoteDelete(generics.DestroyAPIView):
@@ -194,8 +179,7 @@ class CurrentUserView(APIView):
 
 
 # api/views.py
-from rest_framework import generics, permissions
-from .models import Comment, Blog
+from .models import Comment
 from .serializers import CommentSerializer
 from datetime import datetime
 
@@ -219,13 +203,12 @@ class CommentListCreate(generics.ListCreateAPIView):
         serializer.save(blog=blog, author=user, guest_name=guest_label)
 
 
-
-
-
-# ... existing code ...
+# ==========================================
+# 📌 FIXED: CONTACT VIEW WITH PROPER IMPORTS
+# ==========================================
 from django.core.mail import send_mail
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 
 @csrf_exempt
@@ -261,12 +244,12 @@ def contact_view(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# ... existing code ...
 
-
+# ==========================================
+# BOOKINGS
+# ==========================================
 from .models import Booking
 from .serializers import BookingSerializer
-
 
 class BookingCreateView(generics.CreateAPIView):
     serializer_class = BookingSerializer
@@ -275,17 +258,8 @@ class BookingCreateView(generics.CreateAPIView):
     queryset = Booking.objects.all()
 
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response 
-from rest_framework import status
-
 from .models import BookingSnapshot
 from .serializers import BookingSnapshotSerializer
-
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import authentication_classes
-
 
 @csrf_exempt
 @api_view(["POST"])
@@ -319,22 +293,8 @@ def booking_snapshot(request):
     return Response(serializer.errors, status=400)
 
 
-
-
-
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import (
-    api_view,
-    permission_classes,
-    authentication_classes,
-)
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
 import stripe
-
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
-
 
 @csrf_exempt                     # 🔥 REQUIRED
 @api_view(["POST"])
@@ -375,4 +335,3 @@ def payment_link(request):
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
