@@ -26,7 +26,7 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 # 5. Build the app (running from the root using filter)
-RUN pnpm --filter forms build
+RUN pnpm --filter ./apps/forms/frontend build
 
 # ================= PRODUCTION STAGE =================
 FROM nginx:alpine
