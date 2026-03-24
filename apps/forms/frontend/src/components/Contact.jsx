@@ -8,7 +8,8 @@ import api from "../api";
 
 const Contact = () => {
   const formRef = useRef();
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  // Added 'service' to the form state
+  const [form, setForm] = useState({ name: "", email: "", message: "", service: "" });
   const [loading, setLoading] = useState(false);
 
   // Toast popup state
@@ -23,12 +24,25 @@ const Contact = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Trick: Combine the selected service into the message string
+    const finalMessage = form.service 
+      ? `[Service Inquiry: ${form.service}]\n\n${form.message}`
+      : form.message;
+
+    // Create the payload exactly how the backend expects it (NO service field)
+    const payload = {
+      name: form.name,
+      email: form.email,
+      message: finalMessage,
+    };
+
     api
-      .post("/api/contact-messages/", form)
+      .post("/api/contact-messages/", payload)
       .then((res) => {
         if (res.status === 201) {
           showToast("Message sent successfully!", "success");
-          setForm({ name: "", email: "", message: "" });
+          // Reset the form including the service field
+          setForm({ name: "", email: "", message: "", service: "" });
         } else {
           showToast("Something went wrong. Please try again.", "error");
         }
@@ -63,6 +77,7 @@ const Contact = () => {
               onChange={handleChange}
               placeholder="What's your good name?"
               className="bg-tertiary py-4 px-6 placeholder:text-secondary text-white rounded-lg outline-none border-none font-medium"
+              required
             />
           </label>
           <label className="flex flex-col">
@@ -74,8 +89,28 @@ const Contact = () => {
               onChange={handleChange}
               placeholder="What's your web address?"
               className="bg-tertiary py-4 px-6 placeholder:text-secondary text-white rounded-lg outline-none border-none font-medium"
+              required
             />
           </label>
+          
+          {/* New Service Selection Dropdown */}
+          <label className="flex flex-col">
+            <span className="text-white font-medium mb-4">Service Interested In</span>
+            <select
+              name="service"
+              value={form.service}
+              onChange={handleChange}
+              className="bg-tertiary py-4 px-6 text-white rounded-lg outline-none border-none font-medium appearance-none"
+              required
+            >
+              <option value="" disabled className="text-secondary">Select a service...</option>
+              <option value="Commercial Cleaning">Commercial Cleaning</option>
+              <option value="Man and Van">Man and Van</option>
+              <option value="Rubbish Removal">Rubbish Removal</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
           <label className="flex flex-col">
             <span className="text-white font-medium mb-4">Your Message</span>
             <textarea
@@ -85,12 +120,13 @@ const Contact = () => {
               onChange={handleChange}
               placeholder="What you want to say?"
               className="bg-tertiary py-4 px-6 placeholder:text-secondary text-white rounded-lg outline-none border-none font-medium"
+              required
             />
           </label>
 
           <button
             type="submit"
-            className="bg-tertiary py-3 px-8 rounded-xl outline-none w-fit text-white font-bold shadow-md shadow-primary"
+            className="bg-tertiary py-3 px-8 rounded-xl outline-none w-fit text-white font-bold shadow-md shadow-primary hover:bg-white/10 transition-colors"
           >
             {loading ? "Sending..." : "Send"}
           </button>
@@ -111,7 +147,7 @@ const Contact = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.3 }}
-          className={`fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-lg text-white ${
+          className={`fixed bottom-5 right-5 px-6 py-3 rounded-lg shadow-lg text-white z-50 ${
             toast.type === "success" ? "bg-green-500" : "bg-red-500"
           }`}
         >

@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Tell Tailwind v4 to scan your monorepo UI packages for classes */
+@source "../../packages/ui/src/**/*.{js,ts,jsx,tsx}";

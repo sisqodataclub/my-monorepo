@@ -21,8 +21,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Keep your home or workplace consistently clean with trusted professionals on a schedule that suits you.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "Our regular cleaning services maintain hygiene, comfort, and a spotless environment all year round.",
@@ -73,8 +73,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "A thorough top-to-bottom clean designed to refresh, sanitise, and restore your space.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/deep-cleaning-checklist" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "Our deep cleaning service targets built-up dirt, grease, and bacteria for a complete reset.",
@@ -125,8 +125,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Professional end of tenancy cleaning to ensure a smooth property handover.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "We clean every room to inspection-ready standards for tenants and landlords.",
@@ -177,8 +177,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Maintain a clean, productive, and hygienic workplace with professional office cleaning.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "We keep offices clean, safe, and welcoming for staff and visitors.",
@@ -229,8 +229,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Affordable, reliable cleaning for student homes, flats, and shared accommodation.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "We help keep student living spaces clean, hygienic, and landlord-ready.",
@@ -281,8 +281,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Professional appliance cleaning to restore hygiene and performance.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "Extend the life of your appliances with expert cleaning.",
@@ -333,8 +333,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Revive carpets and rugs with deep professional carpet cleaning.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "We remove dirt, stains, and allergens for a fresh, long-lasting clean.",
@@ -386,8 +386,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Maintain spotless, hygienic, and welcoming environments for your guests in hotels, bars, and restaurants.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "Our hospitality cleaning services ensure your premises meet the highest hygiene standards for staff and guests.",
@@ -439,8 +439,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Comprehensive cleaning for newly built or renovated properties, removing dust, debris, and residues.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "We make your new or renovated property ready for handover, inspection, or occupation.",
@@ -492,8 +492,8 @@ export const servicesContent: Record<string, ServiceData> = {
     heroSubtitle:
       "Specialised cleaning services for hospitals, clinics, GP surgeries, and medical facilities.",
     heroButtons: [
-      { label: "Get a Free Quote", href: "/contact", primary: true },
-      { label: "Speak to Our Team", href: "/contact" },
+      { label: "Get a Free Quote", href: "/#contact", primary: true },
+      { label: "Speak to Our Team", href: "/#contact" },
     ],
     ctaPrimaryText:
       "We maintain high-level hygiene standards to protect patients, staff, and visitors in healthcare environments.",

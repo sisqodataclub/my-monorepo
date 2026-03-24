@@ -1,8 +1,8 @@
 packages:
   - packages/*
   - apps/*
-  - apps/project_3D/frontend
-  - apps/project_3D/backend
+  - apps/forms/frontend
+  - apps/forms/backend
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
