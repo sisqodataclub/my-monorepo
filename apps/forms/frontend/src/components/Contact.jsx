@@ -37,7 +37,7 @@ const Contact = () => {
     };
 
     api
-      .post("/api/contact-messages/", payload)
+      .post("/api/contact/", payload)
       .then((res) => {
         if (res.status === 201) {
           showToast("Message sent successfully!", "success");
