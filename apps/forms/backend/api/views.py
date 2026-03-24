@@ -227,6 +227,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([]) # <-- This tells Django NO token is required!
 def contact_view(request):
     name = request.data.get("name")
     email = request.data.get("email")
