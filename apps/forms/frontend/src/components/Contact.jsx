@@ -39,7 +39,8 @@ const Contact = () => {
     api
       .post("/api/contact/", payload)
       .then((res) => {
-        if (res.status === 201) {
+        // Accept both 200 (OK) and 201 (Created) as successful responses!
+        if (res.status === 200 || res.status === 201) {
           showToast("Message sent successfully!", "success");
           // Reset the form including the service field
           setForm({ name: "", email: "", message: "", service: "" });
