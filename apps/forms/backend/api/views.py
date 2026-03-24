@@ -3,6 +3,8 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import Note, Blog
 from .serializers import NoteSerializer, BlogSerializer, UserSerializer, UserCreateSerializer
+from django.views.decorators.csrf import csrf_exempt
+
 
 from django.views.generic import TemplateView
 from .models import Booking
