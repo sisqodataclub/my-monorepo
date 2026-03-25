@@ -4,7 +4,7 @@ services:
       context: ../..
       dockerfile: apps/forms/frontend/Dockerfile
       args:
-        - VITE_API_URL=https://api.franciscodes.com
+        - VITE_API_URL=https://api.ddeepcleaningservices.com
     container_name: ddeep-forms
     restart: always
     expose:
@@ -28,3 +28,6 @@ services:
 networks:
   proxy_network:
     external: true
+
+
+
