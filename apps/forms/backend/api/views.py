@@ -8,6 +8,70 @@ from django.views.generic import TemplateView
 from .models import Booking
 import os
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny # Or IsAuthenticated if protected
+from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import timedelta
+from .models import Booking
+
+class KPIDashboardView(APIView):
+    permission_classes = [AllowAny] # Change to [IsAuthenticated] when ready for production
+
+    def get(self, request):
+        now = timezone.now()
+        
+        # 1. This Year
+        start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        year_qs = Booking.objects.filter(created_at__gte=start_of_year)
+        year_revenue = year_qs.aggregate(total=Sum('total'))['total'] or 0
+        year_count = year_qs.count()
+        
+        # 2. This Month
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_qs = Booking.objects.filter(created_at__gte=start_of_month)
+        month_revenue = month_qs.aggregate(total=Sum('total'))['total'] or 0
+        month_count = month_qs.count()
+        
+        # 3. This Week (Starting Monday)
+        start_of_week = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        week_qs = Booking.objects.filter(created_at__gte=start_of_week)
+        week_revenue = week_qs.aggregate(total=Sum('total'))['total'] or 0
+        week_count = week_qs.count()
+        
+        # Format the combined data for the React KPICard
+        kpi_data = [
+            {
+                "id": "year",
+                "title": "This Year",
+                "revenue": f"£{year_revenue:,.2f}",
+                "bookings": year_count,
+            },
+            {
+                "id": "month",
+                "title": "This Month",
+                "revenue": f"£{month_revenue:,.2f}",
+                "bookings": month_count,
+            },
+            {
+                "id": "week",
+                "title": "This Week",
+                "revenue": f"£{week_revenue:,.2f}",
+                "bookings": week_count,
+            }
+        ]
+        
+        return Response(kpi_data)
+
+
+
+
+
+
+
+
+
 class ReactAppView(TemplateView):
     template_name = "index.html"
 

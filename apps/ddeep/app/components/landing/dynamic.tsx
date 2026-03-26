@@ -123,45 +123,42 @@ function ServiceFeatures({ data }: { data: ServiceData }) {
 }
 
 /* ================= MAIN DYNAMIC PAGE ================= */
-export default function DynamicServicePage({ data }: { data: ServiceData }) {
-  const faqData = [
-    {
-      question: "Which areas in Greater Manchester and Lancashire do you cover?",
-      answer:
-        "We provide professional cleaning services across the entire North West. This includes Manchester City Centre, Salford Quays, Trafford Park, Didsbury, Altrincham, Stockport, Bolton, Bury, Oldham, Rochdale, Preston, Blackburn, Burnley, Warrington, Wigan, and Chorley.",
-    },
-    {
-      question: "Does your End of Tenancy cleaning guarantee deposit recovery?",
-      answer:
-        "Yes. Our End of Tenancy service follows a rigorous, agency-approved checklist designed to meet landlord requirements. A 'Cleaning Certificate' is provided upon completion.",
-    },
-    {
-      question: "What standards do you follow for Healthcare & Clinical cleaning?",
-      answer:
-        "Hygiene is our priority. Our healthcare cleaning team is trained in infection control and cross-contamination prevention, meeting CQC standards.",
-    },
-    {
-      question: "Do you offer out-of-hours cleaning for offices and hospitality venues?",
-      answer:
-        "Yes. Flexible scheduling including early mornings, late evenings, and weekends is available to minimize disruption.",
-    },
-    {
-      question: "How does your Carpet Cleaning process work?",
-      answer:
-        "We use professional-grade hot water extraction (steam cleaning), removing deep-seated stains, allergens, and bacteria, while extending carpet life.",
-    },
-    {
-      question: "What is included in a Post-Construction clean?",
-      answer:
-        "We remove fine masonry dust, paint splatters, and debris left by builders, ensuring the property is move-in ready.",
-    },
-    {
-      question: "Are your cleaners vetted for Student Accommodation turnarounds?",
-      answer:
-        "Yes. All staff are fully vetted and background-checked. We ensure spotless rooms for high-volume student housing.",
-    },
-  ];
+/* ================= MAIN DYNAMIC PAGE ================= */
 
+// Export the FAQs so the Route file can read them for SEO Schema
+export const faqData = [
+  {
+    question: "Which areas in Greater Manchester and Lancashire do you cover?",
+    answer: "We provide professional cleaning services across the entire North West. This includes Manchester City Centre, Salford Quays, Trafford Park, Didsbury, Altrincham, Stockport, Bolton, Bury, Oldham, Rochdale, Preston, Blackburn, Burnley, Warrington, Wigan, and Chorley.",
+  },
+  {
+    question: "Does your End of Tenancy cleaning guarantee deposit recovery?",
+    answer: "Yes. Our End of Tenancy service follows a rigorous, agency-approved checklist designed to meet landlord requirements. A 'Cleaning Certificate' is provided upon completion.",
+  },
+  {
+    question: "What standards do you follow for Healthcare & Clinical cleaning?",
+    answer: "Hygiene is our priority. Our healthcare cleaning team is trained in infection control and cross-contamination prevention, meeting CQC standards.",
+  },
+  {
+    question: "Do you offer out-of-hours cleaning for offices and hospitality venues?",
+    answer: "Yes. Flexible scheduling including early mornings, late evenings, and weekends is available to minimize disruption.",
+  },
+  {
+    question: "How does your Carpet Cleaning process work?",
+    answer: "We use professional-grade hot water extraction (steam cleaning), removing deep-seated stains, allergens, and bacteria, while extending carpet life.",
+  },
+  {
+    question: "What is included in a Post-Construction clean?",
+    answer: "We remove fine masonry dust, paint splatters, and debris left by builders, ensuring the property is move-in ready.",
+  },
+  {
+    question: "Are your cleaners vetted for Student Accommodation turnarounds?",
+    answer: "Yes. All staff are fully vetted and background-checked. We ensure spotless rooms for high-volume student housing.",
+  },
+];
+
+export default function DynamicServicePage({ data }: { data: ServiceData }) {
+  // faqData is now pulled from the export above!
   return (
     <div className="w-full">
       <StoryCard bgImage={HeroImage}>

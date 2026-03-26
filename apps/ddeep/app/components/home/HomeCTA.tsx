@@ -112,13 +112,16 @@ export default function HomeCTA() {
             
             <div className="flex flex-col lg:flex-row items-stretch gap-4">
               {/* PRIMARY CTA */}
-              <Link 
-                to="/contact" 
-                className="flex-grow bg-green-900 hover:bg-green-800 text-white text-lg font-bold py-5 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg transition-all group"
-              >
-                Get Your Free Quote 
-                <FaArrowRight className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Link>
+              <a 
+		  href="https://api.ddeepcleaningservices.com/" 
+		  target="_blank" 
+		  rel="noopener noreferrer"
+		  className="flex-grow bg-green-900 hover:bg-green-800 text-white text-lg font-bold py-5 px-8 rounded-2xl flex items-center justify-center gap-3 shadow-lg transition-all group"
+		>
+		  Get Your Free Quote 
+		  <FaArrowRight className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+		</a>
+
 
               {/* CONTACT DETAILS GRID */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

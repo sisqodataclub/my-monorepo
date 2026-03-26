@@ -1,4 +1,9 @@
-﻿import { Link } from "react-router";
+import { Link } from "react-router";
+
+export const meta = () => [
+  { title: "Our Services | DDeep Cleaning" },
+  { name: "description", content: "Explore our professional cleaning services: deep cleaning, regular maintenance, and more." },
+];
 
 export default function ServicesIndex() {
   return (

@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import CurrentUserView
+from .views import CurrentUserView, KPIDashboardView
 
 from .views import (
     BlogListCreate, 
@@ -29,6 +29,8 @@ urlpatterns = [
 
     # Old contact messages endpoint (left here in case other parts of your app use it)
     path("contact-messages/", ContactMessageListCreate.as_view(), name="contact-messages"),
+    # Add the new KPI endpoint
+    path("kpis/", KPIDashboardView.as_view(), name="dashboard-kpis"),
     
     # Bookings & Payments
     path("bookings/", BookingCreateView.as_view(), name="booking-create"),

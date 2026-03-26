@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import DeepCleaningContent from "../components/landing/dynamic";
 import {
@@ -9,6 +9,21 @@ import {
   FaLeaf,
   FaChild,
 } from "react-icons/fa";
+
+export function meta() {
+  return [
+    { title: "Regular Cleaning Services | D Deep Cleaning" },
+    {
+      name: "description",
+      content: "Weekly or fortnightly regular cleaning services for homes and offices across Manchester and Liverpool. Consistent, reliable cleaning on your schedule."
+    },
+    {
+      name: "keywords",
+      content: "regular cleaning, weekly cleaners, fortnightly cleaning, domestic cleaners, office cleaning schedule, trusted cleaners manchester"
+    },
+    { name: "robots", content: "index, follow" },
+  ];
+}
 
 /* ================= DATA ================= */
 
@@ -28,56 +43,22 @@ const badges = [
   { icon: <FaHome />, text: "Fully Insured Cleaners" },
   { icon: <FaBriefcase />, text: "Weekly & Fortnightly Plans" },
   { icon: <FaLeaf />, text: "Eco-Friendly Products" },
-  { icon: <FaShieldAlt />, text: "Trusted Local Professionals" },
-  { icon: <FaChild />, text: "Safe for Kids & Pets" },
-  { icon: <FaCertificate />, text: "Consistent Quality Cleaning" },
 ];
 
-const heroButtons = [
-  { label: "Get a Free Quote", href: "/contact", primary: true },
-  { label: "Speak to Our Team", href: "/contact" },
-];
-
-const regularCleaningFeatures = [
-  {
-    title: "Weekly & Fortnightly Cleaning",
-    description:
-      "Maintain a spotless home or office with reliable scheduled cleaning that fits around your lifestyle.",
-  },
-  {
-    title: "Professional Trusted Cleaners",
-    description:
-      "Fully vetted, insured, and trained cleaners you can confidently welcome into your space.",
-  },
-  {
-    title: "Custom Cleaning Checklist",
-    description:
-      "We tailor each clean to your priorities — from kitchens and bathrooms to bedrooms and workspaces.",
-  },
-  {
-    title: "Eco-Friendly Products",
-    description:
-      "Safe, non-toxic products that protect your family, pets, and the environment.",
-  },
-  {
-    title: "Consistent High Standards",
-    description:
-      "The same professional approach every visit, ensuring long-term cleanliness and peace of mind.",
-  },
-];
-
-/* ================= PAGE ================= */
-
-export default function RegularCleanPage() {
+export default function RegularCleaning() {
   return (
-    <DeepCleaningContent
-      heroTitle={heroTexts.regular.heroTitle}
-      heroSubtitle={heroTexts.regular.heroSubtitle}
-      ctaPrimaryText={heroTexts.regular.ctaPrimaryText}
-      ctaSecondaryText={heroTexts.regular.ctaSecondaryText}
-      heroButtons={heroButtons}
-      badges={badges}
-      featureCards={regularCleaningFeatures}
-    />
+    <div>
+      <h1>{heroTexts.regular.heroTitle}</h1>
+      <p>{heroTexts.regular.heroSubtitle}</p>
+      <DeepCleaningContent />
+      <div>
+        {badges.map((badge, idx) => (
+          <div key={idx}>
+            {badge.icon}
+            <span>{badge.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
