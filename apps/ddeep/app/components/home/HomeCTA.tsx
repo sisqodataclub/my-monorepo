@@ -16,7 +16,7 @@ import {
 // ===== CONTACT CONSTANTS =====
 const CONTACT_EMAIL = "clean@ddeepcleaningservices.com";
 const CONTACT_PHONE = "07459416262";
-const CONTACT_WHATSAPP = "07459416262";
+const CONTACT_WHATSAPP = "447459416262";
 
 // ===== STEPS =====
 const steps = [
