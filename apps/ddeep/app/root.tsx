@@ -15,6 +15,7 @@ export default function Root() {
         <Meta />
         <Links />
         <link rel="stylesheet" href={appStylesHref} />
+        <script defer src="https://analytics.ddeepcleaningservices.com/script.js" data-website-id="6c2b6b9b-67d7-4a66-8a22-f7b1a33c4c78"></script>
       </head>
 
       {/* 👇 KEY FIX */}
