@@ -4,20 +4,16 @@ services:
   umami:
     image: ghcr.io/umami-software/umami:postgresql-latest
     container_name: umami-app
-    # Tell Docker to pull from the .env file
     env_file:
       - .env
     environment:
-      # Inject the variables into the connection string
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@umami-db:5432/${DB_NAME}
       DATABASE_TYPE: postgresql
       APP_SECRET: ${UMAMI_SECRET}
-    ports:
-      # Expose port 3000 so you can view it on localhost
-      - "3000:3000"
     depends_on:
       - umami-db
     networks:
+      - proxy_network    # 👈 ADD THIS HERE
       - umami_internal
     restart: unless-stopped
 
@@ -37,6 +33,8 @@ services:
     restart: unless-stopped
 
 networks:
+  proxy_network:         # 👈 ADD THIS HERE
+    external: true       # 👈 AND THIS HERE
   umami_internal:
 
 volumes:
