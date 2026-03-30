@@ -1,0 +1,64 @@
+version: '3.9'
+
+x-superset-depends-on: &superset-depends-on
+  - superset-db
+  - superset-redis
+
+x-superset-volumes: &superset-volumes
+  - ./superset_config.py:/app/pythonpath/superset_config.py
+
+services:
+  superset-app:
+    image: apache/superset:3.1.2
+    container_name: superset-app
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${DB_USER}:${DB_PASS}@superset-db:5432/${DB_NAME}
+    depends_on: *superset-depends-on
+    volumes: *superset-volumes
+    networks:
+      - proxy_network
+      - superset_internal
+    restart: unless-stopped
+
+  superset-worker:
+    image: apache/superset:3.1.2
+    container_name: superset-worker
+    command: ["celery", "--app=superset.tasks.celery_app:app", "worker", "-O", "fair", "-c", "2"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${DB_USER}:${DB_PASS}@superset-db:5432/${DB_NAME}
+    depends_on: *superset-depends-on
+    volumes: *superset-volumes
+    networks:
+      - superset_internal
+    restart: unless-stopped
+
+  superset-redis:
+    image: redis:7-alpine
+    container_name: superset-redis
+    networks:
+      - superset_internal
+    restart: unless-stopped
+
+  superset-db:
+    image: postgres:15-alpine
+    container_name: superset-db
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - superset-db-data:/var/lib/postgresql/data
+    networks:
+      - superset_internal
+    restart: unless-stopped
+
+networks:
+  proxy_network:
+    external: true
+  superset_internal:
+
+volumes:
+  superset-db-data:
