@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom"; 
-import { FaPhoneAlt, FaWhatsapp, FaEnvelope, FaChevronRight } from "react-icons/fa";
+import { FaPhoneAlt, FaWhatsapp, FaEnvelope, FaChevronRight, FaClipboardList } from "react-icons/fa";
 
 const CONTACT_EMAIL = "clean@ddeepcleaningservices.com";
 const CONTACT_PHONE = "07459416262";
@@ -132,21 +132,35 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* MOBILE QUICK-ACTION TAB BAR (Thinner & Bottom Docked) */}
+      {/* MOBILE QUICK-ACTION TAB BAR (4 Items with Highlighted Book Button) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[1001] bg-slate-900 border-t border-white/10">
         <div className="flex items-center justify-between shadow-2xl">
-          <a href={`tel:${CONTACT_PHONE}`} className="flex-1 flex flex-col items-center py-2.5 text-white active:bg-slate-800 transition-colors">
+          
+          <a 
+            href="https://api.ddeepcleaningservices.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex flex-col items-center py-2.5 bg-green-600 text-white active:bg-green-700 transition-colors"
+          >
+            <FaClipboardList className="mb-0.5 text-sm" />
+            <span className="text-[9px] font-black uppercase tracking-widest">Quote</span>
+          </a>
+
+          <a href={`tel:${CONTACT_PHONE}`} className="flex-1 flex flex-col items-center py-2.5 border-r border-white/5 text-white active:bg-slate-800 transition-colors">
             <FaPhoneAlt className="text-green-500 mb-0.5 text-sm" />
             <span className="text-[9px] font-black uppercase tracking-widest">Call</span>
           </a>
-          <a href={`https://wa.me/${CONTACT_WHATSAPP.replace(/\D/g, "")}`} className="flex-1 flex flex-col items-center py-2.5 border-x border-white/5 text-white active:bg-slate-800 transition-colors">
+          
+          <a href={`https://wa.me/${CONTACT_WHATSAPP.replace(/\D/g, "")}`} className="flex-1 flex flex-col items-center py-2.5 border-r border-white/5 text-white active:bg-slate-800 transition-colors">
             <FaWhatsapp className="text-green-500 mb-0.5 text-sm" />
-            <span className="text-[9px] font-black uppercase tracking-widest">WhatsApp</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Chat</span>
           </a>
+          
           <a href={`mailto:${CONTACT_EMAIL}`} className="flex-1 flex flex-col items-center py-2.5 text-white active:bg-slate-800 transition-colors">
             <FaEnvelope className="text-green-500 mb-0.5 text-sm" />
             <span className="text-[9px] font-black uppercase tracking-widest">Email</span>
           </a>
+
         </div>
       </div>
 

@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { FaStar, FaGoogle, FaQuoteLeft, FaCheckCircle, FaStarHalfAlt } from "react-icons/fa";
 
@@ -7,13 +9,15 @@ const platformStats = [
     name: "Google", 
     rating: 4.9, 
     icon: FaGoogle, 
-    iconColor: "text-blue-500" 
+    iconColor: "text-blue-500",
+    url: "https://www.google.co.uk/search?ibp=gwp;0,7&q=D+Deep+cleaning+Services+ltd&ludocid=2179265534533258076&lsig=AB86z5WxQdL0CPBNvr0iyBeYQFV4&gfe_rd=mr&pli=1#gfe_rd=mr&lpg=cid:CgIgAQ%3D%3D&pli=1"
   },
   { 
     name: "Trustpilot", 
     rating: 4.8, 
     icon: FaStar, 
-    iconColor: "text-green-500" 
+    iconColor: "text-green-500",
+    url: "" // <-- Paste your Trustpilot link here between the quotes when you have it!
   }
 ];
 
@@ -90,21 +94,30 @@ export default function HomeReviewsCarousel() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
           >
-            {platformStats.map((stat) => (
-               <div key={stat.name} className="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-green-100 px-3 py-1.5 md:px-5 md:py-3 rounded-lg md:rounded-xl shadow-sm min-w-[140px] md:min-w-[180px]">
-                  <div className={`text-base md:text-xl ${stat.iconColor}`} aria-hidden="true">
-                     <stat.icon />
-                  </div>
-                  <div>
-                     <div className="flex text-yellow-400 text-[10px] md:text-xs" aria-label="5 star rating">
-                        <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
-                     </div>
-                     <p className="text-green-950 font-bold text-xs md:text-base leading-none">
-                        {stat.rating}/5 <span className="text-slate-400 font-normal ml-1 hidden sm:inline">{stat.name}</span>
-                     </p>
-                  </div>
-               </div>
-            ))}
+            {platformStats.map((stat) => {
+              const isLink = Boolean(stat.url);
+              const CardWrapper = isLink ? "a" : "div";
+
+              return (
+                 <CardWrapper 
+                   key={stat.name} 
+                   {...(isLink ? { href: stat.url, target: "_blank", rel: "noopener noreferrer" } : {})}
+                   className={`flex items-center gap-2 bg-white/80 backdrop-blur-md border border-green-100 px-3 py-1.5 md:px-5 md:py-3 rounded-lg md:rounded-xl shadow-sm min-w-[140px] md:min-w-[180px] ${isLink ? 'hover:scale-105 hover:bg-green-50 hover:shadow-md transition-all cursor-pointer' : ''}`}
+                 >
+                    <div className={`text-base md:text-xl ${stat.iconColor}`} aria-hidden="true">
+                       <stat.icon />
+                    </div>
+                    <div>
+                       <div className="flex text-yellow-400 text-[10px] md:text-xs" aria-label={`${stat.rating} star rating`}>
+                          <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
+                       </div>
+                       <p className="text-green-950 font-bold text-xs md:text-base leading-none">
+                          {stat.rating}/5 <span className="text-slate-400 font-normal ml-1 hidden sm:inline">{stat.name}</span>
+                       </p>
+                    </div>
+                 </CardWrapper>
+              );
+            })}
           </motion.div>
         </div>
 
