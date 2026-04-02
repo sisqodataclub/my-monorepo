@@ -3,30 +3,35 @@ import { recentBookings } from '../mockData';
 
 export default function RecentBookingsTable() {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Bookings</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
+        <h2 className="text-lg font-bold text-gray-900">Recent Bookings</h2>
+        <button className="text-sm font-medium text-blue-600 hover:text-blue-700">View all</button>
+      </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+        <table className="min-w-full divide-y divide-gray-100">
+          <thead className="bg-gray-50/50">
+            <tr>
+              {['ID', 'Customer', 'Service', 'Date', 'Amount', 'Status'].map((header) => (
+                <th key={header} className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-gray-50">
             {recentBookings.map((booking: Booking) => (
-              <tr key={booking.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.customer}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.service}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.date}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${booking.amount.toLocaleString()}</td>
+              <tr key={booking.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{booking.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{booking.customer}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{booking.service}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.date}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">£{booking.amount.toLocaleString()}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    booking.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' : 
+                    booking.status === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
+                  }`}>
                     {booking.status}
                   </span>
                 </td>
