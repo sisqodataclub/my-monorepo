@@ -1,11 +1,14 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import { LayoutDashboard, MessageSquare, Settings, Bell, Search } from 'lucide-react';
+
 import OverviewPage from './pages/OverviewPage';
 import InquiriesPage from './pages/InquiriesPage';
+import LoginPage from './pages/LoginPage';
 
 function Sidebar() {
   const location = useLocation();
-  
+
   const navItems = [
     { name: 'Overview', path: '/', icon: LayoutDashboard },
     { name: 'Inquiries', path: '/inquiries', icon: MessageSquare },
@@ -35,16 +38,6 @@ function Sidebar() {
           );
         })}
       </nav>
-      {/* Placeholder for future user profile */}
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold">A</div>
-          <div className="ml-3">
-            <p className="text-sm font-medium">Admin User</p>
-            <p className="text-xs text-slate-400">View Profile</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -54,17 +47,22 @@ function Topbar() {
     <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 sticky top-0 z-10">
       <div className="flex items-center text-gray-400 focus-within:text-gray-600">
         <Search className="w-5 h-5 absolute ml-3 pointer-events-none" />
-        <input 
-          type="text" 
-          placeholder="Search bookings, clients..." 
+        <input
+          type="text"
+          placeholder="Search bookings, clients..."
           className="pl-10 pr-4 py-2 border-none rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 md:w-96"
         />
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-6">
         <button className="text-gray-400 hover:text-gray-600 relative">
           <Bell className="w-6 h-6" />
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
+        
+        {/* CLERK: Drop-in User Profile & Settings Menu */}
+        <div className="h-8 w-8 flex items-center justify-center">
+          <UserButton afterSignOutUrl="/login" />
+        </div>
       </div>
     </header>
   );
@@ -73,18 +71,46 @@ function Topbar() {
 export default function App() {
   return (
     <Router>
-      <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Topbar />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
-            <Routes>
-              <Route path="/" element={<OverviewPage />} />
-              <Route path="/inquiries" element={<InquiriesPage />} />
-            </Routes>
-          </main>
-        </div>
-      </div>
+      <Routes>
+        {/* PUBLIC ROUTE: The Login Screen */}
+        <Route 
+          path="/login" 
+          element={
+            <SignedOut>
+              <LoginPage />
+            </SignedOut>
+          } 
+        />
+
+        {/* SECURE ROUTES: Protected Dashboard */}
+        <Route
+          path="/*"
+          element={
+            <>
+              {/* Security Wall: Kick unauthenticated users back to login */}
+              <SignedOut>
+                <Navigate to="/login" replace />
+              </SignedOut>
+
+              {/* Secure Area: Only renders if Clerk verifies the user */}
+              <SignedIn>
+                <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Topbar />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+                      <Routes>
+                        <Route path="/" element={<OverviewPage />} />
+                        <Route path="/inquiries" element={<InquiriesPage />} />
+                      </Routes>
+                    </main>
+                  </div>
+                </div>
+              </SignedIn>
+            </>
+          }
+        />
+      </Routes>
     </Router>
   );
 }

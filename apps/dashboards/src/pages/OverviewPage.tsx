@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, RefreshCw, Download } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
+import axios from 'axios';
 
 // Components
 import KPICard, { type KPI } from '../components/KPICard';
@@ -11,32 +13,66 @@ import CustomerRetentionChart from '../components/CustomerRetentionChart';
 import RecentBookingsTable from '../components/RecentBookingsTable';
 import RecentMessagesTable from '../components/RecentMessagesTable';
 
-// Data (Swap this with your Django API later)
+// Data
 import { funnelData, contactMessages } from '../mockData';
-// import api from '../../../forms/frontend/src/api';
 
 const MOCK_KPIS: KPI[] = [
-  { id: '1', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' },
-  { id: '2', title: 'Active Bookings', value: '142', change: 5.2 },
+  { id: '1', title: 'Total Bookings', value: '...', change: 0 }, // Placeholder for live data
+  { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' },
   { id: '3', title: 'New Inquiries', value: '38', change: -2.4 },
   { id: '4', title: 'Conversion Rate', value: '64.2', change: 0, prefix: '%' },
 ];
 
 export default function OverviewPage() {
   const [kpis, setKpis] = useState<KPI[]>(MOCK_KPIS);
-  const [loading, setLoading] = useState(false); // Set to true when using real API
+  const [loading, setLoading] = useState(true);
+  
+  // 🔐 Pull the getToken function from Clerk
+  const { getToken } = useAuth();
 
-  /* // 🔌 UNCOMMENT THIS WHEN DJANGO IS READY
   useEffect(() => {
-    setLoading(true);
-    api.get('/api/v1/dashboard/overview/')
-      .then((res) => setKpis(res.data.kpis))
-      .catch((err) => console.error('Failed to fetch dashboard data:', err))
-      .finally(() => setLoading(false));
-  }, []);
-  */
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // 1. Ask Clerk for the secure JWT for this specific user
+        const token = await getToken();
+        
+        // 2. Fetch data from your Django Proxy View
+        // 2. Fetch data from your Django Proxy View (using the env variable)
+	const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
+	const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/`, {
+	    headers: {
+		Authorization: `Bearer ${token}`
+	    }
+	});
+        
+        // 3. Extract the live KPI returned by Superset -> Django
+        const liveBookingsKpi = response.data.kpis[0];
+        
+        // 4. Merge the live data with the rest of our UI placeholders
+        setKpis([
+          liveBookingsKpi, 
+          MOCK_KPIS[1],
+          MOCK_KPIS[2],
+          MOCK_KPIS[3]
+        ]);
 
-  // Framer Motion variant for staggering sections
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        // Fallback to the mock data if the API fails so the UI doesn't break
+        setKpis([
+          { id: '1', title: 'Total Bookings', value: 'Error', change: 0 },
+          MOCK_KPIS[1], MOCK_KPIS[2], MOCK_KPIS[3]
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [getToken]);
+
+  // Framer Motion variants
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -51,7 +87,7 @@ export default function OverviewPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="max-w-7xl mx-auto pb-12"
       variants={containerVariants}
       initial="hidden"
@@ -61,9 +97,9 @@ export default function OverviewPage() {
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome back. Here is what's happening with DDeep Cleaning today.</p>
+          <p className="text-sm text-gray-500 mt-1">Welcome back. Here is your live business data.</p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
             <Calendar className="w-4 h-4 mr-2 text-gray-400" />
@@ -73,7 +109,10 @@ export default function OverviewPage() {
             <Download className="w-4 h-4 mr-2 text-gray-400" />
             Export
           </button>
-          <button className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+          <button 
+            onClick={() => window.location.reload()}
+            className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+          >
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
@@ -94,7 +133,6 @@ export default function OverviewPage() {
 
       {/* 3. Top Charts Row (Revenue & Funnel) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Revenue Chart takes up 2/3 of the screen */}
         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-base font-bold text-gray-900">Revenue Analytics</h2>
@@ -102,7 +140,6 @@ export default function OverviewPage() {
           <RevenueChart />
         </div>
 
-        {/* Funnel Chart takes up 1/3 of the screen */}
         <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-base font-bold text-gray-900">Booking Funnel</h2>
