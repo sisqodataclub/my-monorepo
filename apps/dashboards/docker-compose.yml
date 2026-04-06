@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  dashboards:
+    build:
+      context: ../..
+      dockerfile: apps/dashboards/Dockerfile
+    container_name: dcs1
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - proxy_network
+
+networks:
+  proxy_network:
+    external: true
