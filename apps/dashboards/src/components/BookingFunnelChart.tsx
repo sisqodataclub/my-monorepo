@@ -27,7 +27,7 @@ export default function BookingFunnelChart({ data }: BookingFunnelChartProps) {
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
           />
           <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={32}>
-            {data.map((entry, index) => (
+            {data.map((_, index) => (
               <Cell key={`cell-${index}`} fill={colors[colors.length - 1 - index] || '#3b82f6'} />
             ))}
           </Bar>

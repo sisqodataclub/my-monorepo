@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
+
+import { useState, useEffect } from 'react';
+
+import { motion, type Variants } from 'framer-motion';
+
+
 import { Calendar, RefreshCw, Download } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
@@ -73,7 +78,7 @@ export default function OverviewPage() {
   }, [getToken]);
 
   // Framer Motion variants
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -81,7 +86,7 @@ export default function OverviewPage() {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
   };
