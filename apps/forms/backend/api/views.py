@@ -1,134 +1,105 @@
+import os
+import re
+import stripe
+from datetime import timedelta
+
 from django.contrib.auth.models import User
-from rest_framework import generics, permissions
-from rest_framework.exceptions import PermissionDenied
-from .models import Note, Blog
-from .serializers import NoteSerializer, BlogSerializer, UserSerializer, UserCreateSerializer
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.utils import timezone
+from django.db.models import Sum, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
-from .models import Booking
-import os
 
+from rest_framework import generics, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny # Or IsAuthenticated if protected
-from django.db.models import Sum, Count
-from django.utils import timezone
-from datetime import timedelta
-from .models import Booking
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from .models import Note, Blog, Booking, ContactMessage, Comment, BookingSnapshot
+from .serializers import (
+    NoteSerializer, BlogSerializer, UserSerializer, UserCreateSerializer,
+    ContactMessageSerializer, CommentSerializer, BookingSerializer, BookingSnapshotSerializer
+)
+
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+
+# ==========================================
+# DASHBOARD & KPIs
+# ==========================================
 class KPIDashboardView(APIView):
-    permission_classes = [AllowAny] # Change to [IsAuthenticated] when ready for production
+    permission_classes = [AllowAny] # Change to [IsAuthenticated] when ready to lock down
 
     def get(self, request):
         now = timezone.now()
-        
+
         # 1. This Year
         start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         year_qs = Booking.objects.filter(created_at__gte=start_of_year)
         year_revenue = year_qs.aggregate(total=Sum('total'))['total'] or 0
         year_count = year_qs.count()
-        
+
         # 2. This Month
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         month_qs = Booking.objects.filter(created_at__gte=start_of_month)
         month_revenue = month_qs.aggregate(total=Sum('total'))['total'] or 0
         month_count = month_qs.count()
-        
+
         # 3. This Week (Starting Monday)
         start_of_week = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
         week_qs = Booking.objects.filter(created_at__gte=start_of_week)
         week_revenue = week_qs.aggregate(total=Sum('total'))['total'] or 0
         week_count = week_qs.count()
-        
-        # Format the combined data for the React KPICard
+
         kpi_data = [
-            {
-                "id": "year",
-                "title": "This Year",
-                "revenue": f"£{year_revenue:,.2f}",
-                "bookings": year_count,
-            },
-            {
-                "id": "month",
-                "title": "This Month",
-                "revenue": f"£{month_revenue:,.2f}",
-                "bookings": month_count,
-            },
-            {
-                "id": "week",
-                "title": "This Week",
-                "revenue": f"£{week_revenue:,.2f}",
-                "bookings": week_count,
-            }
+            {"id": "year", "title": "This Year", "revenue": f"£{year_revenue:,.2f}", "bookings": year_count},
+            {"id": "month", "title": "This Month", "revenue": f"£{month_revenue:,.2f}", "bookings": month_count},
+            {"id": "week", "title": "This Week", "revenue": f"£{week_revenue:,.2f}", "bookings": week_count}
         ]
-        
         return Response(kpi_data)
-
-
-
-
-
-
-
 
 
 class ReactAppView(TemplateView):
     template_name = "index.html"
 
 
-# views.py
-from .models import ContactMessage
-from .serializers import ContactMessageSerializer
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-
+# ==========================================
+# CONTACT MESSAGES
+# ==========================================
 class ContactMessageListCreate(generics.ListCreateAPIView):
     queryset = ContactMessage.objects.all().order_by('-created')
     serializer_class = ContactMessageSerializer
-    permission_classes = [permissions.AllowAny]
-    authentication_classes = []  # ✅ disable token/session requirement
+    permission_classes = [AllowAny]
+    authentication_classes = []  # Disable token requirement for public form
 
     def perform_create(self, serializer):
         author = self.request.user if self.request.user.is_authenticated else None
         contact_message = serializer.save(author=author)
 
-        # ------------------------------------------------------------
-        # 🔥 Extract TOTAL QUOTE from contact_message.message
-        # ------------------------------------------------------------
+        # Extract TOTAL QUOTE from message
         total_quote = None
-        import re
         match = re.search(r'£(\d+(?:\.\d+)?)', contact_message.message)
         if match:
             total_quote = match.group(1)
 
-        # ------------------------------------------------------------
-        # 🔥 Fetch latest booking (only for items, not quote)
-        # ------------------------------------------------------------
-        latest_booking = Booking.objects.filter(
-            email=contact_message.email
-        ).order_by('-created_at').first()
-
+        # Fetch latest booking 
+        latest_booking = Booking.objects.filter(email=contact_message.email).order_by('-created_at').first()
         booking_items = latest_booking.quantities if latest_booking else None
 
-        # ------------------------------------------------------------
-        # 🔥 Build context with extracted quote (NOT from booking)
-        # ------------------------------------------------------------
         context = {
             'contact': contact_message,
             'booking_items': booking_items,
-            'total_quote': total_quote,                   # ✔ now from message
+            'total_quote': total_quote,
             'phone': getattr(latest_booking, 'phone', None) if latest_booking else None,
             'parking': getattr(latest_booking, 'parking', None) if latest_booking else None,
             'furnished': getattr(latest_booking, 'furnished_status', None) if latest_booking else None,
             'booking_id': latest_booking.id if latest_booking else None,
         }
 
-        # ------------------------------------------------------------
-        # 🔥 Send Email
-        # ------------------------------------------------------------
-        from django.core.mail import send_mail
-        from django.template.loader import render_to_string
-        from django.utils.html import strip_tags
-        
+        # Send Email
         subject = 'Enquiry Confirmation!'
         html_message = render_to_string('thankyou.html', context)
         plain_message = strip_tags(html_message)
@@ -141,151 +112,17 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
             html_message=html_message
         )
 
-
-class NoteListCreate(generics.ListCreateAPIView):
-    serializer_class = NoteSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Note.objects.filter(author=self.request.user)
-
-    def perform_create(self, serializer):
-        note = serializer.save(author=self.request.user)
-
-        # --- Trigger email after creating note ---
-        try:
-            from django.core.mail import send_mail
-            from django.template.loader import render_to_string
-            from django.utils.html import strip_tags
-            
-            subject = 'New Note Created'
-            html_message = render_to_string(
-                'quote.html',  # Template path
-                {
-                    'name': self.request.user.get_full_name() or self.request.user.username,
-                    'email': self.request.user.email,
-                    'note_title': note.title,
-                    'note_content': note.content,
-                }
-            )
-            plain_message = strip_tags(html_message)
-            from_email = 'francis@dataclubcenter.com'
-            to_email = [self.request.user.email, 'francis@dataclubcenter.com']
-
-            send_mail(
-                subject,
-                plain_message,
-                from_email,
-                to_email,
-                html_message=html_message
-            )
-        except Exception as e:
-            # Log or print error without breaking API
-            print(f"Email sending failed: {e}")
-
-
-class NoteDelete(generics.DestroyAPIView):
-    serializer_class = NoteSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Note.objects.filter(author=self.request.user)
-
-
-class BlogListCreate(generics.ListCreateAPIView):
-    serializer_class = BlogSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_queryset(self):
-        author_id = self.request.query_params.get('author')
-        if author_id:
-            return Blog.objects.filter(author__id=author_id)
-        return Blog.objects.all()
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-
-class BlogRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = BlogSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_queryset(self):
-        return Blog.objects.all()
-
-    def perform_update(self, serializer):
-        if self.request.user != self.get_object().author:
-            raise PermissionDenied("Cannot edit another user's blog.")
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        if self.request.user != instance.author:
-            raise PermissionDenied("Cannot delete another user's blog.")
-        instance.delete()
-
-
-class CreateUserView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]
-
-
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-
-class CurrentUserView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        serializer = UserCreateSerializer(request.user)
-        return Response(serializer.data)
-
-
-# api/views.py
-from .models import Comment
-from .serializers import CommentSerializer
-from datetime import datetime
-
-class CommentListCreate(generics.ListCreateAPIView):
-    """
-    GET /api/blogs/<pk>/comments/  -> list
-    POST /api/blogs/<pk>/comments/ -> create
-    """
-    serializer_class   = CommentSerializer
-    permission_classes = [permissions.AllowAny]
-
-    def get_queryset(self):
-        return Comment.objects.filter(blog_id=self.kwargs["pk"])
-
-    def perform_create(self, serializer):
-        blog = Blog.objects.get(pk=self.kwargs["pk"])
-        user = self.request.user if self.request.user.is_authenticated else None
-        guest_label = ""
-        if not user:
-            guest_label = f"Guest {datetime.now():%Y-%m-%d %H:%M}"
-        serializer.save(blog=blog, author=user, guest_name=guest_label)
-
-
-# ==========================================
-# 📌 FIXED: CONTACT VIEW WITH PROPER IMPORTS
-# ==========================================
-from django.core.mail import send_mail
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import AllowAny
-from rest_framework import status
-
 @csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@authentication_classes([]) # <-- This tells Django NO token is required!
+@authentication_classes([]) 
 def contact_view(request):
     name = request.data.get("name")
     email = request.data.get("email")
     message = request.data.get("message")
 
     try:
-        # 1. Send the lead notification to YOU
+        # 1. Lead notification to Admin
         send_mail(
             subject=f"New Contact Form Submission from {name}",
             message=f"You have a new inquiry!\n\nName: {name}\nEmail: {email}\n\nMessage:\n{message}",
@@ -294,7 +131,7 @@ def contact_view(request):
             fail_silently=False,
         )
 
-        # 2. Send a professional Auto-Reply to the CUSTOMER
+        # 2. Auto-Reply to Customer
         if email:
             send_mail(
                 subject="Thank you for contacting Ddeep Cleaning Services!",
@@ -310,60 +147,148 @@ def contact_view(request):
 
 
 # ==========================================
-# BOOKINGS
+# NOTES
 # ==========================================
-from .models import Booking
-from .serializers import BookingSerializer
+class NoteListCreate(generics.ListCreateAPIView):
+    serializer_class = NoteSerializer
+    permission_classes = [IsAuthenticated] # Automatically uses JWT now
 
+    def get_queryset(self):
+        return Note.objects.filter(author=self.request.user)
+
+    def perform_create(self, serializer):
+        note = serializer.save(author=self.request.user)
+        try:
+            subject = 'New Note Created'
+            html_message = render_to_string('quote.html', {
+                'name': self.request.user.get_full_name() or self.request.user.username,
+                'email': self.request.user.email,
+                'note_title': note.title,
+                'note_content': note.content,
+            })
+            plain_message = strip_tags(html_message)
+            send_mail(
+                subject, plain_message, 'francis@dataclubcenter.com',
+                [self.request.user.email, 'francis@dataclubcenter.com'],
+                html_message=html_message
+            )
+        except Exception as e:
+            print(f"Email sending failed: {e}")
+
+class NoteDelete(generics.DestroyAPIView):
+    serializer_class = NoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Note.objects.filter(author=self.request.user)
+
+
+# ==========================================
+# BLOGS & COMMENTS
+# ==========================================
+class BlogListCreate(generics.ListCreateAPIView):
+    serializer_class = BlogSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        # ⚡ OPTIMIZED: Fetches all related blocks and comments efficiently
+        queryset = Blog.objects.prefetch_related('blocks', 'comments').all()
+        
+        author_id = self.request.query_params.get('author')
+        tag = self.request.query_params.get('tag')
+        
+        if author_id:
+            queryset = queryset.filter(author__id=author_id)
+        if tag:
+            queryset = queryset.filter(tag__icontains=tag)
+            
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+class BlogRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = BlogSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        return Blog.objects.prefetch_related('blocks', 'comments').all()
+
+    def perform_update(self, serializer):
+        if self.request.user != self.get_object().author:
+            raise PermissionDenied("Cannot edit another user's blog.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if self.request.user != instance.author:
+            raise PermissionDenied("Cannot delete another user's blog.")
+        instance.delete()
+
+class CommentListCreate(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Comment.objects.filter(blog_id=self.kwargs["pk"])
+
+    def perform_create(self, serializer):
+        blog = Blog.objects.get(pk=self.kwargs["pk"])
+        user = self.request.user if self.request.user.is_authenticated else None
+        guest_label = f"Guest {timezone.now():%Y-%m-%d %H:%M}" if not user else ""
+        serializer.save(blog=blog, author=user, guest_name=guest_label)
+
+
+# ==========================================
+# USERS
+# ==========================================
+class CreateUserView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated] # Requires valid JWT Bearer token
+
+    def get(self, request):
+        serializer = UserCreateSerializer(request.user)
+        return Response(serializer.data)
+
+
+# ==========================================
+# BOOKINGS & PAYMENTS
+# ==========================================
 class BookingCreateView(generics.CreateAPIView):
     serializer_class = BookingSerializer
-    permission_classes = [permissions.AllowAny]
-    authentication_classes = []  # 👈 THIS FIXES YOUR 401
+    permission_classes = [AllowAny]
+    authentication_classes = [] 
     queryset = Booking.objects.all()
-
-
-from .models import BookingSnapshot
-from .serializers import BookingSnapshotSerializer
 
 @csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@authentication_classes([])  # ⬅ this is REQUIRED
+@authentication_classes([]) 
 def booking_snapshot(request):
     session_id = request.data.get("session_id")
-
     if not session_id:
         return Response({"error": "session_id is required"}, status=400)
 
-    # Try to find existing snapshot for that session
-    snapshot = BookingSnapshot.objects.filter(
-        session_id=session_id, is_final=False
-    ).last()
+    snapshot = BookingSnapshot.objects.filter(session_id=session_id, is_final=False).last()
 
     if snapshot:
-        # Update instead of creating new
         serializer = BookingSnapshotSerializer(snapshot, data=request.data, partial=True)
     else:
-        # Create fresh snapshot
         serializer = BookingSnapshotSerializer(data=request.data)
 
     if serializer.is_valid():
         serializer.save()
-        return Response(
-            {"status": "saved", "snapshot_id": serializer.instance.id},
-            status=200
-        )
+        return Response({"status": "saved", "snapshot_id": serializer.instance.id}, status=200)
 
     return Response(serializer.errors, status=400)
 
-
-import stripe
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
-
-@csrf_exempt                     # 🔥 REQUIRED
+@csrf_exempt                     
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@authentication_classes([])      # 🔥 REQUIRED
+@authentication_classes([])      
 def payment_link(request):
     try:
         total = request.data.get("total")
@@ -380,22 +305,13 @@ def payment_link(request):
                 "price_data": {
                     "currency": "gbp",
                     "unit_amount": amount,
-                    "product_data": {
-                        "name": "Cleaning Booking Payment"
-                    },
+                    "product_data": {"name": "Cleaning Booking Payment"},
                 },
                 "quantity": 1,
             }],
             mode="payment",
         )
-
-        return Response(
-            {"paymentlink": session.url},
-            status=status.HTTP_200_OK
-        )
+        return Response({"paymentlink": session.url}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

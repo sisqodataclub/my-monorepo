@@ -26,29 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-m7_-fo@qfi@=r%3hqocvzu86_d1um)xrp=pgs13kncua0=6xq$'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-m7_-fo@qfi@=r%3hqocvzu86_d1um)xrp=pgs13kncua0=6xq$')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ["*"]
-#CSRF_TRUSTED_ORIGINS = [
-#    "http://localhost:5173",
-#    "https://franciscodes.com",
-#    "https://www.franciscodes.com",
-#    "http://153.92.208.112:3000",
-#    "https://api.franciscodes.com",
-#]
-
-#CORS_ALLOWED_ORIGINS = [
-#    "http://localhost:5173",
-#    "https://franciscodes.com",
-#    "https://www.franciscodes.com",
-#    "http://153.92.208.112:3000",
-#    "https://api.franciscodes.com",
-#]
-
-
 
 # Grab the comma-separated strings from the .env file (or default to empty string)
 cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "")
@@ -59,9 +42,6 @@ CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(",")] if cor
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_env.split(",")] if csrf_env else []
 
 
-
-
-
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -69,11 +49,16 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6,
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 # Email Configuration
@@ -100,11 +85,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "api",
     "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist", # Required for BLACKLIST_AFTER_ROTATION
     "corsheaders",
 ]
 
 MIDDLEWARE = [
-
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -114,7 +100,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -183,8 +168,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 import os
 
-
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
@@ -192,23 +175,11 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # Optional but recommended
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-#if DEBUG:
-#
-#    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-#
-#else:
-#
-#    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-#CORS_ALLOW_ALL_ORIGINS = True
-#CORS_ALLOWS_CREDENTIALS = True
 
 
 CORS_ALLOW_CREDENTIALS = True

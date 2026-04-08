@@ -39,18 +39,32 @@ class BlogBlockSerializer(serializers.ModelSerializer):
         fields = ["id", "order", "text", "image"]
 
 
+
+
+
+
+
+
 class BlogSerializer(serializers.ModelSerializer):
     blocks = BlogBlockSerializer(many=True)
-    author = serializers.CharField(source="author.username", read_only=True) 
+    author = serializers.CharField(source="author.username", read_only=True)
+    
+    # 🌟 NEW: Automatically count comments for the frontend
+    comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model  = Blog
         fields = [
             "id", "title", "created",
             "tag", "snippet", "image",
-            "author", "blocks",
+            "author", "blocks", 
+            "comment_count", # 🌟 Added here
         ]
         read_only_fields = ["author", "created"]
+
+    # 🌟 NEW: The function that calculates the count
+    def get_comment_count(self, obj):
+        return obj.comments.count()
 
     # allow POST / PUT with nested blocks
     def create(self, validated_data):
@@ -73,6 +87,8 @@ class BlogSerializer(serializers.ModelSerializer):
         for idx, blk in enumerate(blocks_data):
             BlogBlock.objects.create(blog=instance, order=idx, **blk)
         return instance
+
+
 
 
 
