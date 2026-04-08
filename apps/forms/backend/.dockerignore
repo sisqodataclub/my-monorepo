@@ -1,0 +1,20 @@
+# Environments and Git
+.git
+.gitignore
+venv/
+env/
+.venv/
+.env
+
+# Python Cache (Prevents weird bugs)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Database (Handled by Docker Volumes now!)
+db.sqlite3
+db/
+
+# Static Files (Django generates these during deployment)
+staticfiles/
