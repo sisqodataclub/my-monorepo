@@ -23,15 +23,11 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      # 🌟 THE FIX: This is a Named Volume. It's safe from Git resets and cleans.
-      - forms_db_data:/app/db
+      # 🌟 This points to the folder inside your backend app
+      - ./backend/db:/app/db
     networks:
       - proxy_network
 
 networks:
   proxy_network:
     external: true
-
-# 🌟 REQUIRED: Declare the volume here so Docker knows to keep it permanent
-volumes:
-  forms_db_data:
