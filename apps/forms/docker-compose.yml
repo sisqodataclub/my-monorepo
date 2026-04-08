@@ -23,8 +23,8 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      # 🌟 CHANGED: This is a Bind Mount. It connects your exact host folder to the container.
-      - ./backend/db:/app/db
+      # 🌟 THE FIX: This is a Named Volume. It's safe from Git resets and cleans.
+      - forms_db_data:/app/db
     networks:
       - proxy_network
 
@@ -32,4 +32,6 @@ networks:
   proxy_network:
     external: true
 
-# 🌟 DELETED the "volumes: sqlite_data:" block that was down here!
+# 🌟 REQUIRED: Declare the volume here so Docker knows to keep it permanent
+volumes:
+  forms_db_data:

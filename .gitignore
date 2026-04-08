@@ -10,3 +10,5 @@ build/
 Thumbs.db
 .env
 .env
+*.sqlite3
+db/
