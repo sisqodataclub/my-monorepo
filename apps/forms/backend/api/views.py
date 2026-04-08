@@ -19,6 +19,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
+# 🌟 ADDED: Throttle import for spam protection
+from rest_framework.throttling import ScopedRateThrottle
+
 from .models import Note, Blog, Booking, ContactMessage, Comment, BookingSnapshot
 from .serializers import (
     NoteSerializer, BlogSerializer, UserSerializer, UserCreateSerializer,
@@ -74,6 +77,10 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
     serializer_class = ContactMessageSerializer
     permission_classes = [AllowAny]
     authentication_classes = []  # Disable token requirement for public form
+    
+    # 🌟 ADDED: Rate limiting to stop contact form spam
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'contact_limit'
 
     def perform_create(self, serializer):
         author = self.request.user if self.request.user.is_authenticated else None
@@ -85,7 +92,7 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
         if match:
             total_quote = match.group(1)
 
-        # Fetch latest booking 
+        # Fetch latest booking
         latest_booking = Booking.objects.filter(email=contact_message.email).order_by('-created_at').first()
         booking_items = latest_booking.quantities if latest_booking else None
 
@@ -115,7 +122,7 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
 @csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@authentication_classes([]) 
+@authentication_classes([])
 def contact_view(request):
     name = request.data.get("name")
     email = request.data.get("email")
@@ -193,15 +200,15 @@ class BlogListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         # ⚡ OPTIMIZED: Fetches all related blocks and comments efficiently
         queryset = Blog.objects.prefetch_related('blocks', 'comments').all()
-        
+
         author_id = self.request.query_params.get('author')
         tag = self.request.query_params.get('tag')
-        
+
         if author_id:
             queryset = queryset.filter(author__id=author_id)
         if tag:
             queryset = queryset.filter(tag__icontains=tag)
-            
+
         return queryset
 
     def perform_create(self, serializer):
@@ -260,13 +267,17 @@ class CurrentUserView(APIView):
 class BookingCreateView(generics.CreateAPIView):
     serializer_class = BookingSerializer
     permission_classes = [AllowAny]
-    authentication_classes = [] 
+    authentication_classes = []
     queryset = Booking.objects.all()
+
+    # 🌟 ADDED: Rate limiting to stop fake booking bots
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'booking_limit'
 
 @csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@authentication_classes([]) 
+@authentication_classes([])
 def booking_snapshot(request):
     session_id = request.data.get("session_id")
     if not session_id:
@@ -285,10 +296,10 @@ def booking_snapshot(request):
 
     return Response(serializer.errors, status=400)
 
-@csrf_exempt                     
+@csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@authentication_classes([])      
+@authentication_classes([])
 def payment_link(request):
     try:
         total = request.data.get("total")
