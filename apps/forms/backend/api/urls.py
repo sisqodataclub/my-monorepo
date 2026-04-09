@@ -1,3 +1,5 @@
+from .views import UKEconomyDashboardView
+
 from django.urls import path
 from . import views
 from .views import CurrentUserView, KPIDashboardView
@@ -36,4 +38,8 @@ urlpatterns = [
     path("bookings/", BookingCreateView.as_view(), name="booking-create"),
     path("booking-snapshots/", booking_snapshot, name="booking_snapshot"),
     path("payment-link/", payment_link, name="payment_link"),
+    path('economy/kpis/', UKEconomyDashboardView.as_view(), name='economy-kpis'),
+
+
+
 ]

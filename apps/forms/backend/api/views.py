@@ -291,7 +291,7 @@ def booking_snapshot(request):
         serializer = BookingSnapshotSerializer(data=request.data)
 
     if serializer.is_valid():
-        serializer.save()
+B        serializer.save()
         return Response({"status": "saved", "snapshot_id": serializer.instance.id}, status=200)
 
     return Response(serializer.errors, status=400)
@@ -326,3 +326,53 @@ def payment_link(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# ==========================================
+# UK ECONOMY DASHBOARD (SUPERSET PROXY)
+# ==========================================
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+
+# ==========================================
+# UK ECONOMY DASHBOARD (SUPERSET PROXY)
+# ==========================================
+from .superset_utils import fetch_economy_kpis
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UKEconomyDashboardView(APIView):
+    permission_classes = [AllowAny] 
+    authentication_classes = []  # Explicitly clear auth to bypass DRF's CSRF checks
+
+    def get(self, request):
+        # 1. Ask Superset for the data
+        superset_data = fetch_economy_kpis()
+
+        if "error" in superset_data:
+            return Response(superset_data, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        # 2. Shape the JSON perfectly for your React UI
+        formatted_response = {
+            "status": "success",
+            "kpis": {
+                "headline_inflation": {
+                    "title": "Current Inflation Rate",
+                    "value": f"{superset_data['headline_rate']}%",
+                    "subtitle": "Official UK CPIH Rate"
+                },
+                "economic_trajectory": {
+                    "title": "Monthly Trajectory",
+                    "value": f"{superset_data['trajectory_change']}%",
+                    "subtitle": "Versus Previous Month"
+                },
+                "wallet_squeeze": {
+                    "title": "Most Expensive Category",
+                    "value": superset_data['top_category_name'],
+                    "subtitle": f"+{superset_data['top_category_rate']}% YoY"
+                }
+            }
+        }
+
+        # 3. Ship it to React!
+        return Response(formatted_response, status=status.HTTP_200_OK)

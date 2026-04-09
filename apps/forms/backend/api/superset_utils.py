@@ -1,0 +1,61 @@
+import requests
+import os
+
+# Set these in your environment variables, or hardcode them for testing
+SUPERSET_URL = os.environ.get("SUPERSET_URL", "http://153.92.208.112:8088")
+USERNAME = "django_service_account"
+PASSWORD = "YOUR_SUPERSET_PASSWORD"
+
+def get_superset_token():
+    """Logs into Superset and returns the JWT Bearer token."""
+    login_url = f"{SUPERSET_URL}/api/v1/security/login"
+    payload = {
+        "username": USERNAME,
+        "password": PASSWORD,
+        "provider": "db"
+    }
+    
+    try:
+        response = requests.post(login_url, json=payload, timeout=5)
+        if response.status_code == 200:
+            return response.json().get("access_token")
+    except requests.exceptions.RequestException as e:
+        print(f"Superset Login Error: {e}")
+    
+    return None
+
+def fetch_economy_kpis():
+    """Fetches the 3 KPIs via Superset's SQL Lab API."""
+    token = get_superset_token()
+    if not token:
+        return {"error": "Failed to authenticate with Superset"}
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # We combine our 3 lightning-fast views into a single Superset request
+    # NOTE: database_id is usually 1 if this was the first DB you connected to Superset.
+    sql_payload = {
+        "client_id": "django_react_frontend",
+        "database_id": 1, 
+        "schema": "gold",
+        "sql": """
+            SELECT
+                (SELECT current_inflation_rate FROM gold.v_kpi_headline) as headline_rate,
+                (SELECT trajectory_change FROM gold.v_kpi_trajectory) as trajectory_change,
+                (SELECT category_name FROM gold.v_kpi_top_category) as top_category_name,
+                (SELECT highest_inflation_rate FROM gold.v_kpi_top_category) as top_category_rate;
+        """
+    }
+
+    query_url = f"{SUPERSET_URL}/api/v1/sqllab/execute/"
+    
+    try:
+        response = requests.post(query_url, json=sql_payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json().get("data", [])
+            if data:
+                return data[0] # Return the clean JSON row
+    except requests.exceptions.RequestException as e:
+        print(f"Superset Query Error: {e}")
+
+    return {"error": "Failed to fetch data from Superset"}~
