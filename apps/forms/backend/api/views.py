@@ -18,8 +18,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-
-# 🌟 ADDED: Throttle import for spam protection
 from rest_framework.throttling import ScopedRateThrottle
 
 from .models import Note, Blog, Booking, ContactMessage, Comment, BookingSnapshot
@@ -34,7 +32,7 @@ stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 # DASHBOARD & KPIs
 # ==========================================
 class KPIDashboardView(APIView):
-    permission_classes = [AllowAny] # Change to [IsAuthenticated] when ready to lock down
+    permission_classes = [AllowAny] 
 
     def get(self, request):
         now = timezone.now()
@@ -76,9 +74,8 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
     queryset = ContactMessage.objects.all().order_by('-created')
     serializer_class = ContactMessageSerializer
     permission_classes = [AllowAny]
-    authentication_classes = []  # Disable token requirement for public form
-    
-    # 🌟 ADDED: Rate limiting to stop contact form spam
+    authentication_classes = []  
+
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'contact_limit'
 
@@ -86,13 +83,11 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
         author = self.request.user if self.request.user.is_authenticated else None
         contact_message = serializer.save(author=author)
 
-        # Extract TOTAL QUOTE from message
         total_quote = None
         match = re.search(r'£(\d+(?:\.\d+)?)', contact_message.message)
         if match:
             total_quote = match.group(1)
 
-        # Fetch latest booking
         latest_booking = Booking.objects.filter(email=contact_message.email).order_by('-created_at').first()
         booking_items = latest_booking.quantities if latest_booking else None
 
@@ -106,7 +101,6 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
             'booking_id': latest_booking.id if latest_booking else None,
         }
 
-        # Send Email
         subject = 'Enquiry Confirmation!'
         html_message = render_to_string('thankyou.html', context)
         plain_message = strip_tags(html_message)
@@ -129,7 +123,6 @@ def contact_view(request):
     message = request.data.get("message")
 
     try:
-        # 1. Lead notification to Admin
         send_mail(
             subject=f"New Contact Form Submission from {name}",
             message=f"You have a new inquiry!\n\nName: {name}\nEmail: {email}\n\nMessage:\n{message}",
@@ -138,7 +131,6 @@ def contact_view(request):
             fail_silently=False,
         )
 
-        # 2. Auto-Reply to Customer
         if email:
             send_mail(
                 subject="Thank you for contacting Ddeep Cleaning Services!",
@@ -158,7 +150,7 @@ def contact_view(request):
 # ==========================================
 class NoteListCreate(generics.ListCreateAPIView):
     serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated] # Automatically uses JWT now
+    permission_classes = [IsAuthenticated] 
 
     def get_queryset(self):
         return Note.objects.filter(author=self.request.user)
@@ -198,7 +190,6 @@ class BlogListCreate(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        # ⚡ OPTIMIZED: Fetches all related blocks and comments efficiently
         queryset = Blog.objects.prefetch_related('blocks', 'comments').all()
 
         author_id = self.request.query_params.get('author')
@@ -254,7 +245,7 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 class CurrentUserView(APIView):
-    permission_classes = [IsAuthenticated] # Requires valid JWT Bearer token
+    permission_classes = [IsAuthenticated] 
 
     def get(self, request):
         serializer = UserCreateSerializer(request.user)
@@ -270,7 +261,6 @@ class BookingCreateView(generics.CreateAPIView):
     authentication_classes = []
     queryset = Booking.objects.all()
 
-    # 🌟 ADDED: Rate limiting to stop fake booking bots
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'booking_limit'
 
@@ -328,29 +318,25 @@ def payment_link(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 # ==========================================
 # UK ECONOMY DASHBOARD (SUPERSET PROXY)
 # ==========================================
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-
-# ==========================================
-# UK ECONOMY DASHBOARD (SUPERSET PROXY)
-# ==========================================
-from .superset_utils import fetch_economy_kpis
+from .superset_utils import fetch_economy_kpis, fetch_economy_charts # 🌟 IMPORTED CHART FUNCTION
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UKEconomyDashboardView(APIView):
-    permission_classes = [AllowAny] 
-    authentication_classes = []  # Explicitly clear auth to bypass DRF's CSRF checks
+    permission_classes = [AllowAny]
+    authentication_classes = []  
 
     def get(self, request):
-        # 1. Ask Superset for the data
-        superset_data = fetch_economy_kpis()
+        # 1. Ask Superset for BOTH datasets
+        superset_kpis = fetch_economy_kpis()
+        superset_charts = fetch_economy_charts()
 
-        if "error" in superset_data:
-            return Response(superset_data, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        if "error" in superset_kpis or "error" in superset_charts:
+            return Response({"error": "Superset unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         # 2. Shape the JSON perfectly for your React UI
         formatted_response = {
@@ -358,19 +344,24 @@ class UKEconomyDashboardView(APIView):
             "kpis": {
                 "headline_inflation": {
                     "title": "Current Inflation Rate",
-                    "value": f"{superset_data['headline_rate']}%",
+                    "value": f"{superset_kpis.get('headline_rate', 0)}%",
                     "subtitle": "Official UK CPIH Rate"
                 },
                 "economic_trajectory": {
                     "title": "Monthly Trajectory",
-                    "value": f"{superset_data['trajectory_change']}%",
+                    "value": f"{superset_kpis.get('trajectory_change', 0)}%",
                     "subtitle": "Versus Previous Month"
                 },
                 "wallet_squeeze": {
                     "title": "Most Expensive Category",
-                    "value": superset_data['top_category_name'],
-                    "subtitle": f"+{superset_data['top_category_rate']}% YoY"
+                    "value": superset_kpis.get('top_category_name', 'N/A'),
+                    "subtitle": f"+{superset_kpis.get('top_category_rate', 0)}% YoY"
                 }
+            },
+            # 🌟 NEW: Pass the chart arrays directly to React
+            "charts": {
+                "inflation_trend": superset_charts.get('trend_array') or [],
+                "category_breakdown": superset_charts.get('category_array') or []
             }
         }
 
