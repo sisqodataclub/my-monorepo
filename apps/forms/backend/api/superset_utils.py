@@ -58,4 +58,5 @@ def fetch_economy_kpis():
     except requests.exceptions.RequestException as e:
         print(f"Superset Query Error: {e}")
 
-    return {"error": "Failed to fetch data from Superset"}~
+    return {"error": "Failed to fetch data from Superset"}
+
