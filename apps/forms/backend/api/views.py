@@ -291,7 +291,7 @@ def booking_snapshot(request):
         serializer = BookingSnapshotSerializer(data=request.data)
 
     if serializer.is_valid():
-B        serializer.save()
+        serializer.save()
         return Response({"status": "saved", "snapshot_id": serializer.instance.id}, status=200)
 
     return Response(serializer.errors, status=400)
