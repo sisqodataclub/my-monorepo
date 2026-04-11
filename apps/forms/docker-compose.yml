@@ -28,6 +28,34 @@ services:
     networks:
       - proxy_network
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: franciscodes-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # The main broker port
+      - "15672:15672" # The web management UI
+    networks:
+      - proxy_network
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: franciscodes-celery
+    restart: always
+    # 'backend' is the name of the folder containing your settings.py
+    command: celery -A backend worker -l info
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - backend
+      - rabbitmq
+    volumes:
+      - ./backend/db:/app/db
+    networks:
+      - proxy_network
+
 networks:
   proxy_network:
     external: true

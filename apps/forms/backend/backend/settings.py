@@ -195,5 +195,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_CREDENTIALS = True
 
+# ==========================================
+# CELERY & RABBITMQ SETTINGS
+# ==========================================
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
 
 print("STATICFILES_DIRS path:", BASE_DIR / "static")
