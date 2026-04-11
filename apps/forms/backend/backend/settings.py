@@ -58,10 +58,14 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.ScopedRateThrottle',
     ],
+
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/day',       # General limit for unauthenticated users
-        'booking_limit': '5/hour' # Strict limit specifically for bookings
+        'anon': '100/day',       
+        'booking_limit': '5/hour',
+        'contact_limit': '10/hour'  # 🌟 ADD THIS LINE
     }
+
+
 
 
 }
