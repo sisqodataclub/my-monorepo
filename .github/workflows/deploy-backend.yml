@@ -1,0 +1,28 @@
+name: Deploy Backend Architecture
+
+# Only trigger this pipeline when code is pushed to the main branch...
+on:
+  push:
+    branches:
+      - main
+    # ...AND only if the files changed were inside the backend folder!
+    paths:
+      - 'apps/forms/backend/**'
+      - 'apps/forms/docker-compose.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚀 Trigger VPS Deployment Script
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # This tells GitHub to run your exact bash script on the server
+          script: |
+            cd /opt
+            chmod +x deploy_backend.sh
+            ./deploy_backend.sh
