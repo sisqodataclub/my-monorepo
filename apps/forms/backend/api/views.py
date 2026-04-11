@@ -4,13 +4,13 @@ import stripe
 from datetime import timedelta
 
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils import timezone
 from django.db.models import Sum, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
+from django.conf import settings
 
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
@@ -26,13 +26,16 @@ from .serializers import (
     ContactMessageSerializer, CommentSerializer, BookingSerializer, BookingSnapshotSerializer
 )
 
+# 🌟 IMPORT OUR NEW CELERY TASK
+from .tasks import send_async_email
+
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 # ==========================================
 # DASHBOARD & KPIs
 # ==========================================
 class KPIDashboardView(APIView):
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
 
     def get(self, request):
         now = timezone.now()
@@ -74,7 +77,7 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
     queryset = ContactMessage.objects.all().order_by('-created')
     serializer_class = ContactMessageSerializer
     permission_classes = [AllowAny]
-    authentication_classes = []  
+    authentication_classes = []
 
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'contact_limit'
@@ -105,11 +108,11 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
         html_message = render_to_string('thankyou.html', context)
         plain_message = strip_tags(html_message)
 
-        send_mail(
-            subject,
-            plain_message,
-            'francis@dataclubcenter.com',
-            [contact_message.email, 'francis@dataclubcenter.com'],
+        # 🌟 SENT TO CELERY (ASYNC)
+        send_async_email.delay(
+            subject=subject,
+            message=plain_message,
+            recipient_list=[contact_message.email, 'francis@dataclubcenter.com'],
             html_message=html_message
         )
 
@@ -123,24 +126,22 @@ def contact_view(request):
     message = request.data.get("message")
 
     try:
-        send_mail(
+        # 🌟 SENT TO CELERY: Notify Admin
+        send_async_email.delay(
             subject=f"New Contact Form Submission from {name}",
             message=f"You have a new inquiry!\n\nName: {name}\nEmail: {email}\n\nMessage:\n{message}",
-            from_email="clean@ddeepcleaningservices.com",
             recipient_list=["francis@dataclubcenter.com"],
-            fail_silently=False,
         )
 
         if email:
-            send_mail(
+            # 🌟 SENT TO CELERY: Notify User
+            send_async_email.delay(
                 subject="Thank you for contacting Ddeep Cleaning Services!",
-                message=f"Hi {name},\n\nThank you for reaching out! We have received your message and will get back to you as soon as possible with a quote.\n\nYour message:\n{message}\n\nBest regards,\nDdeep Cleaning Services\nclean@ddeepcleaningservices.com",
-                from_email="clean@ddeepcleaningservices.com",
+                message=f"Hi {name},\n\nThank you for reaching out! We have received your message and will get back to you as soon as possible with a quote.\n\nYour message:\n{message}\n\nBest regards,\nDdeep Cleaning Services",
                 recipient_list=[email],
-                fail_silently=False,
             )
 
-        return Response({"message": "Emails sent successfully."}, status=status.HTTP_200_OK)
+        return Response({"message": "Emails are being sent in the background."}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -150,7 +151,7 @@ def contact_view(request):
 # ==========================================
 class NoteListCreate(generics.ListCreateAPIView):
     serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Note.objects.filter(author=self.request.user)
@@ -166,13 +167,16 @@ class NoteListCreate(generics.ListCreateAPIView):
                 'note_content': note.content,
             })
             plain_message = strip_tags(html_message)
-            send_mail(
-                subject, plain_message, 'francis@dataclubcenter.com',
-                [self.request.user.email, 'francis@dataclubcenter.com'],
+            
+            # 🌟 SENT TO CELERY (ASYNC)
+            send_async_email.delay(
+                subject=subject,
+                message=plain_message,
+                recipient_list=[self.request.user.email, 'francis@dataclubcenter.com'],
                 html_message=html_message
             )
         except Exception as e:
-            print(f"Email sending failed: {e}")
+            print(f"Failed to queue email: {e}")
 
 class NoteDelete(generics.DestroyAPIView):
     serializer_class = NoteSerializer
@@ -245,7 +249,7 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 class CurrentUserView(APIView):
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         serializer = UserCreateSerializer(request.user)
@@ -323,12 +327,7 @@ def payment_link(request):
 # ==========================================
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from .superset_utils import fetch_economy_kpis, fetch_economy_charts # 🌟 IMPORTED CHART FUNCTION
-
-
-
-
-# Add this import at the top of your views.py (or right above the class)
+from .superset_utils import fetch_economy_kpis, fetch_economy_charts
 from django.core.cache import cache
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -337,22 +336,16 @@ class UKEconomyDashboardView(APIView):
     authentication_classes = []
 
     def get(self, request):
-        # 🌟 1. Check if Django already memorized the data today
         cached_dashboard = cache.get("uk_economy_dashboard_data")
         if cached_dashboard:
-            print("🚀 Serving Dashboard from Django Cache (Instant!)")
             return Response(cached_dashboard, status=status.HTTP_200_OK)
 
-        print("🐢 Cache Empty: Fetching fresh data from Superset...")
-        
-        # 2. Ask Superset for BOTH datasets
         superset_kpis = fetch_economy_kpis()
         superset_charts = fetch_economy_charts()
 
         if "error" in superset_kpis or "error" in superset_charts:
             return Response({"error": "Superset unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        # 3. Shape the JSON perfectly for your React UI
         formatted_response = {
             "status": "success",
             "kpis": {
@@ -378,8 +371,5 @@ class UKEconomyDashboardView(APIView):
             }
         }
 
-        # 🌟 4. Save the perfect JSON into Django's memory for 24 hours (86400 seconds)
         cache.set("uk_economy_dashboard_data", formatted_response, 86400)
-
-        # 5. Ship it to React!
         return Response(formatted_response, status=status.HTTP_200_OK)
