@@ -325,20 +325,34 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .superset_utils import fetch_economy_kpis, fetch_economy_charts # 🌟 IMPORTED CHART FUNCTION
 
+
+
+
+# Add this import at the top of your views.py (or right above the class)
+from django.core.cache import cache
+
 @method_decorator(csrf_exempt, name='dispatch')
 class UKEconomyDashboardView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = []  
+    authentication_classes = []
 
     def get(self, request):
-        # 1. Ask Superset for BOTH datasets
+        # 🌟 1. Check if Django already memorized the data today
+        cached_dashboard = cache.get("uk_economy_dashboard_data")
+        if cached_dashboard:
+            print("🚀 Serving Dashboard from Django Cache (Instant!)")
+            return Response(cached_dashboard, status=status.HTTP_200_OK)
+
+        print("🐢 Cache Empty: Fetching fresh data from Superset...")
+        
+        # 2. Ask Superset for BOTH datasets
         superset_kpis = fetch_economy_kpis()
         superset_charts = fetch_economy_charts()
 
         if "error" in superset_kpis or "error" in superset_charts:
             return Response({"error": "Superset unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        # 2. Shape the JSON perfectly for your React UI
+        # 3. Shape the JSON perfectly for your React UI
         formatted_response = {
             "status": "success",
             "kpis": {
@@ -358,12 +372,14 @@ class UKEconomyDashboardView(APIView):
                     "subtitle": f"+{superset_kpis.get('top_category_rate', 0)}% YoY"
                 }
             },
-            # 🌟 NEW: Pass the chart arrays directly to React
             "charts": {
                 "inflation_trend": superset_charts.get('trend_array') or [],
                 "category_breakdown": superset_charts.get('category_array') or []
             }
         }
 
-        # 3. Ship it to React!
+        # 🌟 4. Save the perfect JSON into Django's memory for 24 hours (86400 seconds)
+        cache.set("uk_economy_dashboard_data", formatted_response, 86400)
+
+        # 5. Ship it to React!
         return Response(formatted_response, status=status.HTTP_200_OK)
