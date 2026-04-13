@@ -208,6 +208,18 @@ CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
+# ==========================================
+# SHARED CACHE (WEB + CELERY)
+# ==========================================
+# Force Django and Celery to share memory via a physical shared folder mounted by Docker
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/app/shared_cache', # This perfectly matches the volume in docker-compose
+    }
+}
+
+
 
 
 print("STATICFILES_DIRS path:", BASE_DIR / "static")

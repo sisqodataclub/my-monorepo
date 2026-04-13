@@ -23,8 +23,8 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      # 🌟 This points to the folder inside your backend app
       - ./backend/db:/app/db
+      - django_shared_cache:/app/shared_cache  # 🌟 NEW: Shared Cache Folder
     networks:
       - proxy_network
 
@@ -44,7 +44,6 @@ services:
       dockerfile: Dockerfile
     container_name: franciscodes-celery
     restart: always
-    # 'backend' is the name of the folder containing your settings.py
     command: celery -A backend worker -l info
     env_file:
       - ./backend/.env
@@ -53,9 +52,14 @@ services:
       - rabbitmq
     volumes:
       - ./backend/db:/app/db
+      - django_shared_cache:/app/shared_cache  # 🌟 NEW: Celery gets the exact same folder
     networks:
       - proxy_network
 
 networks:
   proxy_network:
     external: true
+
+# 🌟 NEW: Tell Docker to create the physical shared volume
+volumes:
+  django_shared_cache:
