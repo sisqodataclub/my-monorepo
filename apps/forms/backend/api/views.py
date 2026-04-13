@@ -1,3 +1,4 @@
+# api/views.py
 import os
 import re
 import stripe
@@ -11,6 +12,7 @@ from django.db.models import Sum, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.conf import settings
+from django.core.cache import cache
 
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
@@ -26,8 +28,8 @@ from .serializers import (
     ContactMessageSerializer, CommentSerializer, BookingSerializer, BookingSnapshotSerializer
 )
 
-# 🌟 IMPORT OUR NEW CELERY TASK
-from .tasks import send_async_email
+# 🌟 IMPORT CELERY TASKS
+from .tasks import send_async_email, refresh_uk_economy_cache
 
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
@@ -65,10 +67,8 @@ class KPIDashboardView(APIView):
         ]
         return Response(kpi_data)
 
-
 class ReactAppView(TemplateView):
     template_name = "index.html"
-
 
 # ==========================================
 # CONTACT MESSAGES
@@ -78,7 +78,6 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
     serializer_class = ContactMessageSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
-
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'contact_limit'
 
@@ -108,7 +107,6 @@ class ContactMessageListCreate(generics.ListCreateAPIView):
         html_message = render_to_string('thankyou.html', context)
         plain_message = strip_tags(html_message)
 
-        # 🌟 SENT TO CELERY (ASYNC)
         send_async_email.delay(
             subject=subject,
             message=plain_message,
@@ -126,7 +124,6 @@ def contact_view(request):
     message = request.data.get("message")
 
     try:
-        # 🌟 SENT TO CELERY: Notify Admin
         send_async_email.delay(
             subject=f"New Contact Form Submission from {name}",
             message=f"You have a new inquiry!\n\nName: {name}\nEmail: {email}\n\nMessage:\n{message}",
@@ -134,7 +131,6 @@ def contact_view(request):
         )
 
         if email:
-            # 🌟 SENT TO CELERY: Notify User
             send_async_email.delay(
                 subject="Thank you for contacting Ddeep Cleaning Services!",
                 message=f"Hi {name},\n\nThank you for reaching out! We have received your message and will get back to you as soon as possible with a quote.\n\nYour message:\n{message}\n\nBest regards,\nDdeep Cleaning Services",
@@ -144,7 +140,6 @@ def contact_view(request):
         return Response({"message": "Emails are being sent in the background."}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 # ==========================================
 # NOTES
@@ -167,8 +162,7 @@ class NoteListCreate(generics.ListCreateAPIView):
                 'note_content': note.content,
             })
             plain_message = strip_tags(html_message)
-            
-            # 🌟 SENT TO CELERY (ASYNC)
+
             send_async_email.delay(
                 subject=subject,
                 message=plain_message,
@@ -185,7 +179,6 @@ class NoteDelete(generics.DestroyAPIView):
     def get_queryset(self):
         return Note.objects.filter(author=self.request.user)
 
-
 # ==========================================
 # BLOGS & COMMENTS
 # ==========================================
@@ -195,7 +188,6 @@ class BlogListCreate(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Blog.objects.prefetch_related('blocks', 'comments').all()
-
         author_id = self.request.query_params.get('author')
         tag = self.request.query_params.get('tag')
 
@@ -239,7 +231,6 @@ class CommentListCreate(generics.ListCreateAPIView):
         guest_label = f"Guest {timezone.now():%Y-%m-%d %H:%M}" if not user else ""
         serializer.save(blog=blog, author=user, guest_name=guest_label)
 
-
 # ==========================================
 # USERS
 # ==========================================
@@ -254,7 +245,6 @@ class CurrentUserView(APIView):
     def get(self, request):
         serializer = UserCreateSerializer(request.user)
         return Response(serializer.data)
-
 
 # ==========================================
 # BOOKINGS & PAYMENTS
@@ -321,14 +311,10 @@ def payment_link(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 # ==========================================
-# UK ECONOMY DASHBOARD (SUPERSET PROXY)
+# UK ECONOMY DASHBOARD (EVENT-DRIVEN)
 # ==========================================
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from .superset_utils import fetch_economy_kpis, fetch_economy_charts
-from django.core.cache import cache
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UKEconomyDashboardView(APIView):
@@ -336,40 +322,41 @@ class UKEconomyDashboardView(APIView):
     authentication_classes = []
 
     def get(self, request):
+        # 1. Instantly pull from memory (Zero wait time)
         cached_dashboard = cache.get("uk_economy_dashboard_data")
+        
         if cached_dashboard:
             return Response(cached_dashboard, status=status.HTTP_200_OK)
 
-        superset_kpis = fetch_economy_kpis()
-        superset_charts = fetch_economy_charts()
+        # 2. Failsafe: If cache is empty (e.g. Redis restarted), fire task and return loading state
+        refresh_uk_economy_cache.delay()
+        
+        return Response({
+            "status": "loading", 
+            "message": "Dashboard data is syncing. Please refresh in a few seconds."
+        }, status=status.HTTP_202_ACCEPTED)
 
-        if "error" in superset_kpis or "error" in superset_charts:
-            return Response({"error": "Superset unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+# ==========================================
+# AIRFLOW WEBHOOK (TRIGGERS CELERY TASK)
+# ==========================================
+@method_decorator(csrf_exempt, name='dispatch')
+class SupersetRefreshWebhookView(APIView):
+    """
+    Airflow will hit this endpoint when a DAG completes to trigger a background 
+    cache rebuild, keeping the dashboard 100% real-time and event-driven.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
-        formatted_response = {
-            "status": "success",
-            "kpis": {
-                "headline_inflation": {
-                    "title": "Current Inflation Rate",
-                    "value": f"{superset_kpis.get('headline_rate', 0)}%",
-                    "subtitle": "Official UK CPIH Rate"
-                },
-                "economic_trajectory": {
-                    "title": "Monthly Trajectory",
-                    "value": f"{superset_kpis.get('trajectory_change', 0)}%",
-                    "subtitle": "Versus Previous Month"
-                },
-                "wallet_squeeze": {
-                    "title": "Most Expensive Category",
-                    "value": superset_kpis.get('top_category_name', 'N/A'),
-                    "subtitle": f"+{superset_kpis.get('top_category_rate', 0)}% YoY"
-                }
-            },
-            "charts": {
-                "inflation_trend": superset_charts.get('trend_array') or [],
-                "category_breakdown": superset_charts.get('category_array') or []
-            }
-        }
+    def post(self, request):
+        # Simple Bearer Token security to prevent public spamming
+        expected_token = os.environ.get("AIRFLOW_WEBHOOK_SECRET", "airflow-secret-key-123")
+        auth_header = request.headers.get("Authorization", "")
 
-        cache.set("uk_economy_dashboard_data", formatted_response, 86400)
-        return Response(formatted_response, status=status.HTTP_200_OK)
+        if auth_header != f"Bearer {expected_token}":
+            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Trigger the Celery background worker
+        refresh_uk_economy_cache.delay()
+        
+        return Response({"message": "Cache rebuild triggered successfully"}, status=status.HTTP_202_ACCEPTED)
