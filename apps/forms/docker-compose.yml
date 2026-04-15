@@ -24,7 +24,7 @@ services:
       - ./backend/.env
     volumes:
       - ./backend/db:/app/db
-      - django_shared_cache:/app/shared_cache  # 🌟 NEW: Shared Cache Folder
+      - django_shared_cache:/app/shared_cache
     networks:
       - proxy_network
 
@@ -33,8 +33,8 @@ services:
     container_name: franciscodes-rabbitmq
     restart: always
     ports:
-      - "5672:5672"   # The main broker port
-      - "15672:15672" # The web management UI
+      - "5672:5672"
+      - "15672:15672"
     networks:
       - proxy_network
 
@@ -52,7 +52,17 @@ services:
       - rabbitmq
     volumes:
       - ./backend/db:/app/db
-      - django_shared_cache:/app/shared_cache  # 🌟 NEW: Celery gets the exact same folder
+      - django_shared_cache:/app/shared_cache
+    networks:
+      - proxy_network
+
+  # 🌟 NEW: The High-Speed Data Broker for Streaming
+  redis:
+    image: redis:alpine
+    container_name: franciscodes-redis
+    restart: always
+    ports:
+      - "6379:6379"
     networks:
       - proxy_network
 
@@ -60,6 +70,5 @@ networks:
   proxy_network:
     external: true
 
-# 🌟 NEW: Tell Docker to create the physical shared volume
 volumes:
   django_shared_cache:

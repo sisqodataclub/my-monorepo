@@ -9,8 +9,11 @@ sqlparse
 psycopg2-binary
 python-dotenv
 gunicorn
-django-cors-headers
 stripe
 whitenoise
 pdfkit
 celery==5.3.6
+
+# 🌟 NEW: Streaming & Messaging Dependencies
+redis==5.0.3
+websocket-client==1.7.0
