@@ -66,6 +66,21 @@ services:
     networks:
       - proxy_network
 
+  # 🌟 NEW: Dedicated container for your live firehose
+  stream-producer:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: franciscodes-stream-producer
+    restart: always
+    command: python stream_producer.py
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+    networks:
+      - proxy_network
+
 networks:
   proxy_network:
     external: true
