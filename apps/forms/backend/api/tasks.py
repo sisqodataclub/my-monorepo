@@ -3,15 +3,10 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
 
-# Import your superset functions
 from .superset_utils import fetch_economy_kpis, fetch_economy_charts
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_async_email(self, subject, message, recipient_list, html_message=None):
-    """
-    Universal background task for sending emails via RabbitMQ & Celery.
-    Includes auto-retry logic for SMTP failures.
-    """
     try:
         send_mail(
             subject=subject,
@@ -30,10 +25,6 @@ def send_async_email(self, subject, message, recipient_list, html_message=None):
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
 def refresh_uk_economy_cache(self):
-    """
-    Fetches heavy data from Superset in the background and sets it
-    in the Django cache permanently (until the next Airflow run).
-    """
     try:
         superset_kpis = fetch_economy_kpis()
         superset_charts = fetch_economy_charts()
@@ -72,7 +63,6 @@ def refresh_uk_economy_cache(self):
             }
         }
 
-        # Set cache with NO timeout (lives forever until overwritten)
         cache.set("uk_economy_dashboard_data", formatted_response, timeout=None)
         return "Superset Cache Successfully Rebuilt!"
 
