@@ -1,4 +1,3 @@
-# api/tasks.py
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
@@ -50,6 +49,11 @@ def refresh_uk_economy_cache(self):
                     "value": f"{superset_kpis.get('headline_rate', 0)}%",
                     "subtitle": "Official UK CPIH Rate"
                 },
+                "core_inflation": {
+                    "title": "Core Inflation",
+                    "value": f"{superset_kpis.get('core_rate', 0)}%",
+                    "subtitle": "Excl. Food, Energy, Alcohol"
+                },
                 "economic_trajectory": {
                     "title": "Monthly Trajectory",
                     "value": f"{superset_kpis.get('trajectory_change', 0)}%",
@@ -63,7 +67,8 @@ def refresh_uk_economy_cache(self):
             },
             "charts": {
                 "inflation_trend": superset_charts.get('trend_array') or [],
-                "category_breakdown": superset_charts.get('category_array') or []
+                "category_breakdown": superset_charts.get('category_array') or [],
+                "heatmap_array": superset_charts.get('heatmap_array') or []
             }
         }
 
