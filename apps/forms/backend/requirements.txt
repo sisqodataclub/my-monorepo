@@ -23,6 +23,8 @@ daphne==4.0.0
 channels-redis==4.1.0
 
 # 🌟 NEW: BigQuery Data Warehouse Dependencies
+# 🌟 NEW: BigQuery Data Warehouse Dependencies
 google-cloud-bigquery==3.11.4
+numpy<2.0.0                  # <-- ADD THIS LINE!
 pandas==2.1.1
 db-dtypes==1.1.1
