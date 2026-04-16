@@ -21,3 +21,8 @@ websocket-client==1.7.0
 channels==4.0.0
 daphne==4.0.0
 channels-redis==4.1.0
+
+# 🌟 NEW: BigQuery Data Warehouse Dependencies
+google-cloud-bigquery==3.11.4
+pandas==2.1.1
+db-dtypes==1.1.1
