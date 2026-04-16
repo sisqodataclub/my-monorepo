@@ -43,4 +43,10 @@ urlpatterns = [
 
     # 🌟 NEW: Webhooks (For Airflow -> Django communication)
     path('webhooks/refresh-superset/', SupersetRefreshWebhookView.as_view(), name='webhook-refresh-superset'),
+
+    # 🌟 NEW: The BigQuery Funnel Route
+    path('ecommerce/funnel/', views.get_ecommerce_funnel, name='ecommerce_funnel'),
+
+
+
 ]

@@ -25,6 +25,7 @@ services:
     volumes:
       - ./backend/db:/app/db
       - django_shared_cache:/app/shared_cache
+      - ./backend/credentials:/app/credentials # 🌟 NEW: Mount GCP Keys
     networks:
       - proxy_network
 
@@ -53,10 +54,10 @@ services:
     volumes:
       - ./backend/db:/app/db
       - django_shared_cache:/app/shared_cache
+      - ./backend/credentials:/app/credentials # 🌟 NEW: Mount GCP Keys
     networks:
       - proxy_network
 
-  # 🌟 NEW: The High-Speed Data Broker for Streaming
   redis:
     image: redis:alpine
     container_name: franciscodes-redis
@@ -66,7 +67,6 @@ services:
     networks:
       - proxy_network
 
-  # 🌟 NEW: Dedicated container for your live firehose
   stream-producer:
     build:
       context: ./backend

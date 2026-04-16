@@ -4,6 +4,13 @@ import re
 import stripe
 from datetime import timedelta
 
+
+
+from rest_framework.response import Response
+from .bigquery_client import fetch_ga4_funnel
+
+
+
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
@@ -360,3 +367,24 @@ class SupersetRefreshWebhookView(APIView):
         refresh_uk_economy_cache.delay()
         
         return Response({"message": "Cache rebuild triggered successfully"}, status=status.HTTP_202_ACCEPTED)
+
+
+
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny]) # Allowing any for now so we can test it easily
+def get_ecommerce_funnel(request):
+    """
+    API Endpoint: /api/ecommerce/funnel/
+    Fetches the live GA4 conversion funnel from BigQuery.
+    """
+    result = fetch_ga4_funnel()
+    
+    if result['status'] == 'success':
+        return Response(result['data'], status=200)
+    else:
+        return Response({"error": result['message']}, status=500)
