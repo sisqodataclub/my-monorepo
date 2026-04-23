@@ -1,9 +1,11 @@
+# api/tasks.py
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.cache import cache
 
-from .superset_utils import fetch_economy_kpis, fetch_economy_charts
+# 🌟 UPDATED: Imported fetch_net_zero_data
+from .superset_utils import fetch_economy_kpis, fetch_economy_charts, fetch_net_zero_data
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_async_email(self, subject, message, recipient_list, html_message=None):
@@ -28,8 +30,12 @@ def refresh_uk_economy_cache(self):
     try:
         superset_kpis = fetch_economy_kpis()
         superset_charts = fetch_economy_charts()
+        
+        # 🌟 NEW: Fetch the Net Zero Data
+        net_zero = fetch_net_zero_data()
 
-        if "error" in superset_kpis or "error" in superset_charts:
+        # 🌟 UPDATED: Check for errors in all three fetches
+        if "error" in superset_kpis or "error" in superset_charts or "error" in net_zero:
             raise Exception("Superset returned an error during fetch.")
 
         formatted_response = {
@@ -60,6 +66,11 @@ def refresh_uk_economy_cache(self):
                 "inflation_trend": superset_charts.get('trend_array') or [],
                 "category_breakdown": superset_charts.get('category_array') or [],
                 "heatmap_array": superset_charts.get('heatmap_array') or []
+            },
+            # 🌟 NEW: Inject the Energy Data directly into the existing payload
+            "energy": {
+                "kpis": net_zero.get("latest_kpis", {}),
+                "graph_data": net_zero.get("graph_data", [])
             }
         }
 

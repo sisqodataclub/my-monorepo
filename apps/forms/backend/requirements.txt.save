@@ -1,0 +1,25 @@
+asgiref
+Django
+django-cors-headers
+djangorestframework
+djangorestframework-simplejwt
+PyJWT
+pytz
+sqlparse
+psycopg2-binary
+python-dotenv
+gunicorn
+stripe
+whitenoise
+pdfkit
+celery==5.3.6
+
+# 🌟 NEW: Streaming & Messaging Dependencies
+redis==5.0.3
+websocket-client==1.7.0
+
+channels==4.0.0
+daphne==4.0.0
+channels-redis==4.1.0
+
+

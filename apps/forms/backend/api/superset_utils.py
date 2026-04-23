@@ -1,5 +1,11 @@
 import requests
 import os
+from collections import defaultdict
+
+
+
+
+
 
 SUPERSET_URL = os.environ.get("SUPERSET_URL", "https://analytics.franciscodes.com")
 USERNAME = os.environ.get("SUPERSET_USERNAME")
@@ -88,3 +94,60 @@ def fetch_economy_charts():
         "category_array": category_array,
         "heatmap_array": heatmap_array
     }
+
+
+
+
+def fetch_net_zero_data():
+    """Fetches the last 24 hours of Grid data and formats it for Recharts."""
+    session = get_authenticated_session()
+    if not session:
+        return {"error": "Failed to authenticate"}
+
+    query_url = f"{SUPERSET_URL}/api/v1/sqllab/execute/"
+    base_payload = {"database_id": 1, "schema": "gold", "runAsync": False}
+
+    # Fetch the last 24 hours (24 hours * 3 categories = 72 rows)
+    # We use TO_CHAR to instantly format the timestamp to 'HH:MM' for the React graph
+    sql = """
+        SELECT 
+            TO_CHAR(recorded_at, 'HH24:MI') as time_label, 
+            energy_category, 
+            ROUND(total_percentage::numeric, 1) as total_percentage 
+        FROM gold.gold_decarbonisation_metrics 
+        ORDER BY recorded_at DESC 
+        LIMIT 72;
+    """
+
+    raw_rows = run_superset_sql(session, query_url, {**base_payload, "sql": sql}, "Chart: Net Zero", fetch_all=True)
+
+    if not raw_rows:
+        return {"graph_data": [], "latest_kpis": {}}
+
+    # Group the rows by hour so Recharts can stack them
+    grouped_data = defaultdict(dict)
+    
+    for row in raw_rows:
+        time_label = row.get('time_label', '00:00')
+        category = row.get('energy_category', 'Unknown')
+        percentage = row.get('total_percentage', 0.0)
+        
+        grouped_data[time_label]['time'] = time_label
+        grouped_data[time_label][category] = float(percentage)
+
+    # Convert to list and reverse so it plots left-to-right (oldest to newest)
+    formatted_list = list(grouped_data.values())
+    formatted_list.reverse()
+
+    # Grab the newest hour's data to populate the Top KPI cards
+    latest_hour = formatted_list[-1] if formatted_list else {}
+
+    return {
+        "graph_data": formatted_list,
+        "latest_kpis": {
+            "renewable_pct": latest_hour.get('Low Carbon / Renewable', 0.0),
+            "fossil_pct": latest_hour.get('Fossil Fuels', 0.0),
+        }
+    }
+
+
