@@ -1,7 +1,12 @@
 import { useState } from 'react';
+
+
+
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
+
+
 import { Calendar, BarChart2, Clock, CalendarDays } from 'lucide-react';
 
 // Define the shape of our data, including the optional "previous period" data
