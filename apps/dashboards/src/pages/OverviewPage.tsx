@@ -6,6 +6,8 @@ import axios from 'axios';
 
 // Components
 import KPICard, { type KPI } from '../components/KPICard';
+import TrafficLineChart from '../components/TrafficLineChart';
+import DeviceChart from '../components/DeviceChart';
 import RevenueChart from '../components/RevenueChart';
 import BookingFunnelChart from '../components/BookingFunnelChart';
 import ServicePopularityChart from '../components/ServicePopularityChart';
@@ -24,49 +26,61 @@ const MOCK_KPIS: KPI[] = [
 ];
 
 export default function OverviewPage() {
+  // --- Data State ---
   const [kpis, setKpis] = useState<KPI[]>(MOCK_KPIS);
+  const [trafficChartData, setTrafficChartData] = useState([]);
+  const [deviceChartData, setDeviceChartData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // --- UI State for the Interactive Chart ---
+  const [timePreset, setTimePreset] = useState('7D');
+  const [granularity, setGranularity] = useState<'hour' | 'day' | 'week'>('day');
+  const [isComparing, setIsComparing] = useState(false);
 
   // 🔐 Pull the getToken function from Clerk
   const { getToken } = useAuth();
 
+  // --- Auto-Sync Granularity UI based on Preset ---
+  useEffect(() => {
+    if (timePreset === '24h') setGranularity('hour');
+    else setGranularity('day');
+  }, [timePreset]);
+
+  // --- Main Data Fetcher ---
+  // Notice timePreset is in the dependency array! It refetches automatically.
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // 1. Ask Clerk for the secure JWT for this specific user
         const token = await getToken();
-
-        // 2. Fetch data from your Django Proxy View
         const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
-        const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
+        
+        // Pass the requested time preset to your dynamic Django view
+        const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?preset=${timePreset}`, {
+            headers: { Authorization: `Bearer ${token}` }
         });
 
-        // 3. Extract the live KPIs returned by Django (Superset + Umami)
+        // 1. Process KPIs
         const fetchedKpis = response.data.kpis;
-
-        // 4. Merge the live data with the Revenue mock so we have exactly 4 cards
         if (fetchedKpis && fetchedKpis.length >= 3) {
           setKpis([
             fetchedKpis[0], // Total Bookings (from Superset)
-            MOCK_KPIS[1],   // Total Revenue (Mocked until you add Stripe)
+            MOCK_KPIS[1],   // Total Revenue (Mocked)
             fetchedKpis[1], // Page Views (from Umami)
             fetchedKpis[2]  // Unique Visitors (from Umami)
           ]);
-        } else {
-          // Fallback if backend returns an unexpected array size
-          setKpis(fetchedKpis); 
         }
+
+        // 2. Process Charts Data
+        // Django now perfectly formats the data based on our preset, so we just set it!
+        if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
+        if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
-        // Fallback to the mock data if the API fails so the UI doesn't break
         setKpis([
           { id: '1', title: 'Total Bookings', value: 'Error', change: 0 },
-          MOCK_KPIS[1], 
+          MOCK_KPIS[1],
           { id: 'umami_err1', title: 'Page Views', value: 'Error', change: 0 },
           { id: 'umami_err2', title: 'Visitors', value: 'Error', change: 0 }
         ]);
@@ -76,15 +90,13 @@ export default function OverviewPage() {
     };
 
     fetchDashboardData();
-  }, [getToken]);
+  }, [getToken, timePreset]); // <-- This array tells React to run the fetch again if timePreset changes!
+
 
   // Framer Motion variants
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.15 }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.15 } }
   };
 
   const itemVariants: Variants = {
@@ -137,7 +149,24 @@ export default function OverviewPage() {
         )}
       </motion.div>
 
-      {/* 3. Top Charts Row (Revenue & Funnel) */}
+      {/* 3. Interactive Traffic Line Chart (Full Width) */}
+      <motion.div variants={itemVariants}>
+        <TrafficLineChart 
+          data={trafficChartData}
+          activePreset={timePreset}
+          activeGranularity={granularity}
+          isComparing={isComparing}
+          onPresetChange={setTimePreset} // When a user clicks a preset, this updates state, triggering the useEffect!
+          onGranularityChange={(gran) => {
+            setGranularity(gran);
+            if (gran === 'hour') setTimePreset('24h');
+            if (gran === 'day' && timePreset === '24h') setTimePreset('7D');
+          }}
+          onCompareToggle={setIsComparing}
+        />
+      </motion.div>
+
+      {/* 4. Top Charts Row (Revenue & Devices) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
@@ -146,17 +175,21 @@ export default function OverviewPage() {
           <RevenueChart />
         </div>
 
+        <div className="lg:col-span-1">
+          <DeviceChart data={deviceChartData} />
+        </div>
+      </motion.div>
+
+      {/* 5. Bottom Charts Row (Retention, Funnel & Popularity) */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-base font-bold text-gray-900">Booking Funnel</h2>
           </div>
           <BookingFunnelChart data={funnelData} />
         </div>
-      </motion.div>
 
-      {/* 4. Bottom Charts Row (Retention & Popularity) */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-base font-bold text-gray-900">Customer Retention</h2>
           </div>
@@ -171,7 +204,7 @@ export default function OverviewPage() {
         </div>
       </motion.div>
 
-      {/* 5. Data Tables Row */}
+      {/* 6. Data Tables Row */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <RecentBookingsTable />
         <RecentMessagesTable messages={contactMessages} />
