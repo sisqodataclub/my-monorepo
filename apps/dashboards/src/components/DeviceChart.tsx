@@ -38,7 +38,8 @@ export default function DeviceChart({ data }: DeviceChartProps) {
               paddingAngle={5}
               dataKey="value"
             >
-              {data.map((entry, index) => (
+              {/* The underscore tells TypeScript we are intentionally ignoring the first parameter */}
+              {data.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
