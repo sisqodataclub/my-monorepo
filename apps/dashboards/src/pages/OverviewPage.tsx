@@ -1,10 +1,5 @@
-
-
 import { useState, useEffect } from 'react';
-
 import { motion, type Variants } from 'framer-motion';
-
-
 import { Calendar, RefreshCw, Download } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
@@ -22,8 +17,8 @@ import RecentMessagesTable from '../components/RecentMessagesTable';
 import { funnelData, contactMessages } from '../mockData';
 
 const MOCK_KPIS: KPI[] = [
-  { id: '1', title: 'Total Bookings', value: '...', change: 0 }, // Placeholder for live data
-  { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' },
+  { id: '1', title: 'Total Bookings', value: '...', change: 0 },
+  { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' }, // We will keep this as mock for now
   { id: '3', title: 'New Inquiries', value: '38', change: -2.4 },
   { id: '4', title: 'Conversion Rate', value: '64.2', change: 0, prefix: '%' },
 ];
@@ -31,7 +26,7 @@ const MOCK_KPIS: KPI[] = [
 export default function OverviewPage() {
   const [kpis, setKpis] = useState<KPI[]>(MOCK_KPIS);
   const [loading, setLoading] = useState(true);
-  
+
   // 🔐 Pull the getToken function from Clerk
   const { getToken } = useAuth();
 
@@ -41,33 +36,39 @@ export default function OverviewPage() {
       try {
         // 1. Ask Clerk for the secure JWT for this specific user
         const token = await getToken();
-        
+
         // 2. Fetch data from your Django Proxy View
-        // 2. Fetch data from your Django Proxy View (using the env variable)
-	const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
-	const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/`, {
-	    headers: {
-		Authorization: `Bearer ${token}`
-	    }
-	});
-        
-        // 3. Extract the live KPI returned by Superset -> Django
-        const liveBookingsKpi = response.data.kpis[0];
-        
-        // 4. Merge the live data with the rest of our UI placeholders
-        setKpis([
-          liveBookingsKpi, 
-          MOCK_KPIS[1],
-          MOCK_KPIS[2],
-          MOCK_KPIS[3]
-        ]);
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
+        const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        // 3. Extract the live KPIs returned by Django (Superset + Umami)
+        const fetchedKpis = response.data.kpis;
+
+        // 4. Merge the live data with the Revenue mock so we have exactly 4 cards
+        if (fetchedKpis && fetchedKpis.length >= 3) {
+          setKpis([
+            fetchedKpis[0], // Total Bookings (from Superset)
+            MOCK_KPIS[1],   // Total Revenue (Mocked until you add Stripe)
+            fetchedKpis[1], // Page Views (from Umami)
+            fetchedKpis[2]  // Unique Visitors (from Umami)
+          ]);
+        } else {
+          // Fallback if backend returns an unexpected array size
+          setKpis(fetchedKpis); 
+        }
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
         // Fallback to the mock data if the API fails so the UI doesn't break
         setKpis([
           { id: '1', title: 'Total Bookings', value: 'Error', change: 0 },
-          MOCK_KPIS[1], MOCK_KPIS[2], MOCK_KPIS[3]
+          MOCK_KPIS[1], 
+          { id: 'umami_err1', title: 'Page Views', value: 'Error', change: 0 },
+          { id: 'umami_err2', title: 'Visitors', value: 'Error', change: 0 }
         ]);
       } finally {
         setLoading(false);
@@ -114,7 +115,7 @@ export default function OverviewPage() {
             <Download className="w-4 h-4 mr-2 text-gray-400" />
             Export
           </button>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
