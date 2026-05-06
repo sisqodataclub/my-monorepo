@@ -92,7 +92,6 @@ export default function OverviewPage() {
   };
 
   return (
-    // Beautiful subtle gradient background for the whole page
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-slate-100/50 to-slate-50 pt-6">
       <motion.div
         className="max-w-[90rem] mx-auto pb-16 px-4 sm:px-6 lg:px-8"
@@ -100,12 +99,10 @@ export default function OverviewPage() {
         initial="hidden"
         animate="show"
       >
-        {/* --- PAGE HEADER --- */}
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Business Intelligence</h1>
-              {/* Pulsing Live Badge */}
               <div className="hidden sm:flex items-center bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping absolute"></div>
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full relative mr-1.5"></div>
@@ -130,7 +127,6 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* --- KPI GRID --- */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {loading ? (
             [1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />)
@@ -139,7 +135,6 @@ export default function OverviewPage() {
           )}
         </motion.div>
 
-        {/* --- MAIN CHART --- */}
         <motion.div variants={itemVariants}>
           <TrafficLineChart 
             data={trafficChartData}
@@ -149,23 +144,48 @@ export default function OverviewPage() {
             compareType={compareType}
             customStartDate={customStartDate}
             customEndDate={customEndDate}
+            
+            // Auto-Fallback Logic for Preset Changes
             onPresetChange={(preset) => {
               setTimePreset(preset);
-              if (preset === '24h') setGranularity('hour');
-              else if ((preset === '7D' || preset === '30D') && granularity === 'month') setGranularity('day');
-              else if (preset === 'This Year' && granularity === 'hour') setGranularity('month');
+              
+              let newDays = 7;
+              if (preset === '24h') newDays = 1;
+              else if (preset === '30D') newDays = 30;
+              else if (preset === 'This Year') newDays = 365;
+              else if (preset === 'Custom') newDays = (new Date(customEndDate).getTime() - new Date(customStartDate).getTime()) / (1000 * 3600 * 24);
+
+              // Force safe intervals
+              if (preset === '24h') {
+                setGranularity('hour');
+              } else if (preset === 'This Year' && granularity === 'hour') {
+                setGranularity('month');
+              } else if (granularity === 'hour' && newDays > 2) {
+                setGranularity('day'); // Fallback if > 2 days
+              } else if (granularity === 'week' && newDays <= 14) {
+                setGranularity('day'); // Fallback if <= 14 days
+              } else if (granularity === 'month' && newDays < 30) {
+                setGranularity('day'); // Fallback if < 30 days
+              }
             }}
+            
             onGranularityChange={setGranularity}
             onCompareToggle={setIsComparing}
             onCompareTypeChange={setCompareType}
+            
+            // Auto-Fallback Logic for Custom Dates
             onCustomDateChange={(start, end) => {
               setCustomStartDate(start);
               setCustomEndDate(end);
+              
+              const newDays = (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 3600 * 24);
+              if (granularity === 'hour' && newDays > 2) setGranularity('day');
+              if (granularity === 'week' && newDays <= 14) setGranularity('day');
+              if (granularity === 'month' && newDays < 30) setGranularity('day');
             }}
           />
         </motion.div>
 
-        {/* --- SECONDARY CHARTS --- */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
@@ -178,7 +198,6 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* --- TERTIARY CHARTS --- */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-1 bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6">Booking Funnel</h2>
@@ -194,7 +213,6 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* --- DATA TABLES --- */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <RecentBookingsTable />
           <RecentMessagesTable messages={contactMessages} />

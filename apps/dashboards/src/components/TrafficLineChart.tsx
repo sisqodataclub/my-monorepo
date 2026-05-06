@@ -56,11 +56,12 @@ export default function TrafficLineChart({
 
   const daysSelected = getDaysDifference();
 
+  // --- Strict Granularity Rules ---
   const availableGranularities = GRANULARITIES.filter(g => {
-    if (daysSelected <= 1) return g.id === 'hour';
-    if (daysSelected <= 14) return g.id === 'hour' || g.id === 'day';
-    if (daysSelected <= 90) return g.id === 'hour' || g.id === 'day' || g.id === 'week';
-    return g.id === 'day' || g.id === 'week' || g.id === 'month';
+    if (g.id === 'hour') return daysSelected <= 2; // ONLY show hourly if 2 days or less!
+    if (g.id === 'week') return daysSelected > 14;  // Hide week if 14 days or less
+    if (g.id === 'month') return daysSelected >= 30; // Hide month if less than 30 days
+    return true; // 'day' is always an option
   });
 
   return (
@@ -149,7 +150,6 @@ export default function TrafficLineChart({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Custom Pill Toggles */}
           <button 
             onClick={() => setShowVisitors(!showVisitors)}
             className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
@@ -204,7 +204,6 @@ export default function TrafficLineChart({
            </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            {/* Switched to ComposedChart so we can mix solid Areas and dashed Lines */}
             <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
@@ -221,7 +220,6 @@ export default function TrafficLineChart({
               <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 500 }} dy={15} />
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 500 }} dx={-10} />
               
-              {/* Premium Glassmorphism Tooltip */}
               <Tooltip 
                 contentStyle={{ 
                   borderRadius: '12px', 
@@ -246,11 +244,9 @@ export default function TrafficLineChart({
                 />
               )}
 
-              {/* Current Period (Gradient Areas) */}
               {showViews && <Area type="monotone" dataKey="views" name="Page Views" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorViews)" activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />}
               {showVisitors && <Area type="monotone" dataKey="visitors" name="Unique Visitors" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorVisitors)" activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }} />}
               
-              {/* Previous Period (Dashed Lines - No Fill) */}
               {isComparing && showViews && <Line type="monotone" dataKey="prevViews" name="Prev. Views" stroke="#34d399" strokeWidth={2} strokeDasharray="6 6" dot={false} activeDot={{ r: 4 }} />}
               {isComparing && showVisitors && <Line type="monotone" dataKey="prevVisitors" name="Prev. Visitors" stroke="#93c5fd" strokeWidth={2} strokeDasharray="6 6" dot={false} activeDot={{ r: 4 }} />}
             </ComposedChart>
