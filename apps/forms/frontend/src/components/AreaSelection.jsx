@@ -1,12 +1,9 @@
+// src/components/AreaSelection.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
 import { getServices } from "../lib/api";
 
-const AreaSelection = ({
-  selectedAreas,    // array of strings (area names) – unchanged
-  setSelectedAreas,
-  setCanProceed,
-}) => {
+const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   const [areaOptions, setAreaOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,7 +13,7 @@ const AreaSelection = ({
     const fetchAreaNames = async () => {
       try {
         const services = await getServices();
-        // ✅ Extract only the names (strings)
+        // Extract only the names (strings) from the API payload
         const names = services.map(service => service.name);
         setAreaOptions(names);
       } catch (err) {
@@ -29,7 +26,6 @@ const AreaSelection = ({
     fetchAreaNames();
   }, []);
 
-  // Toggle selection (same as before)
   const handleToggle = (area) => {
     setSelectedAreas((prev) =>
       prev.includes(area)
