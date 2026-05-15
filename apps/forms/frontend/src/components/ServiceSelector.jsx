@@ -11,14 +11,24 @@ const ServiceSelector = ({ value, setValue }) => {
   useEffect(() => {
     const fetchCleaningServices = async () => {
       try {
-        // ✅ The backend now handles the filtering via the query string
-        const data = await getServices("?category_name=cleaning_services");
+        // 1. Fetch all services using your working helper (no CORS issues)
+        const data = await getServices();
         
-        // Safely extract the array (handling DRF pagination if present)
+        // 2. Safely extract the array (handling DRF pagination if present)
         const servicesArray = Array.isArray(data) ? data : data.results || [];
 
-        // No more frontend .filter() needed! We just set the state directly.
-        setServices(servicesArray);
+        // 3. STRICT FILTER: Only keep services where the category is exactly 'cleaning_services'
+        const cleaningServices = servicesArray.filter((service) => {
+          const name1 = service.category_name || "";
+          const name2 = service.category_detail?.name || "";
+          
+          return (
+            name1.toLowerCase().trim() === "cleaning_services" || 
+            name2.toLowerCase().trim() === "cleaning_services"
+          );
+        });
+
+        setServices(cleaningServices);
       } catch (err) {
         console.error("Failed to fetch cleaning services:", err);
         setError("Could not load services. Please refresh the page.");
@@ -86,7 +96,7 @@ const ServiceSelector = ({ value, setValue }) => {
                 <span className="text-sm sm:text-lg font-medium">
                   {service.name}
                 </span>
-                {/* Optional: Add price display here just like we did for AreaSelection */}
+                {/* Dynamically show the price if it exists in the database */}
                 {service.price_fixed && (
                   <span className={`text-xs mt-0.5 ${active ? 'text-blue-200' : 'text-gray-400'}`}>
                     From £{service.price_fixed}
