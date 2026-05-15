@@ -1,10 +1,11 @@
-// filepath: /src/components/CleaningSelector.jsx
-import React from "react";
+// src/components/CarpetCleaningSelector.jsx
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
+import { getServices } from "../lib/api"; // your existing API helper
 
 // ---------------------------------------------------
-// COUNTER COMPONENT
+// COUNTER COMPONENT (same as before)
 // ---------------------------------------------------
 const Counter = ({ value, onChange }) => {
   const minus = () => onChange(Math.max(0, value - 1));
@@ -18,11 +19,7 @@ const Counter = ({ value, onChange }) => {
       >
         –
       </button>
-
-      <span className="w-6 text-center text-lg font-semibold">
-        {value}
-      </span>
-
+      <span className="w-6 text-center text-lg font-semibold">{value}</span>
       <button
         onClick={plus}
         className="px-3 py-1 bg-blue-500 text-white rounded text-lg font-bold hover:bg-blue-600 transition"
@@ -37,139 +34,128 @@ const Counter = ({ value, onChange }) => {
 // MAIN COMPONENT
 // ---------------------------------------------------
 const CleaningSelector = ({ values, setValues }) => {
-  const updateValue = (key, newValue) => {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCarpetServices = async () => {
+      try {
+        const allServices = await getServices();
+        // Filter services belonging to "Carpets" category (case‑insensitive)
+        const carpetServices = allServices.filter(
+          (service) => service.category_name?.toLowerCase() === "carpets"
+        );
+        setServices(carpetServices);
+      } catch (err) {
+        console.error("Error fetching carpet services:", err);
+        setError("Could not load carpet cleaning options. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCarpetServices();
+  }, []);
+
+  const updateValue = (serviceId, newValue) => {
     setValues((prev) => ({
       ...prev,
-      [key]: newValue,
+      [serviceId]: newValue,
     }));
   };
 
-  const renderRow = (item) => {
-    const value = values[item.id] || 0;
-    const active = value > 0;
-
-    const glowOpacity = Math.min(0.05 + value * 0.05, 0.35);
-    const glowBlur = 6 + value * 4;
-
+  if (loading) {
     return (
-      <motion.div
-        key={item.id}
-        whileHover={{ scale: 1.02 }}
-        className={`relative flex items-center justify-between p-4 rounded-xl border transition-all
-          ${
-            active
-              ? "bg-blue-600 border-blue-500 text-white shadow-lg"
-              : "bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-gray-700"
-          }`}
+      <GlassLayout
+        title="Carpet & Upholstery Cleaning"
+        subtitle="Loading available options..."
       >
-        <span className="font-medium leading-snug">
-          {item.label}
-        </span>
-
-        <Counter
-          value={value}
-          onChange={(v) => updateValue(item.id, v)}
-        />
-
-        {active && (
-          <div
-            className="absolute inset-0 rounded-xl pointer-events-none"
-            style={{
-              backgroundColor: `rgba(59, 130, 246, ${glowOpacity})`,
-              filter: `blur(${glowBlur}px)`,
-            }}
-          />
-        )}
-      </motion.div>
+        <div className="text-white text-center py-8">Loading...</div>
+      </GlassLayout>
     );
-  };
+  }
+
+  if (error) {
+    return (
+      <GlassLayout
+        title="Carpet & Upholstery Cleaning"
+        subtitle="Something went wrong"
+      >
+        <div className="text-red-400 text-center py-8">{error}</div>
+      </GlassLayout>
+    );
+  }
+
+  if (services.length === 0) {
+    return (
+      <GlassLayout
+        title="Carpet & Upholstery Cleaning"
+        subtitle="No services found"
+      >
+        <div className="text-yellow-400 text-center py-8">
+          No carpet cleaning services are currently available.
+        </div>
+      </GlassLayout>
+    );
+  }
 
   return (
     <GlassLayout
       title="Carpet & Upholstery Cleaning"
-      subtitle="Leave blank if not applicable. Select quantities where required."
+      subtitle="Select quantities where required. Leave blank if not applicable."
     >
-      <div className="flex flex-col gap-6">
-        {/* Carpets & Rugs */}
-        <div>
-          <h3 className="text-lg sm:text-xl font-semibold mb-2 text-white">
-            Carpets
-          </h3>
-          <div className="flex flex-col gap-2">
-            {CARPET_OPTIONS.map(renderRow)}
-          </div>
+      <div className="flex flex-col gap-4">
+        {services.map((service) => {
+          const count = values[service.id] || 0;
+          const active = count > 0;
+          const glowOpacity = Math.min(0.05 + count * 0.05, 0.35);
+          const glowBlur = 6 + count * 4;
 
-          <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2 text-white">
-            Rugs
-          </h3>
-          <div className="flex flex-col gap-2">
-            {RUG_OPTIONS.map(renderRow)}
-          </div>
-        </div>
+          return (
+            <motion.div
+              key={service.id}
+              whileHover={{ scale: 1.02 }}
+              className={`relative flex items-center justify-between p-4 rounded-xl border transition-all
+                ${
+                  active
+                    ? "bg-blue-600 border-blue-500 text-white shadow-lg"
+                    : "bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-gray-700"
+                }`}
+            >
+              <div className="flex flex-col">
+                <span className="font-medium leading-snug">{service.name}</span>
+                {service.price_fixed && (
+                  <span className="text-xs opacity-75 mt-0.5">
+                    +£{service.price_fixed}
+                  </span>
+                )}
+                {service.price_per_hour && !service.price_fixed && (
+                  <span className="text-xs opacity-75 mt-0.5">
+                    £{service.price_per_hour}/hour
+                  </span>
+                )}
+              </div>
 
-        {/* Upholstery */}
-        <div>
-          <h3 className="text-lg sm:text-xl font-semibold mb-2 text-white">
-            Sofas
-          </h3>
-          <div className="flex flex-col gap-2">
-            {SOFA_TYPES.map(renderRow)}
-          </div>
+              <Counter
+                value={count}
+                onChange={(v) => updateValue(service.id, v)}
+              />
 
-          <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2 text-white">
-            Mattresses
-          </h3>
-          <div className="flex flex-col gap-2">
-            {MATTRESS_TYPES.map(renderRow)}
-          </div>
-
-          <h3 className="text-lg sm:text-xl font-semibold mt-4 mb-2 text-white">
-            Chairs
-          </h3>
-          <div className="flex flex-col gap-2">
-            {CHAIR_OPTIONS.map(renderRow)}
-          </div>
-        </div>
+              {active && (
+                <div
+                  className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{
+                    backgroundColor: `rgba(59, 130, 246, ${glowOpacity})`,
+                    filter: `blur(${glowBlur}px)`,
+                  }}
+                />
+              )}
+            </motion.div>
+          );
+        })}
       </div>
     </GlassLayout>
   );
 };
 
 export default CleaningSelector;
-
-// ---------------------------------------------------
-// CONSTANTS
-// ---------------------------------------------------
-const CARPET_OPTIONS = [
-  { id: "carpet_bedroom", label: "Bedroom Carpets" },
-  { id: "carpet_living", label: "Living Room Carpets" },
-  { id: "carpet_dining", label: "Dining Room Carpets" },
-  { id: "carpet_hallway", label: "Hallway Carpets" },
-  { id: "carpet_landing", label: "Landing Carpets" },
-  { id: "carpet_stairs", label: "Staircases" },
-];
-
-const RUG_OPTIONS = [
-  { id: "rug_small", label: "Rug – Small" },
-  { id: "rug_medium", label: "Rug – Medium" },
-  { id: "rug_large", label: "Rug – Large" },
-];
-
-const SOFA_TYPES = [
-  { id: "sofa_single", label: "One-seater Sofa" },
-  { id: "sofa_double", label: "Two-seater Sofa" },
-  { id: "sofa_triple", label: "Three-seater Sofa" },
-  { id: "sofa_lshape", label: "L-Shaped 4 Seater Sofa" },
-];
-
-const MATTRESS_TYPES = [
-  { id: "mattress_single", label: "Single Mattress" },
-  { id: "mattress_double", label: "Double Mattress" },
-  { id: "mattress_king", label: "King Size Mattress" },
-  { id: "mattress_superking", label: "Super King Mattress" },
-];
-
-const CHAIR_OPTIONS = [
-  { id: "dining_chairs", label: "Dining Chairs" },
-  { id: "office_chairs", label: "Office Chairs" },
-];
