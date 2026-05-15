@@ -1,7 +1,7 @@
 // src/components/AreaSelection.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // ✅ Using our newly upgraded helper!
+import { getServices } from "../lib/api"; 
 
 const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   const [areaOptions, setAreaOptions] = useState([]);
@@ -11,22 +11,18 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   useEffect(() => {
     const fetchAreas = async () => {
       try {
-        // ✅ 1. Let the backend do the heavy filtering via query string
-        // ✅ 2. The pagination loop in api.js will automatically grab ALL pages
         const allFetchedAreas = await getServices("?category_name=areas");
-        
-        // ✅ 3. Strict frontend fallback just to be bulletproof against typos/spaces
+
         const bulletproofAreas = allFetchedAreas.filter((service) => {
           const name1 = service.category_name || "";
           const name2 = service.category_detail?.name || "";
-          
+
           return (
             name1.toLowerCase().trim() === "areas" ||
             name2.toLowerCase().trim() === "areas"
           );
         });
 
-        // Store the full objects so we can display prices in the UI
         setAreaOptions(bulletproofAreas);
       } catch (err) {
         console.error("Failed to fetch areas:", err);
@@ -38,11 +34,12 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     fetchAreas();
   }, []);
 
-  const handleToggle = (areaName) => {
+  // ✅ FIX: Now accepts and toggles the ID instead of the Name
+  const handleToggle = (areaId) => {
     setSelectedAreas((prev) =>
-      prev.includes(areaName)
-        ? prev.filter((a) => a !== areaName)
-        : [...prev, areaName]
+      prev.includes(areaId)
+        ? prev.filter((id) => id !== areaId)
+        : [...prev, areaId]
     );
   };
 
@@ -85,9 +82,9 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {areaOptions.map((area) => {
-          // area.name is the string (e.g. "Kitchen"), keeping it compatible with your selectedAreas state
-          const active = selectedAreas.includes(area.name);
-          
+          // ✅ FIX: Check if the selectedAreas array includes this specific area.id
+          const active = selectedAreas.includes(area.id);
+
           return (
             <label
               key={area.id}
@@ -107,7 +104,7 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
                 <span className="text-base sm:text-lg font-medium leading-snug">
                   {area.name}
                 </span>
-                {/* Dynamically render the price from the backend if it exists */}
+                
                 {area.priceFixed && (
                   <span className={`text-xs mt-0.5 ${active ? 'text-blue-200' : 'text-gray-400'}`}>
                     +£{area.priceFixed}
@@ -118,7 +115,8 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
               <input
                 type="checkbox"
                 checked={active}
-                onChange={() => handleToggle(area.name)}
+                // ✅ FIX: Pass the ID to the toggle function
+                onChange={() => handleToggle(area.id)}
                 className="w-5 h-5 accent-blue-400 cursor-pointer relative z-10"
               />
 
