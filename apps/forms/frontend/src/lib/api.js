@@ -24,7 +24,7 @@ export const getImageUrl = (path) => {
 export async function getServices(queryString = "") {
   try {
     let allRawResults = [];
-    
+
     // Start with the initial URL
     let currentUrl = `${API_BASE}/api/services/${queryString}`;
 
@@ -48,10 +48,10 @@ export async function getServices(queryString = "") {
       if (data.results && Array.isArray(data.results)) {
         // Add this page's results to our master list
         allRawResults = [...allRawResults, ...data.results];
-        
+
         // Update the URL to the next page. If no next page, data.next is null and loop stops.
-        currentUrl = data.next; 
-      } 
+        currentUrl = data.next;
+      }
       // If Django sent a plain array (pagination disabled)
       else if (Array.isArray(data)) {
         allRawResults = data;
@@ -172,7 +172,7 @@ export async function getUserServiceBookings() {
     if (!res.ok) throw new Error(`Failed to fetch bookings: ${res.status}`);
 
     const data = await res.json();
-    
+
     // We can also add safety mapping here just in case bookings get paginated later!
     return data.results || data || [];
   } catch (error) {
@@ -213,6 +213,34 @@ export async function cancelServiceBooking(bookingId) {
     return await res.json();
   } catch (error) {
     console.error("API Error (cancelServiceBooking):", error);
+    throw error;
+  }
+}
+
+// ========================
+// SECURE QUOTE CALCULATION
+// ========================
+
+// ✅ ADDED: The secure bridge to your Django backend calculator
+export async function calculateQuoteFromApi(quoteData) {
+  try {
+    const res = await fetch(`${API_BASE}/api/services/calculate_quote/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Tenant": "DDEEP" 
+      },
+      body: JSON.stringify(quoteData),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to calculate quote: ${res.status}`);
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("API Error (calculateQuoteFromApi):", error);
     throw error;
   }
 }
