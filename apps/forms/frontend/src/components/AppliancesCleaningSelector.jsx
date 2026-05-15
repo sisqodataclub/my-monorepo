@@ -19,9 +19,12 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
         
         const data = await response.json();
 
+        // ✅ Safely extract the array whether Django paginates it (data.results) or not
+        const servicesArray = Array.isArray(data) ? data : data.results || [];
+
         // Filter out only the services that belong to the "Appliances" category.
-        // Make sure you named the category "Appliances" (case-insensitive check) in your Django Admin!
-        const applianceServices = data.filter(
+        // Important: Ensure the category is named "Appliances" in your Django Admin!
+        const applianceServices = servicesArray.filter(
           (service) => service.category_name?.toLowerCase() === "appliances"
         );
 
@@ -40,7 +43,7 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
   const updateCount = (id, delta) => {
     setValues((prev) => ({
       ...prev,
-      // We now use the real Django database ID
+      // We use the real Django database ID (e.g., id: 14)
       [id]: Math.max(0, (prev[id] || 0) + delta), 
     }));
   };
@@ -51,16 +54,28 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
       subtitle="Important: Appliances must be emptied for internal cleaning"
     >
       {/* Loading & Error States */}
-      {loading && <p className="text-gray-300 text-center py-4">Loading appliances...</p>}
-      {error && <p className="text-red-400 text-center py-4">{error}</p>}
-
-      {!loading && !error && appliances.length === 0 && (
-        <p className="text-gray-400 text-center py-4">No appliances found in this category.</p>
+      {loading && (
+        <p className="text-gray-300 text-center py-4 animate-pulse">
+          Loading appliances...
+        </p>
+      )}
+      
+      {error && (
+        <p className="text-red-400 text-center py-4 bg-red-900/20 rounded-lg border border-red-500/30">
+          {error}
+        </p>
       )}
 
+      {!loading && !error && appliances.length === 0 && (
+        <p className="text-gray-400 text-center py-4">
+          No appliances found in this category.
+        </p>
+      )}
+
+      {/* Appliances List */}
       <div className="flex flex-col gap-4">
         {appliances.map((item) => {
-          // values[item.id] will now look up the Django integer ID (e.g., values[12])
+          // values[item.id] looks up the Django integer ID
           const count = values[item.id] || 0;
           const active = count > 0;
 
@@ -82,9 +97,9 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
                 <span className="font-medium leading-snug uppercase">
                   {item.name}
                 </span>
-                {/* Optional: Show the price under the name so users know how much it costs */}
+                {/* Optional: Show the price under the name */}
                 {item.price_fixed && (
-                  <span className="text-xs opacity-75">
+                  <span className="text-xs opacity-75 mt-0.5">
                     +£{item.price_fixed}
                   </span>
                 )}
@@ -94,6 +109,7 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
                 <button
                   onClick={() => updateCount(item.id, -1)}
                   className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-bold transition-colors"
+                  aria-label={`Decrease ${item.name}`}
                 >
                   –
                 </button>
@@ -105,6 +121,7 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
                 <button
                   onClick={() => updateCount(item.id, 1)}
                   className="px-3 py-1 bg-blue-500 hover:bg-blue-400 rounded-lg text-white font-bold transition-colors"
+                  aria-label={`Increase ${item.name}`}
                 >
                   +
                 </button>
