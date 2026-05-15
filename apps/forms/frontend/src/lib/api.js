@@ -20,9 +20,11 @@ export const getImageUrl = (path) => {
 // SERVICES (Public)
 // ========================
 
-export async function getServices() {
+// ✅ UPDATED: Now accepts an optional queryString (e.g., "?category_name=cleaning_services")
+export async function getServices(queryString = "") {
   try {
-    const res = await fetch(`${API_BASE}/api/services/`, {
+    // ✅ URL now appends the query string seamlessly
+    const res = await fetch(`${API_BASE}/api/services/${queryString}`, {
       method: "GET",
       headers: {
         "Accept": "application/json",
@@ -99,7 +101,7 @@ export async function getAvailableSlots(serviceId, date, providerId = null) {
     });
 
     if (!res.ok) throw new Error(`Failed to fetch slots: ${res.status}`);
-    return await res.json(); 
+    return await res.json();
   } catch (error) {
     console.error("API Error (getAvailableSlots):", error);
     return [];
@@ -130,7 +132,7 @@ export async function createServiceBooking(bookingData) {
       throw new Error(errorData.error || "Booking creation failed");
     }
 
-    return await res.json(); 
+    return await res.json();
   } catch (error) {
     console.error("API Error (createServiceBooking):", error);
     throw error;
