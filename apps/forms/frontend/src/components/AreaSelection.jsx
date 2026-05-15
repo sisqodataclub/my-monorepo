@@ -1,20 +1,24 @@
 // src/components/AreaSelection.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api";
+import api from "../api"; // your axios instance
 
 const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   const [areaOptions, setAreaOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch service names from backend
   useEffect(() => {
-    const fetchAreaNames = async () => {
+    const fetchAreas = async () => {
       try {
-        const services = await getServices();
-        // Extract only the names (strings) from the API payload
-        const names = services.map(service => service.name);
+        // ✅ Fetch only services in the "Areas" category
+        const response = await api.get("/services/?category_name=Areas", {
+          headers: { "X-Tenant": "DDEEP" } // replace with your tenant name if different
+        });
+        const data = response.data;
+        const results = data.results || data || [];
+        // Extract only the names (strings)
+        const names = results.map(service => service.name);
         setAreaOptions(names);
       } catch (err) {
         console.error("Failed to fetch areas:", err);
@@ -23,7 +27,7 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
         setLoading(false);
       }
     };
-    fetchAreaNames();
+    fetchAreas();
   }, []);
 
   const handleToggle = (area) => {
@@ -34,7 +38,6 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     );
   };
 
-  // Enable "Next" button when at least one area is selected
   useEffect(() => {
     setCanProceed(selectedAreas.length > 0);
   }, [selectedAreas, setCanProceed]);
@@ -59,7 +62,7 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     return (
       <GlassLayout title="Select Areas" subtitle="No areas available">
         <div className="text-yellow-400 text-center py-8">
-          No services found. Please check back later.
+          No areas found. Please check back later.
         </div>
       </GlassLayout>
     );

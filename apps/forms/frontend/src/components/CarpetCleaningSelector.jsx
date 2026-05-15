@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // your existing API helper
+import api from "../api"; // your axios instance
 
 // ---------------------------------------------------
-// COUNTER COMPONENT (same as before)
+// COUNTER COMPONENT
 // ---------------------------------------------------
 const Counter = ({ value, onChange }) => {
   const minus = () => onChange(Math.max(0, value - 1));
@@ -41,12 +41,13 @@ const CleaningSelector = ({ values, setValues }) => {
   useEffect(() => {
     const fetchCarpetServices = async () => {
       try {
-        const allServices = await getServices();
-        // Filter services belonging to "Carpets" category (case‑insensitive)
-        const carpetServices = allServices.filter(
-          (service) => service.category_name?.toLowerCase() === "carpets"
-        );
-        setServices(carpetServices);
+        // ✅ Fetch only services in the "Carpets" category
+        const response = await api.get("/services/?category_name=Carpets", {
+          headers: { "X-Tenant": "DDEEP" } // replace with your tenant name if different
+        });
+        const data = response.data;
+        const results = data.results || data || [];
+        setServices(results);
       } catch (err) {
         console.error("Error fetching carpet services:", err);
         setError("Could not load carpet cleaning options. Please try again later.");

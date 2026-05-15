@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // ✅ use the existing helper
+import api from "../api"; // your axios instance
 
 const AppliancesCleaningSelector = ({ values, setValues }) => {
   const [appliances, setAppliances] = useState([]);
@@ -11,12 +11,13 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
   useEffect(() => {
     const fetchAppliances = async () => {
       try {
-        const allServices = await getServices();
-        // Filter by category_name (case‑insensitive)
-        const applianceServices = allServices.filter(
-          (service) => service.category_name?.toLowerCase() === "appliances"
-        );
-        setAppliances(applianceServices);
+        // ✅ Fetch only services in the "Appliances" category
+        const response = await api.get("/services/?category_name=Appliances", {
+          headers: { "X-Tenant": "DDEEP" } // replace with your tenant name if different
+        });
+        const data = response.data;
+        const results = data.results || data || [];
+        setAppliances(results);
       } catch (err) {
         console.error("Error fetching appliances:", err);
         setError("Could not load appliances. Please try again later.");

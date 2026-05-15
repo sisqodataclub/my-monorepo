@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // your existing API helper
+import api from "../api";
 
 const ServiceSelector = ({ value, setValue }) => {
   const [services, setServices] = useState([]);
@@ -10,12 +10,12 @@ const ServiceSelector = ({ value, setValue }) => {
   useEffect(() => {
     const fetchCleaningServices = async () => {
       try {
-        const allServices = await getServices();
-        // Filter by category name "cleaning_services" (case‑insensitive)
-        const cleaningServices = allServices.filter(
-          (service) => service.category_name?.toLowerCase() === "cleaning_services"
-        );
-        setServices(cleaningServices);
+        const response = await api.get("/services/?category_name=cleaning_services", {
+          headers: { "X-Tenant": "DDEEP" } // replace with your actual tenant header
+        });
+        const data = response.data;
+        const results = data.results || data || [];
+        setServices(results);
       } catch (err) {
         console.error("Failed to fetch cleaning services:", err);
         setError("Could not load services. Please refresh the page.");
@@ -60,7 +60,6 @@ const ServiceSelector = ({ value, setValue }) => {
       <div className="flex flex-col gap-4">
         {services.map((service) => {
           const active = value === service.name;
-
           return (
             <label
               key={service.id}
