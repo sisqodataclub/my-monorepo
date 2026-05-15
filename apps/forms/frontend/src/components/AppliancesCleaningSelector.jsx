@@ -1,30 +1,47 @@
 // filepath: /src/components/AppliancesCleaningSelector.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
 
-const APPLIANCE_OPTIONS = [
-  { id: "fridge_freezer", label: "FRIDGE / FREEZER" },
-  { id: "fridge", label: "FRIDGE" },
-  { id: "freezer", label: "FREEZER" },
-  { id: "american_fridge", label: "AMERICAN STYLE FRIDGE (LARGE)" },
-  { id: "built_in_single_oven", label: "BUILT-IN SINGLE OVEN" },
-  { id: "built_in_double_oven", label: "BUILT-IN DOUBLE OVEN" },
-  { id: "freestanding_single_cooker", label: "FREESTANDING SINGLE COOKER" },
-  { id: "freestanding_double_cooker", label: "FREESTANDING DOUBLE COOKER" },
-  { id: "range_cooker", label: "RANGE COOKER / AGA OVEN" },
-  { id: "microwave", label: "MICROWAVE" },
-  { id: "washing_machine", label: "WASHING MACHINE" },
-  { id: "dishwasher", label: "DISHWASHER" },
-  { id: "hob", label: "HOB" },
-  { id: "extractor_hood", label: "HOB EXTRACTOR HOOD" },
-];
-
 const AppliancesCleaningSelector = ({ values, setValues }) => {
+  const [appliances, setAppliances] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch the services from your Django standalone backend
+  useEffect(() => {
+    const fetchAppliances = async () => {
+      try {
+        const response = await fetch("https://core.franciscodes.com/api/services/");
+        if (!response.ok) {
+          throw new Error("Failed to fetch appliances data");
+        }
+        
+        const data = await response.json();
+
+        // Filter out only the services that belong to the "Appliances" category.
+        // Make sure you named the category "Appliances" (case-insensitive check) in your Django Admin!
+        const applianceServices = data.filter(
+          (service) => service.category_name?.toLowerCase() === "appliances"
+        );
+
+        setAppliances(applianceServices);
+      } catch (err) {
+        console.error("Error fetching appliances:", err);
+        setError("Could not load appliances. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppliances();
+  }, []);
+
   const updateCount = (id, delta) => {
     setValues((prev) => ({
       ...prev,
-      [id]: Math.max(0, (prev[id] || 0) + delta),
+      // We now use the real Django database ID
+      [id]: Math.max(0, (prev[id] || 0) + delta), 
     }));
   };
 
@@ -33,8 +50,17 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
       title="Appliances Cleaning"
       subtitle="Important: Appliances must be emptied for internal cleaning"
     >
+      {/* Loading & Error States */}
+      {loading && <p className="text-gray-300 text-center py-4">Loading appliances...</p>}
+      {error && <p className="text-red-400 text-center py-4">{error}</p>}
+
+      {!loading && !error && appliances.length === 0 && (
+        <p className="text-gray-400 text-center py-4">No appliances found in this category.</p>
+      )}
+
       <div className="flex flex-col gap-4">
-        {APPLIANCE_OPTIONS.map((item) => {
+        {appliances.map((item) => {
+          // values[item.id] will now look up the Django integer ID (e.g., values[12])
           const count = values[item.id] || 0;
           const active = count > 0;
 
@@ -52,14 +78,22 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
                     : "bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-gray-700"
                 }`}
             >
-              <span className="font-medium leading-snug">
-                {item.label}
-              </span>
+              <div className="flex flex-col">
+                <span className="font-medium leading-snug uppercase">
+                  {item.name}
+                </span>
+                {/* Optional: Show the price under the name so users know how much it costs */}
+                {item.price_fixed && (
+                  <span className="text-xs opacity-75">
+                    +£{item.price_fixed}
+                  </span>
+                )}
+              </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 relative z-10">
                 <button
                   onClick={() => updateCount(item.id, -1)}
-                  className="px-3 py-1 bg-gray-700 rounded-lg text-white font-bold"
+                  className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-bold transition-colors"
                 >
                   –
                 </button>
@@ -70,7 +104,7 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
 
                 <button
                   onClick={() => updateCount(item.id, 1)}
-                  className="px-3 py-1 bg-blue-500 rounded-lg text-white font-bold"
+                  className="px-3 py-1 bg-blue-500 hover:bg-blue-400 rounded-lg text-white font-bold transition-colors"
                 >
                   +
                 </button>
