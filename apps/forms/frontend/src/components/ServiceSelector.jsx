@@ -10,7 +10,7 @@ const ServiceSelector = ({ value, setValue }) => {
   useEffect(() => {
     const fetchCleaningServices = async () => {
       try {
-        const response = await api.get("/services/?category_name=cleaning_services", {
+        const response = await api.get("/api/services/?category_name=cleaning_services", {
           headers: { "X-Tenant": "DDEEP" } // replace with your actual tenant header
         });
         const data = response.data;
