@@ -1,20 +1,23 @@
 // src/components/QuantitySelection.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // ✅ Fetch areas to translate IDs back to Names
+import { getServices } from "../lib/api"; // Fetching the DB to find variations
+
+// Tell the component which base rooms trigger the S/M/L variations
+const SIZED_AREAS_NAMES = ["Kitchen", "Bedroom"];
 
 const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
-  const [areasData, setAreasData] = useState([]);
+  const [allAreas, setAllAreas] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch the official area details from the database
+  // 1. Fetch all areas so we can match base IDs to variation IDs
   useEffect(() => {
     const fetchAreas = async () => {
       try {
-        const allFetchedAreas = await getServices("?category_name=areas");
-        setAreasData(allFetchedAreas);
+        const data = await getServices("?category_name=areas");
+        setAllAreas(data);
       } catch (err) {
-        console.error("Failed to fetch area details:", err);
+        console.error("Failed to fetch areas:", err);
       } finally {
         setLoading(false);
       }
@@ -22,19 +25,41 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
     fetchAreas();
   }, []);
 
-  // 2. Safely initialize quantities using the secure IDs
+  // 2. Initialize the secure quantities state using database IDs
   useEffect(() => {
-    if (!selectedAreas || selectedAreas.length === 0) return;
-    
+    if (allAreas.length === 0 || selectedAreas.length === 0) return;
+
     setQuantities((prev) => {
       const updated = { ...prev };
-      selectedAreas.forEach((areaId) => {
-        // If this ID hasn't been given a quantity yet, default it to 1
-        if (updated[areaId] === undefined) updated[areaId] = 1;
+
+      selectedAreas.forEach((baseId) => {
+        const baseArea = allAreas.find((a) => a.id === baseId);
+        if (!baseArea) return;
+
+        if (SIZED_AREAS_NAMES.includes(baseArea.name)) {
+          // If it's a Kitchen or Bedroom, find its S/M/L variations in the DB
+          const variations = allAreas.filter(
+            (a) =>
+              a.name === `${baseArea.name}_Small` ||
+              a.name === `${baseArea.name}_Medium` ||
+              a.name === `${baseArea.name}_Large`
+          );
+          
+          variations.forEach((v) => {
+            if (updated[v.id] === undefined) updated[v.id] = 0;
+          });
+
+          // Ensure the "base" generic room isn't accidentally charged
+          updated[baseId] = 0; 
+        } else {
+          // Normal room (like Living Room). Default to 1.
+          if (updated[baseId] === undefined) updated[baseId] = 1;
+        }
       });
+
       return updated;
     });
-  }, [selectedAreas, setQuantities]);
+  }, [selectedAreas, allAreas, setQuantities]);
 
   const increment = (id) =>
     setQuantities((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
@@ -53,10 +78,7 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
     );
   }
 
-  // 3. Filter the database list down to ONLY the areas the user selected
-  const activeAreas = areasData.filter((area) => selectedAreas.includes(area.id));
-
-  if (activeAreas.length === 0) {
+  if (selectedAreas.length === 0) {
     return (
       <GlassLayout title="Room Quantities" subtitle="No areas selected">
         <div className="text-yellow-400 text-center py-8">
@@ -66,50 +88,90 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
     );
   }
 
+  // 3. Build the UI Groups dynamically based on the DB
+  const renderGroups = [];
+  selectedAreas.forEach((baseId) => {
+    const baseArea = allAreas.find((a) => a.id === baseId);
+    if (!baseArea) return;
+
+    if (SIZED_AREAS_NAMES.includes(baseArea.name)) {
+      const variations = allAreas.filter(
+        (a) =>
+          a.name === `${baseArea.name}_Small` ||
+          a.name === `${baseArea.name}_Medium` ||
+          a.name === `${baseArea.name}_Large`
+      );
+      if (variations.length > 0) {
+        renderGroups.push({ title: baseArea.name, items: variations, isGroup: true });
+      } else {
+        renderGroups.push({ title: baseArea.name, items: [baseArea], isGroup: false });
+      }
+    } else {
+      renderGroups.push({ title: baseArea.name, items: [baseArea], isGroup: false });
+    }
+  });
+
   return (
     <GlassLayout
       title="Room Quantities"
-      subtitle="Adjust the quantities for each selected area."
+      subtitle="Adjust quantities for your selected areas."
     >
-      <div className="flex flex-col gap-4">
-        {activeAreas.map((area) => {
-          // We now securely use area.id for logic, but area.name for the UI!
-          const count = quantities[area.id] || 0;
+      <div className="flex flex-col gap-6">
+        {renderGroups.map((group) => (
+          <div key={group.title} className={group.isGroup ? "bg-gray-800/40 p-4 rounded-2xl border border-gray-700/50" : ""}>
+            
+            {/* Header for Grouped Items (Kitchen, Bedroom) */}
+            {group.isGroup && (
+              <h3 className="text-white font-bold text-lg mb-3 px-1">{group.title} Variations</h3>
+            )}
 
-          return (
-            <div
-              key={area.id}
-              className="flex justify-between items-center bg-gray-800/60 border border-white/20 p-4 rounded-xl shadow-sm"
-            >
-              <div className="flex flex-col">
-                <span className="text-white font-medium text-lg">{area.name}</span>
-                {area.priceFixed && (
-                  <span className="text-blue-300 text-xs mt-0.5">
-                    £{area.priceFixed} each
-                  </span>
-                )}
-              </div>
+            <div className="flex flex-col gap-3">
+              {group.items.map((item) => {
+                const count = quantities[item.id] || 0;
+                
+                // Extract just the word "Small", "Medium", or "Large" for a cleaner UI
+                const isVariation = item.name.includes("_");
+                const displayName = isVariation ? item.name.split("_")[1] : item.name;
 
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => decrement(area.id)}
-                  className="w-10 h-10 flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition-colors rounded-lg text-white font-bold text-xl"
-                >
-                  –
-                </button>
-                <span className="text-white font-bold text-xl min-w-[24px] text-center">
-                  {count}
-                </span>
-                <button
-                  onClick={() => increment(area.id)}
-                  className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg text-white font-bold text-xl shadow-lg shadow-blue-500/30"
-                >
-                  +
-                </button>
-              </div>
+                return (
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-center bg-gray-800/80 border border-gray-600 p-4 rounded-xl"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium text-md sm:text-lg">
+                        {displayName}
+                      </span>
+                      {item.priceFixed && (
+                        <span className="text-blue-300 text-xs mt-0.5">
+                          £{item.priceFixed} each
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => decrement(item.id)}
+                        className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition-colors rounded-lg text-white font-bold text-xl"
+                      >
+                        –
+                      </button>
+                      <span className="text-white font-bold text-xl min-w-[24px] text-center">
+                        {count}
+                      </span>
+                      <button
+                        onClick={() => increment(item.id)}
+                        className="w-9 h-9 flex items-center justify-center bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg text-white font-bold text-xl shadow-lg shadow-blue-500/30"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </GlassLayout>
   );

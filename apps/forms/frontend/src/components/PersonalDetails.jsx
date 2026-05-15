@@ -4,7 +4,7 @@ import BookingDatePicker from "./ui/BookingDatePicker";
 import TimeSlotSelector from "./ui/TimeSlotSelector";
 
 /* ----------------------------------
-   Reusable Input Field
+   Reusable Input Field (Upgraded)
 ---------------------------------- */
 const InputField = ({
   label,
@@ -14,45 +14,54 @@ const InputField = ({
   type = "text",
   options = [],
   required = false,
-}) => (
-  <div className="flex flex-col mb-4">
-    <label className="text-white font-medium mb-2">
-      {label}
-      {required && <span className="text-red-400 ml-1">*</span>}
-    </label>
+  autoComplete, // ✅ Added for UX
+}) => {
+  const inputId = `field-${name}`; // ✅ Unique ID for accessibility
 
-    {type === "select" ? (
-      <select
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        className="bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500"
-      >
-        <option value="">Select...</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    ) : (
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        className="bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500"
-      />
-    )}
-  </div>
-);
+  return (
+    <div className="flex flex-col mb-4">
+      <label htmlFor={inputId} className="text-white font-medium mb-2">
+        {label}
+        {required && <span className="text-red-400 ml-1" aria-hidden="true">*</span>}
+      </label>
+
+      {type === "select" ? (
+        <select
+          id={inputId}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          autoComplete={autoComplete}
+          className="bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+        >
+          <option value="" disabled>Select...</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          id={inputId}
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          autoComplete={autoComplete}
+          className="bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+        />
+      )}
+    </div>
+  );
+};
 
 /* ----------------------------------
    Main Component
 ---------------------------------- */
-const PersonalDetails = ({ details, setDetails }) => {
+const PersonalDetails = ({ details, setDetails, blockedDates = [] }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDetails((prev) => ({ ...prev, [name]: value }));
@@ -60,76 +69,80 @@ const PersonalDetails = ({ details, setDetails }) => {
 
   return (
     <GlassLayout title="Personal & Booking Details">
-      {/* Booking Date */}
-      <BookingDatePicker
-        required
-        value={details.booking_date || ""}
-        holidays={["2026-01-11", "2026-01-25"]}
-        onChange={(data) =>
-          setDetails((prev) => ({
-            ...prev,
-            ...data,
-          }))
-        }
-      />
+      
+      {/* Date & Time Section (Full Width) */}
+      <div className="mb-6 space-y-4 border-b border-gray-700/50 pb-6">
+        <BookingDatePicker
+          required
+          value={details.booking_date || ""}
+          holidays={blockedDates} // ✅ Pass dynamically from a higher level/API
+          onChange={(data) =>
+            setDetails((prev) => ({
+              ...prev,
+              ...data,
+            }))
+          }
+        />
 
-      {/* Time Slot */}
-      <TimeSlotSelector
-        required
-        value={details.timeslot || ""}
-        onChange={(slot) =>
-          setDetails((prev) => ({
-            ...prev,
-            timeslot: slot,
-          }))
-        }
-      />
+        <TimeSlotSelector
+          required
+          value={details.timeslot || ""}
+          onChange={(slot) =>
+            setDetails((prev) => ({
+              ...prev,
+              timeslot: slot,
+            }))
+          }
+        />
+      </div>
 
-      {/* Name */}
-      <InputField
-        label="Full Name"
-        name="name"
-        value={details.name || ""}
-        onChange={handleChange}
-        required
-      />
+      {/* Personal Info Section (Responsive Grid) */}
+      {/* ✅ md:grid-cols-2 places inputs side-by-side on larger screens */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+        <InputField
+          label="Full Name"
+          name="name"
+          autoComplete="name"
+          value={details.name || ""}
+          onChange={handleChange}
+          required
+        />
 
-      {/* Email */}
-      <InputField
-        label="Email"
-        name="email"
-        type="email"
-        value={details.email || ""}
-        onChange={handleChange}
-        required
-      />
+        <InputField
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={details.email || ""}
+          onChange={handleChange}
+          required
+        />
 
-      {/* Phone */}
-      <InputField
-        label="Phone"
-        name="phone"
-        type="tel"
-        value={details.phone || ""}
-        onChange={handleChange}
-        required
-      />
+        <InputField
+          label="Phone"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          value={details.phone || ""}
+          onChange={handleChange}
+          required
+        />
 
-      {/* Payment */}
-      <InputField
-        label="Payment Method"
-        name="payment_method"
-        type="select"
-        value={details.payment_method || ""}
-        onChange={handleChange}
-        required
-        options={[
-          { value: "cash", label: "Cash" },
-          { value: "card", label: "Card" },
-          { value: "bank_transfer", label: "Bank Transfer" },
-        ]}
-      />
+        <InputField
+          label="Payment Method"
+          name="payment_method"
+          type="select"
+          value={details.payment_method || ""}
+          onChange={handleChange}
+          required
+          options={[
+            { value: "cash", label: "Cash" },
+            { value: "bank_transfer", label: "Bank Transfer" },
+          ]}
+        />
+      </div>
 
-      <p className="text-sm text-gray-400 mt-3">
+      <p className="text-sm text-gray-400 mt-2">
         <span className="text-red-400">*</span> indicates required fields
       </p>
     </GlassLayout>
