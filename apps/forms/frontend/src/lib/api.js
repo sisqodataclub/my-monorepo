@@ -1,4 +1,4 @@
-// src/lib/api.js
+// src/lib/api.js updated
 // ========================
 // SERVICES API (Public + Auth)
 // ========================
