@@ -1,4 +1,4 @@
-// src/lib/api.js updated
+// src/lib/api.js
 // ========================
 // SERVICES API (Public + Auth)
 // ========================
@@ -20,32 +20,49 @@ export const getImageUrl = (path) => {
 // SERVICES (Public)
 // ========================
 
-// ✅ UPDATED: Now accepts an optional queryString (e.g., "?category_name=cleaning_services")
+// ✅ UPDATED: Auto-Pagination and Query Strings included
 export async function getServices(queryString = "") {
   try {
-    // ✅ URL now appends the query string seamlessly
-    const res = await fetch(`${API_BASE}/api/services/${queryString}`, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json",
-        "X-Tenant": "DDEEP"
+    let allRawResults = [];
+    
+    // Start with the initial URL
+    let currentUrl = `${API_BASE}/api/services/${queryString}`;
+
+    // Keep looping as long as there is a "next" URL to fetch
+    while (currentUrl) {
+      const res = await fetch(currentUrl, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+          "X-Tenant": "DDEEP"
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch services: ${res.status}`);
       }
-    });
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch services: ${res.status}`);
+      const data = await res.json();
+
+      // If Django sent paginated results (which limits to 20 per page)
+      if (data.results && Array.isArray(data.results)) {
+        // Add this page's results to our master list
+        allRawResults = [...allRawResults, ...data.results];
+        
+        // Update the URL to the next page. If no next page, data.next is null and loop stops.
+        currentUrl = data.next; 
+      } 
+      // If Django sent a plain array (pagination disabled)
+      else if (Array.isArray(data)) {
+        allRawResults = data;
+        currentUrl = null; // Stop the loop
+      } else {
+        currentUrl = null; // Failsafe
+      }
     }
 
-    const data = await res.json();
-
-    let rawResults = [];
-    if (data.results && Array.isArray(data.results)) {
-      rawResults = data.results;
-    } else if (Array.isArray(data)) {
-      rawResults = data;
-    }
-
-    return rawResults.map(service => ({
+    // Translate the final, complete list for React
+    return allRawResults.map(service => ({
       id: service.id,
       name: service.name,
       description: service.description,
@@ -155,6 +172,8 @@ export async function getUserServiceBookings() {
     if (!res.ok) throw new Error(`Failed to fetch bookings: ${res.status}`);
 
     const data = await res.json();
+    
+    // We can also add safety mapping here just in case bookings get paginated later!
     return data.results || data || [];
   } catch (error) {
     console.error("API Error (getUserServiceBookings):", error);
