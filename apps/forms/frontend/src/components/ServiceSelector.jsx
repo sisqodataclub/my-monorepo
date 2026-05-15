@@ -1,13 +1,56 @@
+import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
+import { getServices } from "../lib/api"; // your existing API helper
 
 const ServiceSelector = ({ value, setValue }) => {
-  const services = [
-    "Moving in/out Cleaning / End Of Tenancy",
-    "One Off / Deep Cleaning",
-    "After Building Cleaning",
-    "Carpet, Upholstery & Appliances Cleaning ONLY",
-    "Other Enquiries",
-  ];
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCleaningServices = async () => {
+      try {
+        const allServices = await getServices();
+        // Filter by category name "cleaning_services" (case‑insensitive)
+        const cleaningServices = allServices.filter(
+          (service) => service.category_name?.toLowerCase() === "cleaning_services"
+        );
+        setServices(cleaningServices);
+      } catch (err) {
+        console.error("Failed to fetch cleaning services:", err);
+        setError("Could not load services. Please refresh the page.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCleaningServices();
+  }, []);
+
+  if (loading) {
+    return (
+      <GlassLayout title="Choose Your Service" subtitle="Loading available services...">
+        <div className="text-white text-center py-8">Loading...</div>
+      </GlassLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <GlassLayout title="Choose Your Service" subtitle="Something went wrong">
+        <div className="text-red-400 text-center py-8">{error}</div>
+      </GlassLayout>
+    );
+  }
+
+  if (services.length === 0) {
+    return (
+      <GlassLayout title="Choose Your Service" subtitle="No services found">
+        <div className="text-yellow-400 text-center py-8">
+          No cleaning services available at the moment.
+        </div>
+      </GlassLayout>
+    );
+  }
 
   return (
     <GlassLayout
@@ -16,11 +59,11 @@ const ServiceSelector = ({ value, setValue }) => {
     >
       <div className="flex flex-col gap-4">
         {services.map((service) => {
-          const active = value === service;
+          const active = value === service.name;
 
           return (
             <label
-              key={service}
+              key={service.id}
               className={`
                 relative cursor-pointer select-none
                 p-4 sm:p-5 rounded-2xl
@@ -34,13 +77,13 @@ const ServiceSelector = ({ value, setValue }) => {
               `}
             >
               <span className="flex-1 text-sm sm:text-lg font-medium">
-                {service}
+                {service.name}
               </span>
 
               <input
                 type="radio"
                 checked={active}
-                onChange={() => setValue(service)}
+                onChange={() => setValue(service.name)}
                 className="mt-1 w-5 h-5 accent-blue-400"
               />
 
