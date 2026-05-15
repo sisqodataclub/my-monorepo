@@ -1,7 +1,7 @@
 // src/components/AreaSelection.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import api from "../api"; // your axios instance
+import { getServices } from "../lib/api"; // ✅ Using our newly upgraded helper!
 
 const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   const [areaOptions, setAreaOptions] = useState([]);
@@ -11,15 +11,23 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   useEffect(() => {
     const fetchAreas = async () => {
       try {
-        // ✅ Fetch only services in the "Areas" category
-        const response = await api.get("/services/?category_name=Areas", {
-          headers: { "X-Tenant": "DDEEP" } // replace with your tenant name if different
+        // ✅ 1. Let the backend do the heavy filtering via query string
+        // ✅ 2. The pagination loop in api.js will automatically grab ALL pages
+        const allFetchedAreas = await getServices("?category_name=areas");
+        
+        // ✅ 3. Strict frontend fallback just to be bulletproof against typos/spaces
+        const bulletproofAreas = allFetchedAreas.filter((service) => {
+          const name1 = service.category_name || "";
+          const name2 = service.category_detail?.name || "";
+          
+          return (
+            name1.toLowerCase().trim() === "areas" ||
+            name2.toLowerCase().trim() === "areas"
+          );
         });
-        const data = response.data;
-        const results = data.results || data || [];
-        // Extract only the names (strings)
-        const names = results.map(service => service.name);
-        setAreaOptions(names);
+
+        // Store the full objects so we can display prices in the UI
+        setAreaOptions(bulletproofAreas);
       } catch (err) {
         console.error("Failed to fetch areas:", err);
         setError("Could not load areas. Please refresh the page.");
@@ -30,11 +38,11 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     fetchAreas();
   }, []);
 
-  const handleToggle = (area) => {
+  const handleToggle = (areaName) => {
     setSelectedAreas((prev) =>
-      prev.includes(area)
-        ? prev.filter((a) => a !== area)
-        : [...prev, area]
+      prev.includes(areaName)
+        ? prev.filter((a) => a !== areaName)
+        : [...prev, areaName]
     );
   };
 
@@ -45,7 +53,7 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   if (loading) {
     return (
       <GlassLayout title="Select Areas" subtitle="Loading available areas...">
-        <div className="text-white text-center py-8">Loading...</div>
+        <div className="text-white text-center py-8 animate-pulse">Loading...</div>
       </GlassLayout>
     );
   }
@@ -53,7 +61,9 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   if (error) {
     return (
       <GlassLayout title="Select Areas" subtitle="Something went wrong">
-        <div className="text-red-400 text-center py-8">{error}</div>
+        <div className="text-red-400 text-center py-8 bg-red-900/20 rounded-lg border border-red-500/30">
+          {error}
+        </div>
       </GlassLayout>
     );
   }
@@ -75,10 +85,12 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {areaOptions.map((area) => {
-          const active = selectedAreas.includes(area);
+          // area.name is the string (e.g. "Kitchen"), keeping it compatible with your selectedAreas state
+          const active = selectedAreas.includes(area.name);
+          
           return (
             <label
-              key={area}
+              key={area.id}
               className={`
                 relative cursor-pointer select-none
                 p-4 rounded-2xl
@@ -91,15 +103,23 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
                 }
               `}
             >
-              <span className="text-base sm:text-lg font-medium leading-snug">
-                {area}
-              </span>
+              <div className="flex flex-col">
+                <span className="text-base sm:text-lg font-medium leading-snug">
+                  {area.name}
+                </span>
+                {/* Dynamically render the price from the backend if it exists */}
+                {area.priceFixed && (
+                  <span className={`text-xs mt-0.5 ${active ? 'text-blue-200' : 'text-gray-400'}`}>
+                    +£{area.priceFixed}
+                  </span>
+                )}
+              </div>
 
               <input
                 type="checkbox"
                 checked={active}
-                onChange={() => handleToggle(area)}
-                className="w-5 h-5 accent-blue-400 cursor-pointer"
+                onChange={() => handleToggle(area.name)}
+                className="w-5 h-5 accent-blue-400 cursor-pointer relative z-10"
               />
 
               {active && (

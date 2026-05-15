@@ -1,7 +1,8 @@
+// src/components/AppliancesCleaningSelector.jsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
-import api from "../api"; // your axios instance
+import { getServices } from "../lib/api"; // ✅ Using our powerful API helper
 
 const AppliancesCleaningSelector = ({ values, setValues }) => {
   const [appliances, setAppliances] = useState([]);
@@ -11,13 +12,22 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
   useEffect(() => {
     const fetchAppliances = async () => {
       try {
-        // ✅ Fetch only services in the "Appliances" category
-        const response = await api.get("/services/?category_name=Appliances", {
-          headers: { "X-Tenant": "DDEEP" } // replace with your tenant name if different
+        // ✅ 1. Let the backend filter via query string (added include_addons=true just in case!)
+        // ✅ 2. The pagination loop in api.js will automatically grab ALL pages
+        const allFetchedAppliances = await getServices("?category_name=appliances&include_addons=true");
+        
+        // ✅ 3. Strict frontend fallback to be bulletproof against typos/spaces
+        const bulletproofAppliances = allFetchedAppliances.filter((service) => {
+          const name1 = service.category_name || "";
+          const name2 = service.category_detail?.name || "";
+          
+          return (
+            name1.toLowerCase().trim() === "appliances" ||
+            name2.toLowerCase().trim() === "appliances"
+          );
         });
-        const data = response.data;
-        const results = data.results || data || [];
-        setAppliances(results);
+
+        setAppliances(bulletproofAppliances);
       } catch (err) {
         console.error("Error fetching appliances:", err);
         setError("Could not load appliances. Please try again later.");
@@ -35,25 +45,24 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
     }));
   };
 
-  // Loading state
   if (loading) {
     return (
       <GlassLayout title="Appliances Cleaning" subtitle="Loading available appliances...">
-        <div className="text-white text-center py-8">Loading...</div>
+        <div className="text-white text-center py-8 animate-pulse">Loading...</div>
       </GlassLayout>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <GlassLayout title="Appliances Cleaning" subtitle="Something went wrong">
-        <div className="text-red-400 text-center py-8">{error}</div>
+        <div className="text-red-400 text-center py-8 bg-red-900/20 rounded-lg border border-red-500/30">
+          {error}
+        </div>
       </GlassLayout>
     );
   }
 
-  // No results
   if (appliances.length === 0) {
     return (
       <GlassLayout title="Appliances Cleaning" subtitle="No appliances found">
@@ -64,7 +73,6 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
     );
   }
 
-  // Render list
   return (
     <GlassLayout
       title="Appliances Cleaning"
@@ -92,9 +100,10 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
                 <span className="font-medium leading-snug uppercase">
                   {item.name}
                 </span>
-                {item.price_fixed && (
+                {/* ✅ Updated to use the mapped camelCase priceFixed from api.js */}
+                {item.priceFixed && (
                   <span className="text-xs opacity-75 mt-0.5">
-                    +£{item.price_fixed}
+                    +£{item.priceFixed}
                   </span>
                 )}
               </div>

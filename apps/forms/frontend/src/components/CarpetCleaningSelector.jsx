@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
-import api from "../api"; // your axios instance
+import { getServices } from "../lib/api"; // ✅ Using our powerful API helper
 
 // ---------------------------------------------------
 // COUNTER COMPONENT
@@ -41,13 +41,22 @@ const CleaningSelector = ({ values, setValues }) => {
   useEffect(() => {
     const fetchCarpetServices = async () => {
       try {
-        // ✅ Fetch only services in the "Carpets" category
-        const response = await api.get("/services/?category_name=Carpets", {
-          headers: { "X-Tenant": "DDEEP" } // replace with your tenant name if different
+        // ✅ 1. Backend filter via query string (added include_addons=true just in case!)
+        // ✅ 2. The pagination loop in api.js grabs ALL pages automatically
+        const allFetchedCarpets = await getServices("?category_name=carpets&include_addons=true");
+        
+        // ✅ 3. Strict frontend fallback to be completely bulletproof
+        const bulletproofCarpets = allFetchedCarpets.filter((service) => {
+          const name1 = service.category_name || "";
+          const name2 = service.category_detail?.name || "";
+          
+          return (
+            name1.toLowerCase().trim() === "carpets" ||
+            name2.toLowerCase().trim() === "carpets"
+          );
         });
-        const data = response.data;
-        const results = data.results || data || [];
-        setServices(results);
+
+        setServices(bulletproofCarpets);
       } catch (err) {
         console.error("Error fetching carpet services:", err);
         setError("Could not load carpet cleaning options. Please try again later.");
@@ -55,6 +64,7 @@ const CleaningSelector = ({ values, setValues }) => {
         setLoading(false);
       }
     };
+    
     fetchCarpetServices();
   }, []);
 
@@ -71,7 +81,7 @@ const CleaningSelector = ({ values, setValues }) => {
         title="Carpet & Upholstery Cleaning"
         subtitle="Loading available options..."
       >
-        <div className="text-white text-center py-8">Loading...</div>
+        <div className="text-white text-center py-8 animate-pulse">Loading...</div>
       </GlassLayout>
     );
   }
@@ -82,7 +92,9 @@ const CleaningSelector = ({ values, setValues }) => {
         title="Carpet & Upholstery Cleaning"
         subtitle="Something went wrong"
       >
-        <div className="text-red-400 text-center py-8">{error}</div>
+        <div className="text-red-400 text-center py-8 bg-red-900/20 rounded-lg border border-red-500/30">
+          {error}
+        </div>
       </GlassLayout>
     );
   }
@@ -125,14 +137,16 @@ const CleaningSelector = ({ values, setValues }) => {
             >
               <div className="flex flex-col">
                 <span className="font-medium leading-snug">{service.name}</span>
-                {service.price_fixed && (
+                
+                {/* ✅ Updated to camelCase mapping from api.js */}
+                {service.priceFixed && (
                   <span className="text-xs opacity-75 mt-0.5">
-                    +£{service.price_fixed}
+                    +£{service.priceFixed}
                   </span>
                 )}
-                {service.price_per_hour && !service.price_fixed && (
+                {service.pricePerHour && !service.priceFixed && (
                   <span className="text-xs opacity-75 mt-0.5">
-                    £{service.price_per_hour}/hour
+                    £{service.pricePerHour}/hour
                   </span>
                 )}
               </div>
