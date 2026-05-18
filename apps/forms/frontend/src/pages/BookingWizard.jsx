@@ -4,7 +4,7 @@ import WizardSteps from "../components/booking/WizardSteps";
 import WizardNavigation from "../components/booking/WizardNavigation";
 
 import useQuoteCalculator from "../hooks/useQuoteCalculator";
-import useAutoSnapshot, { getSessionId } from "../hooks/useAutoSnapshot";
+import useAutoSnapshot, { getSessionId, regenerateSessionId } from "../hooks/useAutoSnapshot";
 
 import api from "../api";
 import SuccessModal from "../components/SuccessModal";
@@ -12,7 +12,6 @@ import SuccessModal from "../components/SuccessModal";
 // ---------------------------
 // CONSTANTS
 // ---------------------------
-const SESSION_ID = getSessionId();
 const SIZED_AREAS = ["Kitchen", "Bedroom"];
 const SPECIAL_SERVICE = "Carpet, Upholstery & Appliances Cleaning ONLY";
 
@@ -40,6 +39,7 @@ export default function BookingWizard() {
   // ---------------------------
   // STATE
   // ---------------------------
+  const [sessionId, setSessionId] = useState(getSessionId()); // ✅ dynamic session ID
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [step, setStep] = useState(1);
@@ -145,7 +145,8 @@ export default function BookingWizard() {
     details,
   }), [selectedAreas, quantities, carpets, appliances, furnishedFee, biohazardFee, discount, details]);
 
-  useAutoSnapshot(SESSION_ID, snapshotPayload);
+  // ✅ Pass dynamic sessionId to snapshot hook
+  useAutoSnapshot(sessionId, snapshotPayload);
 
   // ---------------------------
   // SUBMIT
@@ -201,7 +202,7 @@ export default function BookingWizard() {
       }
 
       const payload = {
-        session_id: SESSION_ID,
+        session_id: sessionId, // ✅ dynamic session ID
         ...details,
         selected_areas: [service, ...normalAreas],
         quantities: allQuantities,
@@ -212,9 +213,6 @@ export default function BookingWizard() {
       const res = await api.post("/api/bookings/", payload);
 
       if (res.status === 200 || res.status === 201) {
-        // ✅ The backend already sends a booking confirmation email.
-        // The contact-messages endpoint is no longer needed and has been removed to avoid 404.
-
         if (paymentlink) {
           window.location.href = paymentlink;
           return;
@@ -222,6 +220,10 @@ export default function BookingWizard() {
 
         setShowSuccess(true);
         resetAll();
+
+        // ✅ Generate a fresh session ID for the next booking
+        const freshId = regenerateSessionId();
+        setSessionId(freshId);
       }
     } catch (err) {
       console.error("Booking Error:", err);
