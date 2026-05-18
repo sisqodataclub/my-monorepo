@@ -33,7 +33,7 @@ const INITIAL_DETAILS = {
 // ---------------------------
 export default function BookingWizard() {
   const navigate = useNavigate();
-  
+
   // A ref to target the scrollable middle section
   const scrollContainerRef = useRef(null);
 
@@ -83,7 +83,7 @@ export default function BookingWizard() {
   const goNext = useCallback(() => {
     const idx = stepsOrder.indexOf(step);
     if (stepsOrder[idx + 1]) setStep(stepsOrder[idx + 1]);
-    setError(null); 
+    setError(null);
   }, [step, stepsOrder]);
 
   const goPrev = useCallback(() => {
@@ -108,7 +108,7 @@ export default function BookingWizard() {
   // ---------------------------
   // EFFECTS
   // ---------------------------
-  
+
   // Scroll the inner container to the top instead of the whole window
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -212,11 +212,8 @@ export default function BookingWizard() {
       const res = await api.post("/api/bookings/", payload);
 
       if (res.status === 200 || res.status === 201) {
-        await api.post("/api/contact-messages/", {
-          name: details.name,
-          email: details.email,
-          message: `Your cleaning quote total is £${finalTotal}.`,
-        });
+        // ✅ The backend already sends a booking confirmation email.
+        // The contact-messages endpoint is no longer needed and has been removed to avoid 404.
 
         if (paymentlink) {
           window.location.href = paymentlink;
@@ -224,7 +221,7 @@ export default function BookingWizard() {
         }
 
         setShowSuccess(true);
-        resetAll(); 
+        resetAll();
       }
     } catch (err) {
       console.error("Booking Error:", err);
@@ -250,7 +247,7 @@ export default function BookingWizard() {
   // ---------------------------
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-      
+
       {/* 1. FIXED HEADER */}
       <header className="flex-shrink-0 pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800 z-20 shadow-md">
         <h1 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 text-center tracking-wide">
@@ -269,7 +266,6 @@ export default function BookingWizard() {
       </header>
 
       {/* 2. SCROLLABLE MIDDLE SECTION */}
-      {/* The ref allows us to scroll THIS specific div to the top when the user clicks Next */}
       <main ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-0 custom-scrollbar">
         <div className="max-w-3xl mx-auto w-full pb-8">
           <WizardSteps
