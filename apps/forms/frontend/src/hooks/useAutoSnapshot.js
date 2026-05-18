@@ -1,15 +1,24 @@
+// src/hooks/useAutoSnapshot.js
 import { useEffect, useRef } from "react";
 import api from "../api";
 
+// ----- Helpers for session ID management (using localStorage) -----
 export function getSessionId() {
-  let id = sessionStorage.getItem("browser_session_id");
+  let id = localStorage.getItem("booking_session_id");
   if (!id) {
     id = crypto.randomUUID();
-    sessionStorage.setItem("browser_session_id", id);
+    localStorage.setItem("booking_session_id", id);
   }
   return id;
 }
 
+export function regenerateSessionId() {
+  const newId = crypto.randomUUID();
+  localStorage.setItem("booking_session_id", newId);
+  return newId;
+}
+
+// ----- Main hook -----
 export default function useAutoSnapshot(sessionId, data) {
   const lastSentSnapshot = useRef(null);
 
@@ -87,9 +96,9 @@ export default function useAutoSnapshot(sessionId, data) {
     quantities: buildSnapshotQuantities(),
   });
 
-  // Save snapshot locally
+  // Save snapshot locally (for recovery on page load)
   useEffect(() => {
-    sessionStorage.setItem(
+    localStorage.setItem(
       `snapshot_${sessionId}`,
       JSON.stringify(buildSnapshotPayload())
     );
@@ -122,11 +131,11 @@ export default function useAutoSnapshot(sessionId, data) {
     return () => clearInterval(i);
   }, [data]);
 
-  // Page hide
+  // Page hide (send beacon)
   useEffect(() => {
     const handler = () => {
       const payload = buildSnapshotPayload();
-      sessionStorage.setItem(
+      localStorage.setItem(
         `snapshot_${sessionId}`,
         JSON.stringify(payload)
       );
