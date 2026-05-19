@@ -173,8 +173,8 @@ export default function BookingWizard() {
       normalQuantities[area] = quantities[area] ?? 1;
     });
 
+    // ✅ Removed the spread of ...details from allQuantities
     const allQuantities = {
-      ...details,
       ...sizedAreas,
       ...normalQuantities,
       ...carpets,
@@ -191,13 +191,13 @@ export default function BookingWizard() {
         selected_areas: [service, ...normalAreas],
         quantities: allQuantities,
         total: finalTotal,
-        payment_method: details.payment_method,   // ✅ send payment method, backend creates Stripe link
+        payment_method: details.payment_method,
       };
 
       const res = await api.post("/api/bookings/", payload);
 
       if (res.status === 200 || res.status === 201) {
-        const paymentlink = res.data.paymentlink;   // ✅ get from backend response
+        const paymentlink = res.data.paymentlink;
         if (paymentlink) {
           window.location.href = paymentlink;
           return;
