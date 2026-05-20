@@ -13,7 +13,7 @@ const SPECIAL_SERVICE = "Carpet, Upholstery & Appliances Cleaning ONLY";
 const INITIAL_DETAILS = {
   name: "", email: "", phone: "", furnished_status: "",
   parking: "", biohazard: "", payment_method: "",
-  booking_date: "", timeslot: "",
+  booking_date: "", timeslot: "", postcode: "", address: "" // ✅ Added missing fields
 };
 
 export default function BookingWizard() {
@@ -69,19 +69,39 @@ export default function BookingWizard() {
     setDiscountCode("");
     setDetails(INITIAL_DETAILS); 
     setError(null);
-    // ✅ Removed setShowSuccess(false) from here so the modal stays open!
   }, []);
 
+  // ---------------------------
+  // EFFECTS
+  // ---------------------------
+  
+  // 1. Scroll to top on step change
   useEffect(() => {
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  // ✅ 2. NEW: Reset everything when the main service changes
+  useEffect(() => {
+    if (service === "") return; // ignore initial empty state
+    
+    setSelectedAreas([]);
+    setQuantities({});
+    setCarpets({});
+    setAppliances({});
+    setDiscountCode("");
+    setDetails(INITIAL_DETAILS);
+  }, [service]);
+
+  // 3. Navigate to correct next step after service selection
   useEffect(() => {
     if (!service) return;
     setStep(service === SPECIAL_SERVICE ? 4 : 2);
   }, [service]);
 
-  // ✅ Removed the 5-second auto-redirect useEffect so users can click the modal buttons
+
+  // ---------------------------
+  // SNAPSHOT & SUBMIT
+  // ---------------------------
 
   const snapshotPayload = useMemo(() => ({
     selected_areas: selectedAreas,
@@ -144,8 +164,8 @@ export default function BookingWizard() {
           window.location.href = paymentlink;
           return;   
         }
-        setShowSuccess(true);    // ✅ Trigger the modal
-        resetAll();              // ✅ Silently wipe the form in the background
+        setShowSuccess(true);
+        resetAll();
         setSessionId(regenerateSessionId());
       }
     } catch (err) {
@@ -198,7 +218,6 @@ export default function BookingWizard() {
         </div>
       </footer>
 
-      {/* ✅ Modal correctly rendered here */}
       <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} />
     </div>
   );
