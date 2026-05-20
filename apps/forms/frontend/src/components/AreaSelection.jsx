@@ -1,7 +1,7 @@
 // src/components/AreaSelection.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; 
+import { getServices } from "../lib/api";
 
 const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
   const [areaOptions, setAreaOptions] = useState([]);
@@ -16,11 +16,15 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
         const bulletproofAreas = allFetchedAreas.filter((service) => {
           const name1 = service.category_name || "";
           const name2 = service.category_detail?.name || "";
-
-          return (
+          
+          // ✅ Keep only services belonging to "Areas" category AND whose name does NOT contain an underscore
+          const isAreasCategory = (
             name1.toLowerCase().trim() === "areas" ||
             name2.toLowerCase().trim() === "areas"
           );
+          const isBaseArea = !service.name.includes("_"); // exclude variations like Bedroom_Small
+          
+          return isAreasCategory && isBaseArea;
         });
 
         setAreaOptions(bulletproofAreas);
@@ -34,7 +38,6 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     fetchAreas();
   }, []);
 
-  // ✅ FIX: Now accepts and toggles the ID instead of the Name
   const handleToggle = (areaId) => {
     setSelectedAreas((prev) =>
       prev.includes(areaId)
@@ -82,7 +85,6 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {areaOptions.map((area) => {
-          // ✅ FIX: Check if the selectedAreas array includes this specific area.id
           const active = selectedAreas.includes(area.id);
 
           return (
@@ -104,7 +106,6 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
                 <span className="text-base sm:text-lg font-medium leading-snug">
                   {area.name}
                 </span>
-                
                 {area.priceFixed && (
                   <span className={`text-xs mt-0.5 ${active ? 'text-blue-200' : 'text-gray-400'}`}>
                     +£{area.priceFixed}
@@ -115,7 +116,6 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
               <input
                 type="checkbox"
                 checked={active}
-                // ✅ FIX: Pass the ID to the toggle function
                 onChange={() => handleToggle(area.id)}
                 className="w-5 h-5 accent-blue-400 cursor-pointer relative z-10"
               />
