@@ -15,7 +15,7 @@ export default function useQuoteCalculator({
     fees: 0,
     discount: 0,
     finalTotal: 0,
-    breakdown: [], // ✅ Capturing your new line-by-line breakdown
+    breakdown: [],
     loading: false,
     error: null,
   });
@@ -25,10 +25,11 @@ export default function useQuoteCalculator({
       setQuote((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        // 1. Build the strict "items" array your backend now expects
+        // 1. Build the items array ONLY from quantities, carpets, and appliances.
+        //    All area selections (including normal areas) are already stored in `quantities`
+        //    with their default quantity = 1, so we don't need `selectedAreas` at all.
         const items = [];
 
-        // Helper to process dictionary-shaped states (e.g., { "12": 2, "15": 1 })
         const processDict = (dict) => {
           Object.entries(dict).forEach(([id, qty]) => {
             if (qty > 0) {
@@ -44,23 +45,17 @@ export default function useQuoteCalculator({
         processDict(carpets);
         processDict(appliances);
 
-        // Map selected areas (Assumes selectedAreas array now holds IDs!)
-        selectedAreas.forEach((areaId) => {
-          const parsedId = parseInt(areaId, 10);
-          if (!isNaN(parsedId)) {
-            items.push({ service_id: parsedId, quantity: 1 });
-          }
-        });
+        // ✅ Removed the selectedAreas loop – it was causing duplicates.
 
-        // Optional: If no items are selected, reset and skip the API call
         if (items.length === 0) {
           setQuote({
-            subtotal: 0, fees: 0, discount: 0, finalTotal: 0, breakdown: [], loading: false, error: null
+            subtotal: 0, fees: 0, discount: 0, finalTotal: 0,
+            breakdown: [], loading: false, error: null,
           });
           return;
         }
 
-        // 2. Format the exact payload your Django view expects
+        // 2. Format payload for Django calculate_quote endpoint
         const payload = {
           items: items,
           furnished_status: details?.furnished_status || null,
@@ -70,7 +65,6 @@ export default function useQuoteCalculator({
 
         const data = await calculateQuoteFromApi(payload);
 
-        // 3. Update state with the rich response structure
         setQuote({
           subtotal: data.subtotal || 0,
           fees: data.fees || 0,
@@ -86,14 +80,10 @@ export default function useQuoteCalculator({
       }
     };
 
-    const timeoutId = setTimeout(() => {
-      fetchSecureQuote();
-    }, 300);
-
+    const timeoutId = setTimeout(fetchSecureQuote, 300);
     return () => clearTimeout(timeoutId);
-
   }, [
-    JSON.stringify(selectedAreas),
+    // ✅ Removed selectedAreas from dependencies – it no longer affects the calculation.
     JSON.stringify(quantities),
     JSON.stringify(carpets),
     JSON.stringify(appliances),
