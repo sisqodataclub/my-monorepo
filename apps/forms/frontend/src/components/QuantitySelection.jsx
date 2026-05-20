@@ -1,12 +1,12 @@
 // src/components/QuantitySelection.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // Fetching the DB to find variations
+import { getServices } from "../lib/api";
 
 // Tell the component which base rooms trigger the S/M/L variations
 const SIZED_AREAS_NAMES = ["Kitchen", "Bedroom"];
 
-const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
+const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQuantities }) => {
   const [allAreas, setAllAreas] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,6 +24,19 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
     };
     fetchAreas();
   }, []);
+
+  // Helper: given a variation name (e.g., "Bedroom_Medium"), find the base area ID
+  const getBaseAreaId = (variationName) => {
+    const baseName = variationName.split('_')[0];
+    const baseArea = allAreas.find(area => area.name === baseName);
+    return baseArea ? baseArea.id : null;
+  };
+
+  // Helper: check if any variation of a base area has a positive quantity
+  const hasAnyVariationSelected = (baseAreaName) => {
+    const variations = allAreas.filter(a => a.name.startsWith(baseAreaName + '_'));
+    return variations.some(v => (quantities[v.id] || 0) > 0);
+  };
 
   // 2. Initialize the secure quantities state using database IDs
   useEffect(() => {
@@ -44,13 +57,13 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
               a.name === `${baseArea.name}_Medium` ||
               a.name === `${baseArea.name}_Large`
           );
-          
+
           variations.forEach((v) => {
             if (updated[v.id] === undefined) updated[v.id] = 0;
           });
 
           // Ensure the "base" generic room isn't accidentally charged
-          updated[baseId] = 0; 
+          updated[baseId] = 0;
         } else {
           // Normal room (like Living Room). Default to 1.
           if (updated[baseId] === undefined) updated[baseId] = 1;
@@ -61,14 +74,29 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
     });
   }, [selectedAreas, allAreas, setQuantities]);
 
-  const increment = (id) =>
-    setQuantities((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
+  const increment = (id) => {
+    const newQty = (quantities[id] || 0) + 1;
+    setQuantities((prev) => ({ ...prev, [id]: newQty }));
 
-  const decrement = (id) =>
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: Math.max(0, (prev[id] ?? 0) - 1),
-    }));
+    // If this is a variation and its quantity just became 1, remove the base area from selectedAreas
+    const item = allAreas.find(a => a.id === id);
+    if (item && item.name.includes('_') && newQty === 1) {
+      const baseId = getBaseAreaId(item.name);
+      if (baseId && selectedAreas.includes(baseId)) {
+        setSelectedAreas(prev => prev.filter(areaId => areaId !== baseId));
+      }
+    }
+  };
+
+  const decrement = (id) => {
+    const oldQty = quantities[id] || 0;
+    const newQty = Math.max(0, oldQty - 1);
+    setQuantities((prev) => ({ ...prev, [id]: newQty }));
+
+    // Optional: if this is a variation and it becomes 0, and no other variations of the same base area are selected,
+    // you could re‑add the base area ID. For simplicity, we'll leave the base area removed.
+    // The user can always go back to the AreaSelection step to re‑select the base area.
+  };
 
   if (loading) {
     return (
@@ -78,7 +106,7 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
     );
   }
 
-  if (selectedAreas.length === 0) {
+  if (selectedAreas.length === 0 && Object.values(quantities).every(q => q === 0)) {
     return (
       <GlassLayout title="Room Quantities" subtitle="No areas selected">
         <div className="text-yellow-400 text-center py-8">
@@ -90,7 +118,19 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
 
   // 3. Build the UI Groups dynamically based on the DB
   const renderGroups = [];
-  selectedAreas.forEach((baseId) => {
+  // Use a set of base IDs from selectedAreas, but also include any base area that has a variation selected
+  const baseIdsToRender = new Set(selectedAreas);
+  // Also add base areas that have variations in quantities (if a variation is selected but base not in selectedAreas)
+  Object.keys(quantities).forEach(id => {
+    const item = allAreas.find(a => a.id === parseInt(id));
+    if (item && item.name.includes('_')) {
+      const baseName = item.name.split('_')[0];
+      const baseArea = allAreas.find(a => a.name === baseName);
+      if (baseArea) baseIdsToRender.add(baseArea.id);
+    }
+  });
+
+  baseIdsToRender.forEach(baseId => {
     const baseArea = allAreas.find((a) => a.id === baseId);
     if (!baseArea) return;
 
@@ -119,17 +159,12 @@ const QuantitySelection = ({ selectedAreas, quantities, setQuantities }) => {
       <div className="flex flex-col gap-6">
         {renderGroups.map((group) => (
           <div key={group.title} className={group.isGroup ? "bg-gray-800/40 p-4 rounded-2xl border border-gray-700/50" : ""}>
-            
-            {/* Header for Grouped Items (Kitchen, Bedroom) */}
             {group.isGroup && (
               <h3 className="text-white font-bold text-lg mb-3 px-1">{group.title} Variations</h3>
             )}
-
             <div className="flex flex-col gap-3">
               {group.items.map((item) => {
                 const count = quantities[item.id] || 0;
-                
-                // Extract just the word "Small", "Medium", or "Large" for a cleaner UI
                 const isVariation = item.name.includes("_");
                 const displayName = isVariation ? item.name.split("_")[1] : item.name;
 

@@ -1,3 +1,4 @@
+// src/components/booking/WizardSteps.jsx
 import React, { useState } from "react";
 
 import ServiceSelector from "../ServiceSelector";
@@ -35,9 +36,8 @@ export default function WizardSteps({
 
   const submitOnce = () => {
     if (isSubmitting) return;
-
     setIsSubmitting(true);
-    handleSubmit(); // ✅ DO NOT await
+    handleSubmit();
   };
 
   switch (step) {
@@ -57,6 +57,7 @@ export default function WizardSteps({
       return (
         <QuantitySelection
           selectedAreas={selectedAreas}
+          setSelectedAreas={setSelectedAreas}   // ✅ added to fix duplication
           quantities={quantities}
           setQuantities={setQuantities}
         />
