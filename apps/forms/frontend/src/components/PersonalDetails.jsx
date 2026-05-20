@@ -14,13 +14,21 @@ const InputField = ({
   type = "text",
   options = [],
   required = false,
-  autoComplete, // ✅ Added for UX
+  autoComplete,
+  placeholder,
+  pattern,
+  maxLength,
+  className = "",
 }) => {
-  const inputId = `field-${name}`; // ✅ Unique ID for accessibility
+  const inputId = `field-${name}`;
+
+  // Unified styling for inputs, selects, and textareas
+  const baseInputStyles =
+    "bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all w-full placeholder-gray-500";
 
   return (
-    <div className="flex flex-col mb-4">
-      <label htmlFor={inputId} className="text-white font-medium mb-2">
+    <div className={`flex flex-col mb-4 ${className}`}>
+      <label htmlFor={inputId} className="text-white font-medium mb-2 text-sm tracking-wide">
         {label}
         {required && <span className="text-red-400 ml-1" aria-hidden="true">*</span>}
       </label>
@@ -33,7 +41,7 @@ const InputField = ({
           onChange={onChange}
           required={required}
           autoComplete={autoComplete}
-          className="bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+          className={baseInputStyles}
         >
           <option value="" disabled>Select...</option>
           {options.map((opt) => (
@@ -42,6 +50,18 @@ const InputField = ({
             </option>
           ))}
         </select>
+      ) : type === "textarea" ? (
+        <textarea
+          id={inputId}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          rows="3"
+          className={`${baseInputStyles} resize-none`}
+        />
       ) : (
         <input
           id={inputId}
@@ -51,7 +71,10 @@ const InputField = ({
           onChange={onChange}
           required={required}
           autoComplete={autoComplete}
-          className="bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+          placeholder={placeholder}
+          pattern={pattern}
+          maxLength={maxLength}
+          className={baseInputStyles}
         />
       )}
     </div>
@@ -63,88 +86,122 @@ const InputField = ({
 ---------------------------------- */
 const PersonalDetails = ({ details, setDetails, blockedDates = [] }) => {
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    
+    // Auto-uppercase UK Postcodes as the user types
+    if (name === "postcode") {
+      value = value.toUpperCase();
+    }
+    
     setDetails((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
     <GlassLayout title="Personal & Booking Details">
-      
-      {/* Date & Time Section (Full Width) */}
-      <div className="mb-6 space-y-4 border-b border-gray-700/50 pb-6">
+
+      {/* 1. Date & Time Section */}
+      <div className="mb-8 space-y-4 border-b border-gray-700/50 pb-8">
+        <h3 className="text-lg font-semibold text-blue-400 mb-4">1. When do you need us?</h3>
         <BookingDatePicker
           required
           value={details.booking_date || ""}
-          holidays={blockedDates} // ✅ Pass dynamically from a higher level/API
+          holidays={blockedDates}
           onChange={(data) =>
-            setDetails((prev) => ({
-              ...prev,
-              ...data,
-            }))
+            setDetails((prev) => ({ ...prev, ...data }))
           }
         />
-
         <TimeSlotSelector
           required
           value={details.timeslot || ""}
           onChange={(slot) =>
-            setDetails((prev) => ({
-              ...prev,
-              timeslot: slot,
-            }))
+            setDetails((prev) => ({ ...prev, timeslot: slot }))
           }
         />
       </div>
 
-      {/* Personal Info Section (Responsive Grid) */}
-      {/* ✅ md:grid-cols-2 places inputs side-by-side on larger screens */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-        <InputField
-          label="Full Name"
-          name="name"
-          autoComplete="name"
-          value={details.name || ""}
-          onChange={handleChange}
-          required
-        />
+      {/* 2. Contact & Address Section (Grid Layout) */}
+      <div className="mb-8 border-b border-gray-700/50 pb-8">
+        <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Your Details & Location</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+          <InputField
+            label="Full Name"
+            name="name"
+            autoComplete="name"
+            placeholder="e.g. John Doe"
+            value={details.name || ""}
+            onChange={handleChange}
+            required
+          />
 
-        <InputField
-          label="Email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={details.email || ""}
-          onChange={handleChange}
-          required
-        />
+          <InputField
+            label="Email Address"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="e.g. name@example.com"
+            value={details.email || ""}
+            onChange={handleChange}
+            required
+          />
 
-        <InputField
-          label="Phone"
-          name="phone"
-          type="tel"
-          autoComplete="tel"
-          value={details.phone || ""}
-          onChange={handleChange}
-          required
-        />
+          <InputField
+            label="Phone Number"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="e.g. 07700 900000"
+            value={details.phone || ""}
+            onChange={handleChange}
+            required
+          />
 
+          <InputField
+            label="UK Postcode"
+            name="postcode"
+            autoComplete="postal-code"
+            placeholder="e.g. M1 1AA"
+            maxLength="8"
+            // Forgiving regex that allows optional space, but validates valid UK structure
+            pattern="^[A-Za-z]{1,2}[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}$" 
+            value={details.postcode || ""}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Full width textarea spans across the bottom of the grid */}
         <InputField
-          label="Payment Method"
-          name="payment_method"
-          type="select"
-          value={details.payment_method || ""}
+          label="Full Property Address"
+          name="address"
+          type="textarea"
+          autoComplete="street-address"
+          placeholder="House number, street name, city..."
+          value={details.address || ""}
           onChange={handleChange}
           required
-          options={[
-            { value: "cash", label: "Cash" },
-            { value: "bank_transfer", label: "Bank Transfer" },
-          ]}
         />
       </div>
 
-      <p className="text-sm text-gray-400 mt-2">
-        <span className="text-red-400">*</span> indicates required fields
-      </p>
+      {/* 3. Payment Section */}
+      <div>
+        <h3 className="text-lg font-semibold text-blue-400 mb-4">3. Payment</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+          <InputField
+            label="Payment Method"
+            name="payment_method"
+            type="select"
+            value={details.payment_method || ""}
+            onChange={handleChange}
+            required
+            options={[
+              { value: "cash", label: "Cash on the day" },
+              { value: "bank_transfer", label: "Bank Transfer" },
+            ]}
+          />
+        </div>
+      </div>
+
     </GlassLayout>
   );
 };
