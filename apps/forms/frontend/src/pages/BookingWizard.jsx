@@ -5,7 +5,7 @@ import WizardNavigation from "../components/booking/WizardNavigation";
 import useQuoteCalculator from "../hooks/useQuoteCalculator";
 import useAutoSnapshot, { getSessionId, regenerateSessionId } from "../hooks/useAutoSnapshot";
 import api from "../api";
-import BookingSuccessModal from "../components/BookingSuccessModal";   // ✅ new modal
+import BookingSuccessModal from "../components/BookingSuccessModal";   
 
 const SIZED_AREAS = ["Kitchen", "Bedroom"];
 const SPECIAL_SERVICE = "Carpet, Upholstery & Appliances Cleaning ONLY";
@@ -60,9 +60,16 @@ export default function BookingWizard() {
   }, [step, stepsOrder]);
 
   const resetAll = useCallback(() => {
-    setStep(1); setService(""); setSelectedAreas([]); setQuantities({});
-    setCarpets({}); setAppliances({}); setDiscountCode("");
-    setDetails(INITIAL_DETAILS); setShowSuccess(false); setError(null);
+    setStep(1); 
+    setService(""); 
+    setSelectedAreas([]); 
+    setQuantities({});
+    setCarpets({}); 
+    setAppliances({}); 
+    setDiscountCode("");
+    setDetails(INITIAL_DETAILS); 
+    setError(null);
+    // ✅ Removed setShowSuccess(false) from here so the modal stays open!
   }, []);
 
   useEffect(() => {
@@ -73,6 +80,8 @@ export default function BookingWizard() {
     if (!service) return;
     setStep(service === SPECIAL_SERVICE ? 4 : 2);
   }, [service]);
+
+  // ✅ Removed the 5-second auto-redirect useEffect so users can click the modal buttons
 
   const snapshotPayload = useMemo(() => ({
     selected_areas: selectedAreas,
@@ -133,10 +142,10 @@ export default function BookingWizard() {
         const paymentlink = res.data.paymentlink;
         if (paymentlink) {
           window.location.href = paymentlink;
-          return;   // ✅ modal will NOT appear for card payments
+          return;   
         }
-        setShowSuccess(true);    // ✅ show modal only for non‑card bookings
-        resetAll();
+        setShowSuccess(true);    // ✅ Trigger the modal
+        resetAll();              // ✅ Silently wipe the form in the background
         setSessionId(regenerateSessionId());
       }
     } catch (err) {
@@ -189,6 +198,7 @@ export default function BookingWizard() {
         </div>
       </footer>
 
+      {/* ✅ Modal correctly rendered here */}
       <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} />
     </div>
   );
