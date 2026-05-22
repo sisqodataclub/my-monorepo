@@ -27,6 +27,10 @@ export default function BookingWizard() {
   const [step, setStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // ✅ Added state to hold the blocked dates from the backend
+  const [blockedDates, setBlockedDates] = useState([]);
+  const [partiallyBlockedSlots, setPartiallyBlockedSlots] = useState({});
+
   const [service, setService] = useState("");
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [quantities, setQuantities] = useState({});
@@ -98,7 +102,7 @@ export default function BookingWizard() {
     setStep(service === SPECIAL_SERVICE ? 4 : 2);
   }, [service]);
 
-  // ✅ NEW: Auto‑reset ALL state when the user is on the service selector step
+  // Auto‑reset ALL state when the user is on the service selector step
   useEffect(() => {
     if (step === 1) {
       setService("");
@@ -111,6 +115,20 @@ export default function BookingWizard() {
       setError(null);
     }
   }, [step]);
+
+  // ✅ NEW: Fetch Blocked Dates from Backend on initial load
+  useEffect(() => {
+    const fetchBlockedTimes = async () => {
+      try {
+        const res = await api.get("/api/blocked-times/");
+        setBlockedDates(res.data.fully_blocked_dates || []);
+        setPartiallyBlockedSlots(res.data.partially_blocked_slots || {});
+      } catch (err) {
+        console.error("Failed to fetch blocked times", err);
+      }
+    };
+    fetchBlockedTimes();
+  }, []);
 
   // ---------------------------
   // SNAPSHOT & SUBMIT
@@ -221,6 +239,9 @@ export default function BookingWizard() {
             details={details} setDetails={setDetails}
             discountCode={discountCode} setDiscountCode={setDiscountCode}
             totalQuote={finalTotal} setCanProceed={setCanProceed} handleSubmit={handleSubmit}
+            // ✅ Data is now passed down into the steps component
+            blockedDates={blockedDates}
+            partiallyBlockedSlots={partiallyBlockedSlots}
           />
         </div>
       </main>
