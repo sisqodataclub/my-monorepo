@@ -84,11 +84,20 @@ const InputField = ({
 /* ----------------------------------
    Main Component
 ---------------------------------- */
-const PersonalDetails = ({ details, setDetails, blockedDates = [] }) => {
+const PersonalDetails = ({ 
+  details, 
+  setDetails, 
+  blockedDates = [], 
+  partiallyBlockedSlots = {} // ✅ 1. Added this prop to accept specific blocked slots
+}) => {
   const handleChange = (e) => {
     let { name, value } = e.target;
     setDetails((prev) => ({ ...prev, [name]: value }));
   };
+
+  // ✅ 2. Figure out which specific time slots to gray out for the currently chosen date
+  const selectedDate = details.booking_date;
+  const disabledSlotsForDate = selectedDate ? (partiallyBlockedSlots[selectedDate] || []) : [];
 
   return (
     <GlassLayout title="Personal & Booking Details">
@@ -100,13 +109,15 @@ const PersonalDetails = ({ details, setDetails, blockedDates = [] }) => {
           required
           value={details.booking_date || ""}
           holidays={blockedDates}
-          onChange={(data) =>
-            setDetails((prev) => ({ ...prev, ...data }))
-          }
+          onChange={(data) => {
+            // ✅ 3. Auto-clear the timeslot if they change the date, so they don't accidentally keep a blocked slot!
+            setDetails((prev) => ({ ...prev, ...data, timeslot: "" }));
+          }}
         />
         <TimeSlotSelector
           required
           value={details.timeslot || ""}
+          disabledSlots={disabledSlotsForDate} // ✅ 4. Passed the blocked slots into your selector
           onChange={(slot) =>
             setDetails((prev) => ({ ...prev, timeslot: slot }))
           }

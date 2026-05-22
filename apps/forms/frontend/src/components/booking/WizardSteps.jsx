@@ -31,6 +31,8 @@ export default function WizardSteps({
   totalQuote,
   setCanProceed,
   handleSubmit,
+  blockedDates, // ✅ 1. Receive blockedDates prop
+  partiallyBlockedSlots, // ✅ 2. Receive partiallyBlockedSlots prop
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,7 +59,7 @@ export default function WizardSteps({
       return (
         <QuantitySelection
           selectedAreas={selectedAreas}
-          setSelectedAreas={setSelectedAreas}   // ✅ added to fix duplication
+          setSelectedAreas={setSelectedAreas}
           quantities={quantities}
           setQuantities={setQuantities}
         />
@@ -93,7 +95,14 @@ export default function WizardSteps({
       );
 
     case 8:
-      return <PersonalDetails details={details} setDetails={setDetails} />;
+      return (
+        <PersonalDetails 
+          details={details} 
+          setDetails={setDetails} 
+          blockedDates={blockedDates} // ✅ 3. Pass data to PersonalDetails
+          partiallyBlockedSlots={partiallyBlockedSlots} // ✅ 4. Pass data to PersonalDetails
+        />
+      );
 
     case 9:
       return (
