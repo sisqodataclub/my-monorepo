@@ -87,12 +87,6 @@ const InputField = ({
 const PersonalDetails = ({ details, setDetails, blockedDates = [] }) => {
   const handleChange = (e) => {
     let { name, value } = e.target;
-    
-    // Auto-uppercase UK Postcodes as the user types
-    if (name === "postcode") {
-      value = value.toUpperCase();
-    }
-    
     setDetails((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -119,10 +113,10 @@ const PersonalDetails = ({ details, setDetails, blockedDates = [] }) => {
         />
       </div>
 
-      {/* 2. Contact & Address Section (Grid Layout) */}
+      {/* 2. Contact Section (Grid Layout) */}
       <div className="mb-8 border-b border-gray-700/50 pb-8">
-        <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Your Details & Location</h3>
-        
+        <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Your Details</h3>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
           <InputField
             label="Full Name"
@@ -155,32 +149,7 @@ const PersonalDetails = ({ details, setDetails, blockedDates = [] }) => {
             onChange={handleChange}
             required
           />
-
-          <InputField
-            label="UK Postcode"
-            name="postcode"
-            autoComplete="postal-code"
-            placeholder="e.g. M1 1AA"
-            maxLength="8"
-            // Forgiving regex that allows optional space, but validates valid UK structure
-            pattern="^[A-Za-z]{1,2}[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}$" 
-            value={details.postcode || ""}
-            onChange={handleChange}
-            required
-          />
         </div>
-
-        {/* Full width textarea spans across the bottom of the grid */}
-        <InputField
-          label="Full Property Address"
-          name="address"
-          type="textarea"
-          autoComplete="street-address"
-          placeholder="House number, street name, city..."
-          value={details.address || ""}
-          onChange={handleChange}
-          required
-        />
       </div>
 
       {/* 3. Payment Section */}

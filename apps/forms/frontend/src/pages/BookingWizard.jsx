@@ -1,3 +1,4 @@
+// src/pages/BookingWizard.jsx
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import WizardSteps from "../components/booking/WizardSteps";
@@ -5,7 +6,7 @@ import WizardNavigation from "../components/booking/WizardNavigation";
 import useQuoteCalculator from "../hooks/useQuoteCalculator";
 import useAutoSnapshot, { getSessionId, regenerateSessionId } from "../hooks/useAutoSnapshot";
 import api from "../api";
-import BookingSuccessModal from "../components/BookingSuccessModal";   
+import BookingSuccessModal from "../components/BookingSuccessModal";
 
 const SIZED_AREAS = ["Kitchen", "Bedroom"];
 const SPECIAL_SERVICE = "Carpet, Upholstery & Appliances Cleaning ONLY";
@@ -13,7 +14,7 @@ const SPECIAL_SERVICE = "Carpet, Upholstery & Appliances Cleaning ONLY";
 const INITIAL_DETAILS = {
   name: "", email: "", phone: "", furnished_status: "",
   parking: "", biohazard: "", payment_method: "",
-  booking_date: "", timeslot: "", postcode: "", address: "" // ✅ Added missing fields
+  booking_date: "", timeslot: "", postcode: "", address: ""
 };
 
 export default function BookingWizard() {
@@ -60,30 +61,29 @@ export default function BookingWizard() {
   }, [step, stepsOrder]);
 
   const resetAll = useCallback(() => {
-    setStep(1); 
-    setService(""); 
-    setSelectedAreas([]); 
+    setStep(1);
+    setService("");
+    setSelectedAreas([]);
     setQuantities({});
-    setCarpets({}); 
-    setAppliances({}); 
+    setCarpets({});
+    setAppliances({});
     setDiscountCode("");
-    setDetails(INITIAL_DETAILS); 
+    setDetails(INITIAL_DETAILS);
     setError(null);
   }, []);
 
   // ---------------------------
   // EFFECTS
   // ---------------------------
-  
-  // 1. Scroll to top on step change
+
+  // Scroll to top on step change
   useEffect(() => {
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
-  // ✅ 2. NEW: Reset everything when the main service changes
+  // Reset everything when the main service changes
   useEffect(() => {
-    if (service === "") return; // ignore initial empty state
-    
+    if (service === "") return;
     setSelectedAreas([]);
     setQuantities({});
     setCarpets({});
@@ -92,12 +92,25 @@ export default function BookingWizard() {
     setDetails(INITIAL_DETAILS);
   }, [service]);
 
-  // 3. Navigate to correct next step after service selection
+  // Navigate to correct next step after service selection
   useEffect(() => {
     if (!service) return;
     setStep(service === SPECIAL_SERVICE ? 4 : 2);
   }, [service]);
 
+  // ✅ NEW: Auto‑reset ALL state when the user is on the service selector step
+  useEffect(() => {
+    if (step === 1) {
+      setService("");
+      setSelectedAreas([]);
+      setQuantities({});
+      setCarpets({});
+      setAppliances({});
+      setDiscountCode("");
+      setDetails(INITIAL_DETAILS);
+      setError(null);
+    }
+  }, [step]);
 
   // ---------------------------
   // SNAPSHOT & SUBMIT
@@ -162,7 +175,7 @@ export default function BookingWizard() {
         const paymentlink = res.data.paymentlink;
         if (paymentlink) {
           window.location.href = paymentlink;
-          return;   
+          return;
         }
         setShowSuccess(true);
         resetAll();

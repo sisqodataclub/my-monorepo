@@ -1,7 +1,7 @@
 // src/components/ServiceSelector.jsx
 import React, { useEffect, useState } from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; 
+import { getServices } from "../lib/api";
 
 const ServiceSelector = ({ value, setValue }) => {
   const [services, setServices] = useState([]);
@@ -13,7 +13,7 @@ const ServiceSelector = ({ value, setValue }) => {
       try {
         // 1. Fetch all services using your working helper (no CORS issues)
         const data = await getServices();
-        
+
         // 2. Safely extract the array (handling DRF pagination if present)
         const servicesArray = Array.isArray(data) ? data : data.results || [];
 
@@ -21,9 +21,9 @@ const ServiceSelector = ({ value, setValue }) => {
         const cleaningServices = servicesArray.filter((service) => {
           const name1 = service.category_name || "";
           const name2 = service.category_detail?.name || "";
-          
+
           return (
-            name1.toLowerCase().trim() === "cleaning_services" || 
+            name1.toLowerCase().trim() === "cleaning_services" ||
             name2.toLowerCase().trim() === "cleaning_services"
           );
         });
@@ -36,7 +36,7 @@ const ServiceSelector = ({ value, setValue }) => {
         setLoading(false);
       }
     };
-    
+
     fetchCleaningServices();
   }, []);
 
@@ -92,16 +92,11 @@ const ServiceSelector = ({ value, setValue }) => {
                 }
               `}
             >
-              <div className="flex flex-col flex-1">
+              <div className="flex flex-col flex-1 justify-center">
                 <span className="text-sm sm:text-lg font-medium">
                   {service.name}
                 </span>
-                {/* Dynamically show the price if it exists in the database */}
-                {service.price_fixed && (
-                  <span className={`text-xs mt-0.5 ${active ? 'text-blue-200' : 'text-gray-400'}`}>
-                    From £{service.price_fixed}
-                  </span>
-                )}
+                {/* ❌ Price display has been completely removed from here! */}
               </div>
 
               <input
