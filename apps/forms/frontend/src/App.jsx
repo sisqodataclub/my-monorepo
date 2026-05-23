@@ -17,6 +17,10 @@ import ReviewAndSubmit from "./pages/ReviewAndSubmit";
 import BookingWizard from "./pages/BookingWizard";
 import PerfumeAnalyticsDashboard from "./pages/Dashboard";
 import ManVanAnalyticsDashboard from "./pages/ManVanAnalyticsDashboard";
+import QuoteCheckout from "./pages/QuoteCheckout";
+
+
+
 
 import {
   About,
@@ -195,6 +199,7 @@ const App = () => {
           <Route path="/form" element={<BookingWizard />} />
           <Route path="/dashboard" element={<PerfumeAnalyticsDashboard />} />
           <Route path="/manvan" element={<ManVanAnalyticsDashboard />} />
+	  <Route path="/booking" element={<QuoteCheckout />} />
 
           {/* Protected Routes */}
           <Route path="/profile" element={
