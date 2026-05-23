@@ -25,6 +25,8 @@ export default function QuoteCheckout() {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [blockedDates, setBlockedDates] = useState([]);
   const [partiallyBlockedSlots, setPartiallyBlockedSlots] = useState({});
+  const [address, setAddress] = useState("");
+  const [postcode, setPostcode] = useState("");
 
   useEffect(() => {
     if (!quoteId) {
@@ -44,6 +46,8 @@ export default function QuoteCheckout() {
         setBookingDate(data.selected_datetime?.booking_date || "");
         setTimeslot(data.selected_datetime?.timeslot || "");
         setPaymentMethod(data.payment_method || "");
+        setAddress(data.property_details?.address || "");
+        setPostcode(data.property_details?.postcode || "");
         setBlockedDates(timesRes.data.fully_blocked_dates || []);
         setPartiallyBlockedSlots(timesRes.data.partially_blocked_slots || {});
       } catch (err) {
@@ -68,6 +72,10 @@ export default function QuoteCheckout() {
         payment_method: paymentMethod,
         selected_datetime: { booking_date: bookingDate, timeslot: timeslot },
         status: "confirmed",
+        property_details: {
+          address: address,
+          postcode: postcode,
+        },
       };
       const res = await api.patch(`/api/cleaning-bookings/${quoteId}/`, payload);
       if (res.data.paymentlink) {
@@ -106,6 +114,11 @@ export default function QuoteCheckout() {
 
   const disabledSlotsForDate = bookingDate ? (partiallyBlockedSlots[bookingDate] || []) : [];
 
+  // Extract the main service name (first item in selected_areas)
+  const mainService = quoteData.selected_areas && quoteData.selected_areas.length > 0
+    ? quoteData.selected_areas[0]
+    : "Cleaning Service";
+
   return (
     <div className="min-h-[100dvh] bg-gradient-to-br from-gray-900 to-black p-4 sm:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
       <div className="max-w-3xl mx-auto w-full space-y-6">
@@ -115,6 +128,12 @@ export default function QuoteCheckout() {
           </h1>
           <p className="text-gray-400 mt-2">Quote #{quoteId}</p>
         </header>
+
+        {/* Selected Service Banner */}
+        <div className="bg-blue-600/20 border border-blue-500/30 rounded-xl p-4 text-center">
+          <p className="text-blue-300 text-sm font-medium">Selected Service</p>
+          <p className="text-white text-xl font-bold mt-1">{mainService}</p>
+        </div>
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-center">
@@ -153,8 +172,28 @@ export default function QuoteCheckout() {
             />
           </div>
 
+          <div className="mb-8 border-b border-gray-700/50 pb-8">
+            <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Your Address (amend if needed)</h3>
+            <div className="space-y-4">
+              <textarea
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Full property address"
+                rows="2"
+                className="w-full bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+              />
+              <input
+                type="text"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+                placeholder="UK Postcode"
+                className="w-full md:w-1/2 bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              />
+            </div>
+          </div>
+
           <div>
-            <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Confirm Payment Method</h3>
+            <h3 className="text-lg font-semibold text-blue-400 mb-4">3. Confirm Payment Method</h3>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
