@@ -62,7 +62,7 @@ export default function WizardNavigation({
                 : "bg-blue-600"
             }`}
           >
-            {isSecondLast ? "BOOK NOW ✔" : "Next ➡"}
+            {isSecondLast ? "Email Quote ✔" : "Next ➡"}
           </button>
         )}
 

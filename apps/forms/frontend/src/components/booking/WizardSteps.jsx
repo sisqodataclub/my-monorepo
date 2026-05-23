@@ -134,7 +134,7 @@ export default function WizardSteps({
                   : "bg-green-600 hover:bg-green-700"
               }`}
             >
-              {isSubmitting ? "Processing…" : "Submit Booking"}
+              {isSubmitting ? "Processing…" : "Email Quote"}
             </button>
           </div>
         </div>

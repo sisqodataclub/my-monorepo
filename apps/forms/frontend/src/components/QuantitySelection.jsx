@@ -177,11 +177,6 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
                       <span className="text-white font-medium text-md sm:text-lg">
                         {displayName}
                       </span>
-                      {item.priceFixed && (
-                        <span className="text-blue-300 text-xs mt-0.5">
-                          £{item.priceFixed} each
-                        </span>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-3">
