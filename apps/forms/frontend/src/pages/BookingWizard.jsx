@@ -89,7 +89,7 @@ export default function BookingWizard() {
     return allServices.filter((s) => s.category_name?.toLowerCase() === "areas");
   }, [allServices]);
 
-  // Step flow, etc.
+  // Step flow
   const normalFlow = useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8, 9], []);
   const carpetFlow = useMemo(() => [1, 4, 5, 6, 7, 8, 9], []);
   const stepsOrder = useMemo(() =>
@@ -125,9 +125,9 @@ export default function BookingWizard() {
     setError(null);
   }, []);
 
-  // Scroll to top
+  // Scroll to top on step change (using window scroll)
   useEffect(() => {
-    if (scrollContainerRef.current) scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
   // Reset when service changes
@@ -187,18 +187,17 @@ export default function BookingWizard() {
 
   useAutoSnapshot(sessionId, snapshotPayload);
 
-  // ✅ FULLY RESTORED SUBMIT FUNCTION
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(details.email)) {
       setError("Please enter a valid email address.");
       setLoading(false);
       return;
     }
-    
+
     const normalAreas = selectedAreas.filter((a) => !SIZED_AREAS.includes(a));
     const sizedAreas = {};
     SIZED_AREAS.forEach(area => {
@@ -208,12 +207,12 @@ export default function BookingWizard() {
         sizedAreas[`${area}_Large`] = quantities[`${area}_Large`] ?? 0;
       }
     });
-    
+
     const normalQuantities = {};
     normalAreas.forEach(area => {
       normalQuantities[area] = quantities[area] ?? 1;
     });
-    
+
     const allQuantities = {
       ...sizedAreas,
       ...normalQuantities,
@@ -223,7 +222,7 @@ export default function BookingWizard() {
       biohazard_fee: details.biohazard ? biohazardFee : 0,
       discount: discount ?? 0,
     };
-    
+
     try {
       const payload = {
         session_id: sessionId,
@@ -234,9 +233,9 @@ export default function BookingWizard() {
         payment_method: details.payment_method,
         items_breakdown: breakdown,
       };
-      
+
       const res = await api.post("/api/bookings/", payload);
-      
+
       if (res.status === 200 || res.status === 201) {
         const paymentlink = res.data.paymentlink;
         if (paymentlink) {
@@ -260,31 +259,26 @@ export default function BookingWizard() {
         setError("Failed to process your booking. Please check your details and try again.");
       }
     } finally {
-      // ✅ This unlocks the button when finished
       setLoading(false);
     }
   };
 
-  // If services are still loading, show a premium skeleton loader
+  // Skeleton loader while services are loading (mimics normal page layout)
   if (servicesLoading) {
     return (
-      <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-        
+      <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 to-black">
         {/* Skeleton Header */}
-        <header className="flex-shrink-0 pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800 z-20 shadow-md flex flex-col items-center">
+        <header className="pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 border-b border-gray-800 flex flex-col items-center">
           <div className="h-7 sm:h-8 bg-gray-800 rounded w-64 sm:w-80 mb-2 animate-pulse"></div>
           <div className="h-3 sm:h-4 bg-gray-800 rounded w-48 sm:w-64 animate-pulse"></div>
         </header>
 
-        {/* Skeleton Main Content (Mimicking ServiceSelector) */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        {/* Skeleton Main Content */}
+        <main className="p-4 sm:p-6 lg:p-8">
           <div className="max-w-3xl mx-auto w-full">
             <div className="bg-gray-800/40 rounded-2xl border border-gray-700/50 p-6 animate-pulse">
-              {/* Box Title */}
               <div className="h-6 bg-gray-700 rounded w-1/3 mb-3"></div>
               <div className="h-4 bg-gray-700 rounded w-2/3 mb-8"></div>
-              
-              {/* Radio Button Options */}
               <div className="space-y-4">
                 <div className="h-16 sm:h-20 bg-gray-700/50 rounded-2xl w-full"></div>
                 <div className="h-16 sm:h-20 bg-gray-700/50 rounded-2xl w-full"></div>
@@ -294,8 +288,8 @@ export default function BookingWizard() {
           </div>
         </main>
 
-        {/* Skeleton Footer Navigation */}
-        <footer className="flex-shrink-0 p-4 lg:px-8 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 z-20">
+        {/* Skeleton Footer */}
+        <footer className="p-4 lg:px-8 bg-gray-900/95 border-t border-gray-800">
           <div className="max-w-3xl mx-auto w-full flex justify-between">
             <div className="h-12 bg-gray-800 rounded-xl w-24 sm:w-32 animate-pulse"></div>
             <div className="h-12 bg-gray-800 rounded-xl w-24 sm:w-32 animate-pulse"></div>
@@ -307,7 +301,7 @@ export default function BookingWizard() {
 
   if (servicesError) {
     return (
-      <div className="h-screen w-full bg-gray-900 flex items-center justify-center text-white">
+      <div className="min-h-screen w-full bg-gray-900 flex items-center justify-center text-white p-4">
         <div className="bg-red-900/30 p-6 rounded-xl text-center">
           <p>{servicesError}</p>
           <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-blue-600 rounded">Retry</button>
@@ -316,11 +310,11 @@ export default function BookingWizard() {
     );
   }
 
-  // Render with all pre‑fetched data passed down
+  // Main render – normal page scrolling
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-      {/* Header */}
-      <header className="flex-shrink-0 pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800 z-20 shadow-md">
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 to-black">
+      {/* Header – scrolls normally */}
+      <header className="pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 border-b border-gray-800">
         <h1 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 text-center tracking-wide">
           DDEEP CLEANING SERVICES
         </h1>
@@ -332,7 +326,8 @@ export default function BookingWizard() {
         )}
       </header>
 
-      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-0 custom-scrollbar">
+      {/* Main content – page scrolls naturally */}
+      <main className="p-4 sm:p-6 lg:p-8">
         <div className="max-w-3xl mx-auto w-full pb-8">
           <WizardSteps
             step={step} service={service} setService={setService}
@@ -342,7 +337,7 @@ export default function BookingWizard() {
             appliances={appliances} setAppliances={setAppliances}
             details={details} setDetails={setDetails}
             discountCode={discountCode} setDiscountCode={setDiscountCode}
-            totalQuote={finalTotal} setCanProceed={setCanProceed} 
+            totalQuote={finalTotal} setCanProceed={setCanProceed}
             handleSubmit={handleSubmit}
             blockedDates={blockedDates} partiallyBlockedSlots={partiallyBlockedSlots}
             cleaningServices={cleaningServices}
@@ -355,7 +350,8 @@ export default function BookingWizard() {
         </div>
       </main>
 
-      <footer className="flex-shrink-0 p-4 lg:px-8 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 z-20 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.3)]">
+      {/* Footer – normal block */}
+      <footer className="p-4 lg:px-8 bg-gray-900/95 border-t border-gray-800">
         <div className="max-w-3xl mx-auto w-full">
           <WizardNavigation step={step} stepsOrder={stepsOrder} canProceed={canProceed} details={details} goNext={goNext} goPrev={goPrev} resetAll={resetAll} loading={loading} />
         </div>
