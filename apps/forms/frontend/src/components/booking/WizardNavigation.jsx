@@ -13,12 +13,12 @@ export default function WizardNavigation({
     if (!Array.isArray(stepsOrder) || stepsOrder.length === 0) {
       return null;
     }
-  
+
     const stepIndex = stepsOrder.indexOf(step);
-  
+
     const isLast = stepIndex === stepsOrder.length - 1;
     const isSecondLast = stepIndex === stepsOrder.length - 2;
-  
+
     // 🛡️ Safe access to details fields
     const disabled =
       (step === 2 && !canProceed) ||
@@ -26,29 +26,29 @@ export default function WizardNavigation({
       (step === 8 &&
         (!details?.name ||
           !details?.email ||
-          !details?.phone ||
+          /* ✅ Removed !details?.phone so it's no longer mandatory */
           !details?.payment_method));
-  
+
     return (
       <div className="mt-6 flex justify-between gap-4">
         {/* ⬅ Previous */}
         {stepIndex > 0 && (
           <button
             onClick={goPrev}
-            className="bg-blue-600 px-4 py-2 rounded-lg"
+            className="bg-blue-600 px-4 py-2 rounded-lg text-white"
           >
             ⬅ Previous
           </button>
         )}
-  
+
         {/* ⟳ Reset */}
         <button
           onClick={resetAll}
-          className="bg-yellow-500 px-4 py-2 rounded-lg"
+          className="bg-yellow-500 px-4 py-2 rounded-lg text-white"
         >
           ⟳ Reset
         </button>
-  
+
         {/* ➡ Next / Book (hide on first + last step) */}
         {stepIndex > 0 && !isLast && (
           <button
@@ -58,15 +58,13 @@ export default function WizardNavigation({
               disabled
                 ? "bg-gray-500 cursor-not-allowed"
                 : isSecondLast
-                ? "bg-green-600"
-                : "bg-blue-600"
+                ? "bg-green-600 hover:bg-green-500"
+                : "bg-blue-600 hover:bg-blue-500"
             }`}
           >
             {isSecondLast ? "Email Quote ✔" : "Next ➡"}
           </button>
         )}
-
       </div>
     );
   }
-  
