@@ -20,6 +20,7 @@ export default function QuoteCheckout() {
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [quoteData, setQuoteData] = useState(null);
+  
   const [bookingDate, setBookingDate] = useState("");
   const [timeslot, setTimeslot] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -27,6 +28,7 @@ export default function QuoteCheckout() {
   const [partiallyBlockedSlots, setPartiallyBlockedSlots] = useState({});
   const [address, setAddress] = useState("");
   const [postcode, setPostcode] = useState("");
+  const [phone, setPhone] = useState(""); // ✅ Added phone state
 
   useEffect(() => {
     if (!quoteId) {
@@ -43,11 +45,15 @@ export default function QuoteCheckout() {
         ]);
         const data = quoteRes.data;
         setQuoteData(data);
+        
+        // Pre-fill if data exists from the initial quote
         setBookingDate(data.selected_datetime?.booking_date || "");
         setTimeslot(data.selected_datetime?.timeslot || "");
         setPaymentMethod(data.payment_method || "");
         setAddress(data.property_details?.address || "");
         setPostcode(data.property_details?.postcode || "");
+        setPhone(data.phone || ""); 
+        
         setBlockedDates(timesRes.data.fully_blocked_dates || []);
         setPartiallyBlockedSlots(timesRes.data.partially_blocked_slots || {});
       } catch (err) {
@@ -61,23 +67,41 @@ export default function QuoteCheckout() {
   }, [quoteId]);
 
   const handleConfirm = async () => {
-    if (!bookingDate || !timeslot || !paymentMethod) {
-      setError("Please select a date, time, and payment method.");
+    // ✅ Strict validation enforcing ALL crucial fields are filled out
+    if (!bookingDate || !timeslot) {
+      setError("Please select a valid date and time for your booking.");
       return;
     }
+    if (!phone.trim()) {
+      setError("Please enter your phone number so we can contact you.");
+      return;
+    }
+    if (!address.trim() || !postcode.trim()) {
+      setError("Please provide your full property address and postcode.");
+      return;
+    }
+    if (!paymentMethod) {
+      setError("Please select a payment method.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
+
     try {
       const payload = {
         payment_method: paymentMethod,
         selected_datetime: { booking_date: bookingDate, timeslot: timeslot },
         status: "confirmed",
+        phone: phone, // Send updated phone number
         property_details: {
           address: address,
           postcode: postcode,
         },
       };
+      
       const res = await api.patch(`/api/cleaning-bookings/${quoteId}/`, payload);
+      
       if (res.data.paymentlink) {
         window.location.href = res.data.paymentlink;
         return;
@@ -122,11 +146,12 @@ export default function QuoteCheckout() {
   return (
     <div className="min-h-[100dvh] bg-gradient-to-br from-gray-900 to-black p-4 sm:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
       <div className="max-w-3xl mx-auto w-full space-y-6">
+        
         <header className="text-center mb-8">
+          {/* ✅ UK spelling and removed quote ID */}
           <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-            Finalize Your Booking
+            Finalise Your Booking
           </h1>
-          <p className="text-gray-400 mt-2">Quote #{quoteId}</p>
         </header>
 
         {/* Selected Service Banner */}
@@ -136,7 +161,7 @@ export default function QuoteCheckout() {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-center">
+          <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-center animate-fade-in">
             {error}
           </div>
         )}
@@ -153,6 +178,8 @@ export default function QuoteCheckout() {
         />
 
         <GlassLayout title="Final Details">
+          
+          {/* Section 1: Date & Time */}
           <div className="mb-8 space-y-4 border-b border-gray-700/50 pb-8">
             <h3 className="text-lg font-semibold text-blue-400 mb-4">1. Confirm Date & Time</h3>
             <BookingDatePicker
@@ -172,13 +199,21 @@ export default function QuoteCheckout() {
             />
           </div>
 
+          {/* Section 2: Contact & Address */}
           <div className="mb-8 border-b border-gray-700/50 pb-8">
-            <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Your Address (amend if needed)</h3>
+            <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Your Contact Details & Address</h3>
             <div className="space-y-4">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone Number *"
+                className="w-full md:w-1/2 bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              />
               <textarea
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="Full property address"
+                placeholder="Full property address *"
                 rows="2"
                 className="w-full bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
               />
@@ -186,12 +221,13 @@ export default function QuoteCheckout() {
                 type="text"
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-                placeholder="UK Postcode"
+                placeholder="UK Postcode *"
                 className="w-full md:w-1/2 bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
               />
             </div>
           </div>
 
+          {/* Section 3: Payment */}
           <div>
             <h3 className="text-lg font-semibold text-blue-400 mb-4">3. Confirm Payment Method</h3>
             <select
@@ -202,9 +238,9 @@ export default function QuoteCheckout() {
               <option value="" disabled>Select...</option>
               <option value="cash">Cash on the day</option>
               <option value="bank_transfer">Bank Transfer</option>
-              <option value="card">Credit/Debit Card (Online)</option>
             </select>
           </div>
+          
         </GlassLayout>
 
         <div className="mt-8 flex justify-end">
@@ -218,6 +254,7 @@ export default function QuoteCheckout() {
             {submitting ? "Processing..." : `Confirm & Pay £${quoteData.total}`}
           </button>
         </div>
+        
       </div>
       <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} />
     </div>
