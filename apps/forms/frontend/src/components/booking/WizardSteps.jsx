@@ -1,6 +1,5 @@
 // src/components/booking/WizardSteps.jsx
 import React, { useState } from "react";
-
 import ServiceSelector from "../ServiceSelector";
 import AreaSelection from "../AreaSelection";
 import QuantitySelection from "../QuantitySelection";
@@ -31,8 +30,14 @@ export default function WizardSteps({
   totalQuote,
   setCanProceed,
   handleSubmit,
-  blockedDates, // ✅ 1. Receive blockedDates prop
-  partiallyBlockedSlots, // ✅ 2. Receive partiallyBlockedSlots prop
+  blockedDates,
+  partiallyBlockedSlots,
+  // New props
+  cleaningServices,
+  areasServices,
+  carpetsServices,
+  appliancesServices,
+  allAreas,
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,102 +49,33 @@ export default function WizardSteps({
 
   switch (step) {
     case 1:
-      return <ServiceSelector value={service} setValue={setService} />;
-
+      return <ServiceSelector value={service} setValue={setService} cleaningServices={cleaningServices} />;
     case 2:
-      return (
-        <AreaSelection
-          selectedAreas={selectedAreas}
-          setSelectedAreas={setSelectedAreas}
-          setCanProceed={setCanProceed}
-        />
-      );
-
+      return <AreaSelection selectedAreas={selectedAreas} setSelectedAreas={setSelectedAreas} setCanProceed={setCanProceed} areasServices={areasServices} />;
     case 3:
-      return (
-        <QuantitySelection
-          selectedAreas={selectedAreas}
-          setSelectedAreas={setSelectedAreas}
-          quantities={quantities}
-          setQuantities={setQuantities}
-        />
-      );
-
+      return <QuantitySelection selectedAreas={selectedAreas} setSelectedAreas={setSelectedAreas} quantities={quantities} setQuantities={setQuantities} allAreas={allAreas} />;
     case 4:
-      return (
-        <AppliancesCleaningSelector
-          values={appliances}
-          setValues={setAppliances}
-        />
-      );
-
+      return <AppliancesCleaningSelector values={appliances} setValues={setAppliances} appliancesServices={appliancesServices} />;
     case 5:
-      return <CleaningSelector values={carpets} setValues={setCarpets} />;
-
+      return <CleaningSelector values={carpets} setValues={setCarpets} carpetsServices={carpetsServices} />;
     case 6:
       return <PropertyDetails details={details} setDetails={setDetails} />;
-
     case 7:
-      return (
-        <ReviewSummary
-          selectedAreas={selectedAreas}
-          quantities={quantities}
-          carpets={carpets}
-          appliances={appliances}
-          SIZED_AREAS={SIZED_AREAS}
-          furnished_status={details.furnished_status}
-          biohazard={details.biohazard}
-          discountCode={discountCode}
-          setDiscountCode={setDiscountCode}
-        />
-      );
-
+      return <ReviewSummary selectedAreas={selectedAreas} quantities={quantities} carpets={carpets} appliances={appliances} SIZED_AREAS={SIZED_AREAS} furnished_status={details.furnished_status} biohazard={details.biohazard} discountCode={discountCode} setDiscountCode={setDiscountCode} />;
     case 8:
-      return (
-        <PersonalDetails 
-          details={details} 
-          setDetails={setDetails} 
-          blockedDates={blockedDates} // ✅ 3. Pass data to PersonalDetails
-          partiallyBlockedSlots={partiallyBlockedSlots} // ✅ 4. Pass data to PersonalDetails
-        />
-      );
-
+      return <PersonalDetails details={details} setDetails={setDetails} blockedDates={blockedDates} partiallyBlockedSlots={partiallyBlockedSlots} />;
     case 9:
       return (
         <div>
-          <h2 className="text-2xl font-bold text-white mb-4">
-            Final Confirmation
-          </h2>
-
-          <ReviewSummary
-            selectedAreas={selectedAreas}
-            quantities={quantities}
-            carpets={carpets}
-            appliances={appliances}
-            SIZED_AREAS={SIZED_AREAS}
-            furnished_status={details.furnished_status}
-            biohazard={details.biohazard}
-            discountCode={discountCode}
-            setDiscountCode={setDiscountCode}
-            hideDiscountInput
-          />
-
+          <h2 className="text-2xl font-bold text-white mb-4">Final Confirmation</h2>
+          <ReviewSummary selectedAreas={selectedAreas} quantities={quantities} carpets={carpets} appliances={appliances} SIZED_AREAS={SIZED_AREAS} furnished_status={details.furnished_status} biohazard={details.biohazard} discountCode={discountCode} setDiscountCode={setDiscountCode} hideDiscountInput />
           <div className="mt-6">
-            <button
-              onClick={submitOnce}
-              disabled={isSubmitting}
-              className={`px-6 py-3 rounded-xl text-white transition ${
-                isSubmitting
-                  ? "bg-gray-500 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
-            >
+            <button onClick={submitOnce} disabled={isSubmitting} className={`px-6 py-3 rounded-xl text-white transition ${isSubmitting ? "bg-gray-500 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}>
               {isSubmitting ? "Processing…" : "Email Quote"}
             </button>
           </div>
         </div>
       );
-
     default:
       return null;
   }

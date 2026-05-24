@@ -1,111 +1,34 @@
 // src/components/ServiceSelector.jsx
-import React, { useEffect, useState } from "react";
+import React from "react";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api";
 
-const ServiceSelector = ({ value, setValue }) => {
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchCleaningServices = async () => {
-      try {
-        // 1. Fetch all services using your working helper (no CORS issues)
-        const data = await getServices();
-
-        // 2. Safely extract the array (handling DRF pagination if present)
-        const servicesArray = Array.isArray(data) ? data : data.results || [];
-
-        // 3. STRICT FILTER: Only keep services where the category is exactly 'cleaning_services'
-        const cleaningServices = servicesArray.filter((service) => {
-          const name1 = service.category_name || "";
-          const name2 = service.category_detail?.name || "";
-
-          return (
-            name1.toLowerCase().trim() === "cleaning_services" ||
-            name2.toLowerCase().trim() === "cleaning_services"
-          );
-        });
-
-        setServices(cleaningServices);
-      } catch (err) {
-        console.error("Failed to fetch cleaning services:", err);
-        setError("Could not load services. Please refresh the page.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCleaningServices();
-  }, []);
-
-  if (loading) {
-    return (
-      <GlassLayout title="Choose Your Service" subtitle="Loading available services...">
-        <div className="text-white text-center py-8 animate-pulse">Loading...</div>
-      </GlassLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <GlassLayout title="Choose Your Service" subtitle="Something went wrong">
-        <div className="text-red-400 text-center py-8 bg-red-900/20 rounded-lg border border-red-500/30">
-          {error}
-        </div>
-      </GlassLayout>
-    );
-  }
-
-  if (services.length === 0) {
-    return (
-      <GlassLayout title="Choose Your Service" subtitle="No services found">
-        <div className="text-yellow-400 text-center py-8">
-          No cleaning services available at the moment.
-        </div>
-      </GlassLayout>
-    );
-  }
-
+const ServiceSelector = ({ value, setValue, cleaningServices }) => {
   return (
     <GlassLayout
       title="Choose Your Service"
       subtitle="Select the cleaning service you need to get started."
     >
       <div className="flex flex-col gap-4">
-        {services.map((service) => {
+        {cleaningServices.map((service) => {
           const active = value === service.name;
-
           return (
             <label
               key={service.id}
-              className={`
-                relative cursor-pointer select-none
-                p-4 sm:p-5 rounded-2xl
-                flex items-start gap-3
-                transition-all duration-300
-                ${
-                  active
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "bg-gray-800/60 text-gray-200 hover:bg-gray-700"
-                }
-              `}
+              className={`relative cursor-pointer select-none p-4 sm:p-5 rounded-2xl flex items-start gap-3 transition-all duration-300 ${
+                active
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : "bg-gray-800/60 text-gray-200 hover:bg-gray-700"
+              }`}
             >
               <div className="flex flex-col flex-1 justify-center">
-                <span className="text-sm sm:text-lg font-medium">
-                  {service.name}
-                </span>
-                {/* ❌ Price display has been completely removed from here! */}
+                <span className="text-sm sm:text-lg font-medium">{service.name}</span>
               </div>
-
               <input
                 type="radio"
                 checked={active}
                 onChange={() => setValue(service.name)}
                 className="mt-1 w-5 h-5 accent-blue-400 relative z-10"
               />
-
               {active && (
                 <div className="absolute inset-0 rounded-2xl bg-blue-400/20 blur-xl animate-pulse pointer-events-none" />
               )}
