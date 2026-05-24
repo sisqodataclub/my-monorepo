@@ -1,6 +1,6 @@
 // src/pages/BookingWizard.jsx
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import WizardSteps from "../components/booking/WizardSteps";
 import WizardNavigation from "../components/booking/WizardNavigation";
 import useQuoteCalculator from "../hooks/useQuoteCalculator";
@@ -21,6 +21,8 @@ const INITIAL_DETAILS = {
 export default function BookingWizard() {
   const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
+  const [searchParams] = useSearchParams();
+  const quoteId = searchParams.get("quote_id");
 
   // Pre‑fetched services
   const [allServices, setAllServices] = useState([]);
@@ -87,7 +89,7 @@ export default function BookingWizard() {
     return allServices.filter((s) => s.category_name?.toLowerCase() === "areas");
   }, [allServices]);
 
-  // Step flow, etc. (unchanged from your existing code)
+  // Step flow, etc.
   const normalFlow = useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8, 9], []);
   const carpetFlow = useMemo(() => [1, 4, 5, 6, 7, 8, 9], []);
   const stepsOrder = useMemo(() =>
@@ -185,15 +187,120 @@ export default function BookingWizard() {
 
   useAutoSnapshot(sessionId, snapshotPayload);
 
+  // ✅ FULLY RESTORED SUBMIT FUNCTION
   const handleSubmit = async () => {
-    // ... (unchanged from your current handleSubmit)
+    setLoading(true);
+    setError(null);
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(details.email)) {
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+    
+    const normalAreas = selectedAreas.filter((a) => !SIZED_AREAS.includes(a));
+    const sizedAreas = {};
+    SIZED_AREAS.forEach(area => {
+      if (selectedAreas.includes(area)) {
+        sizedAreas[`${area}_Small`] = quantities[`${area}_Small`] ?? 0;
+        sizedAreas[`${area}_Medium`] = quantities[`${area}_Medium`] ?? 0;
+        sizedAreas[`${area}_Large`] = quantities[`${area}_Large`] ?? 0;
+      }
+    });
+    
+    const normalQuantities = {};
+    normalAreas.forEach(area => {
+      normalQuantities[area] = quantities[area] ?? 1;
+    });
+    
+    const allQuantities = {
+      ...sizedAreas,
+      ...normalQuantities,
+      ...carpets,
+      ...appliances,
+      furnished_fee: furnishedFee,
+      biohazard_fee: details.biohazard ? biohazardFee : 0,
+      discount: discount ?? 0,
+    };
+    
+    try {
+      const payload = {
+        session_id: sessionId,
+        ...details,
+        selected_areas: [service, ...normalAreas],
+        quantities: allQuantities,
+        total: finalTotal,
+        payment_method: details.payment_method,
+        items_breakdown: breakdown,
+      };
+      
+      const res = await api.post("/api/bookings/", payload);
+      
+      if (res.status === 200 || res.status === 201) {
+        const paymentlink = res.data.paymentlink;
+        if (paymentlink) {
+          window.location.href = paymentlink;
+          return;
+        }
+        setShowSuccess(true);
+        resetAll();
+        setSessionId(regenerateSessionId());
+      }
+    } catch (err) {
+      console.error("Booking Error:", err);
+      if (err.response && err.response.data) {
+        const backendErrors = err.response.data;
+        const firstKey = Object.keys(backendErrors)[0];
+        const firstMessage = Array.isArray(backendErrors[firstKey])
+          ? backendErrors[firstKey][0]
+          : backendErrors[firstKey];
+        setError(`${firstKey.charAt(0).toUpperCase() + firstKey.slice(1)}: ${firstMessage}`);
+      } else {
+        setError("Failed to process your booking. Please check your details and try again.");
+      }
+    } finally {
+      // ✅ This unlocks the button when finished
+      setLoading(false);
+    }
   };
 
-  // If services are still loading, show a full‑screen loader once
+  // If services are still loading, show a premium skeleton loader
   if (servicesLoading) {
     return (
-      <div className="h-screen w-full bg-gray-900 flex items-center justify-center text-white">
-        <div className="animate-pulse text-xl">Loading booking wizard...</div>
+      <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
+        
+        {/* Skeleton Header */}
+        <header className="flex-shrink-0 pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800 z-20 shadow-md flex flex-col items-center">
+          <div className="h-7 sm:h-8 bg-gray-800 rounded w-64 sm:w-80 mb-2 animate-pulse"></div>
+          <div className="h-3 sm:h-4 bg-gray-800 rounded w-48 sm:w-64 animate-pulse"></div>
+        </header>
+
+        {/* Skeleton Main Content (Mimicking ServiceSelector) */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="max-w-3xl mx-auto w-full">
+            <div className="bg-gray-800/40 rounded-2xl border border-gray-700/50 p-6 animate-pulse">
+              {/* Box Title */}
+              <div className="h-6 bg-gray-700 rounded w-1/3 mb-3"></div>
+              <div className="h-4 bg-gray-700 rounded w-2/3 mb-8"></div>
+              
+              {/* Radio Button Options */}
+              <div className="space-y-4">
+                <div className="h-16 sm:h-20 bg-gray-700/50 rounded-2xl w-full"></div>
+                <div className="h-16 sm:h-20 bg-gray-700/50 rounded-2xl w-full"></div>
+                <div className="h-16 sm:h-20 bg-gray-700/50 rounded-2xl w-full"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Skeleton Footer Navigation */}
+        <footer className="flex-shrink-0 p-4 lg:px-8 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 z-20">
+          <div className="max-w-3xl mx-auto w-full flex justify-between">
+            <div className="h-12 bg-gray-800 rounded-xl w-24 sm:w-32 animate-pulse"></div>
+            <div className="h-12 bg-gray-800 rounded-xl w-24 sm:w-32 animate-pulse"></div>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -212,7 +319,7 @@ export default function BookingWizard() {
   // Render with all pre‑fetched data passed down
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-      {/* Header (unchanged) */}
+      {/* Header */}
       <header className="flex-shrink-0 pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800 z-20 shadow-md">
         <h1 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 text-center tracking-wide">
           DDEEP CLEANING SERVICES
@@ -235,14 +342,15 @@ export default function BookingWizard() {
             appliances={appliances} setAppliances={setAppliances}
             details={details} setDetails={setDetails}
             discountCode={discountCode} setDiscountCode={setDiscountCode}
-            totalQuote={finalTotal} setCanProceed={setCanProceed} handleSubmit={handleSubmit}
+            totalQuote={finalTotal} setCanProceed={setCanProceed} 
+            handleSubmit={handleSubmit}
             blockedDates={blockedDates} partiallyBlockedSlots={partiallyBlockedSlots}
-            // ✅ Pass pre‑filtered data
             cleaningServices={cleaningServices}
             areasServices={areasServices}
             carpetsServices={carpetsServices}
             appliancesServices={appliancesServices}
             allAreas={allAreas}
+            loading={loading}
           />
         </div>
       </main>

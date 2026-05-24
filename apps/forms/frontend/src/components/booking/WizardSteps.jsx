@@ -1,5 +1,5 @@
 // src/components/booking/WizardSteps.jsx
-import React, { useState } from "react";
+import React from "react";
 import ServiceSelector from "../ServiceSelector";
 import AreaSelection from "../AreaSelection";
 import QuantitySelection from "../QuantitySelection";
@@ -32,20 +32,13 @@ export default function WizardSteps({
   handleSubmit,
   blockedDates,
   partiallyBlockedSlots,
-  // New props
   cleaningServices,
   areasServices,
   carpetsServices,
   appliancesServices,
   allAreas,
+  loading,   // ✅ parent's loading state (true when submitting)
 }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const submitOnce = () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    handleSubmit();
-  };
 
   switch (step) {
     case 1:
@@ -70,8 +63,12 @@ export default function WizardSteps({
           <h2 className="text-2xl font-bold text-white mb-4">Final Confirmation</h2>
           <ReviewSummary selectedAreas={selectedAreas} quantities={quantities} carpets={carpets} appliances={appliances} SIZED_AREAS={SIZED_AREAS} furnished_status={details.furnished_status} biohazard={details.biohazard} discountCode={discountCode} setDiscountCode={setDiscountCode} hideDiscountInput />
           <div className="mt-6">
-            <button onClick={submitOnce} disabled={isSubmitting} className={`px-6 py-3 rounded-xl text-white transition ${isSubmitting ? "bg-gray-500 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}>
-              {isSubmitting ? "Processing…" : "Email Quote"}
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className={`px-6 py-3 rounded-xl text-white transition ${loading ? "bg-gray-500 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
+            >
+              {loading ? "Processing…" : "Submit Booking"}
             </button>
           </div>
         </div>
