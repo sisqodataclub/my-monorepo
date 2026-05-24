@@ -92,10 +92,6 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     const oldQty = quantities[id] || 0;
     const newQty = Math.max(0, oldQty - 1);
     setQuantities((prev) => ({ ...prev, [id]: newQty }));
-
-    // Optional: if this is a variation and it becomes 0, and no other variations of the same base area are selected,
-    // you could re‑add the base area ID. For simplicity, we'll leave the base area removed.
-    // The user can always go back to the AreaSelection step to re‑select the base area.
   };
 
   if (loading) {
@@ -173,12 +169,9 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
                     key={item.id}
                     className="flex justify-between items-center bg-gray-800/80 border border-gray-600 p-4 rounded-xl"
                   >
-                    <div className="flex flex-col">
-                      <span className="text-white font-medium text-md sm:text-lg">
-                        {displayName}
-                      </span>
-                    </div>
-
+                    <span className="text-white font-medium text-md sm:text-lg">
+                      {displayName}
+                    </span>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => decrement(item.id)}

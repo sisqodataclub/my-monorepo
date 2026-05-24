@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // ✅ Using our powerful API helper
+import { getServices } from "../lib/api";
 
 const AppliancesCleaningSelector = ({ values, setValues }) => {
   const [appliances, setAppliances] = useState([]);
@@ -12,21 +12,15 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
   useEffect(() => {
     const fetchAppliances = async () => {
       try {
-        // ✅ 1. Let the backend filter via query string (added include_addons=true just in case!)
-        // ✅ 2. The pagination loop in api.js will automatically grab ALL pages
         const allFetchedAppliances = await getServices("?category_name=appliances&include_addons=true");
-        
-        // ✅ 3. Strict frontend fallback to be bulletproof against typos/spaces
         const bulletproofAppliances = allFetchedAppliances.filter((service) => {
           const name1 = service.category_name || "";
           const name2 = service.category_detail?.name || "";
-          
           return (
             name1.toLowerCase().trim() === "appliances" ||
             name2.toLowerCase().trim() === "appliances"
           );
         });
-
         setAppliances(bulletproofAppliances);
       } catch (err) {
         console.error("Error fetching appliances:", err);
@@ -100,12 +94,7 @@ const AppliancesCleaningSelector = ({ values, setValues }) => {
                 <span className="font-medium leading-snug uppercase">
                   {item.name}
                 </span>
-                {/* ✅ Updated to use the mapped camelCase priceFixed from api.js */}
-                {item.priceFixed && (
-                  <span className="text-xs opacity-75 mt-0.5">
-                    +£{item.priceFixed}
-                  </span>
-                )}
+                {/* ❌ Price display completely removed */}
               </div>
 
               <div className="flex items-center gap-3 relative z-10">

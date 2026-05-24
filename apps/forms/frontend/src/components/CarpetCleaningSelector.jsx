@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GlassLayout from "./ui/GlassLayout";
-import { getServices } from "../lib/api"; // ✅ Using our powerful API helper
+import { getServices } from "../lib/api";
 
 // ---------------------------------------------------
 // COUNTER COMPONENT
@@ -41,21 +41,15 @@ const CleaningSelector = ({ values, setValues }) => {
   useEffect(() => {
     const fetchCarpetServices = async () => {
       try {
-        // ✅ 1. Backend filter via query string (added include_addons=true just in case!)
-        // ✅ 2. The pagination loop in api.js grabs ALL pages automatically
         const allFetchedCarpets = await getServices("?category_name=carpets&include_addons=true");
-        
-        // ✅ 3. Strict frontend fallback to be completely bulletproof
         const bulletproofCarpets = allFetchedCarpets.filter((service) => {
           const name1 = service.category_name || "";
           const name2 = service.category_detail?.name || "";
-          
           return (
             name1.toLowerCase().trim() === "carpets" ||
             name2.toLowerCase().trim() === "carpets"
           );
         });
-
         setServices(bulletproofCarpets);
       } catch (err) {
         console.error("Error fetching carpet services:", err);
@@ -64,7 +58,6 @@ const CleaningSelector = ({ values, setValues }) => {
         setLoading(false);
       }
     };
-    
     fetchCarpetServices();
   }, []);
 
@@ -137,18 +130,7 @@ const CleaningSelector = ({ values, setValues }) => {
             >
               <div className="flex flex-col">
                 <span className="font-medium leading-snug">{service.name}</span>
-                
-                {/* ✅ Updated to camelCase mapping from api.js */}
-                {service.priceFixed && (
-                  <span className="text-xs opacity-75 mt-0.5">
-                    +£{service.priceFixed}
-                  </span>
-                )}
-                {service.pricePerHour && !service.priceFixed && (
-                  <span className="text-xs opacity-75 mt-0.5">
-                    £{service.pricePerHour}/hour
-                  </span>
-                )}
+                {/* ❌ All price displays have been removed */}
               </div>
 
               <Counter
