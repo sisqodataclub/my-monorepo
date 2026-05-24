@@ -158,7 +158,7 @@ const PersonalDetails = ({
             placeholder="e.g. 07700 900000"
             value={details.phone || ""}
             onChange={handleChange}
-            required
+            
           />
         </div>
       </div>

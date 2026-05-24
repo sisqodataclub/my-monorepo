@@ -68,7 +68,7 @@ export default function WizardSteps({
               disabled={loading}
               className={`px-6 py-3 rounded-xl text-white transition ${loading ? "bg-gray-500 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
             >
-              {loading ? "Processing…" : "Submit Booking"}
+              {loading ? "Processing…" : "Email Quote"}
             </button>
           </div>
         </div>
