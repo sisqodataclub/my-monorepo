@@ -16,14 +16,14 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
         const bulletproofAreas = allFetchedAreas.filter((service) => {
           const name1 = service.category_name || "";
           const name2 = service.category_detail?.name || "";
-          
-          // ✅ Keep only services belonging to "Areas" category AND whose name does NOT contain an underscore
+
+          // Keep only services belonging to "Areas" category AND whose name does NOT contain an underscore
           const isAreasCategory = (
             name1.toLowerCase().trim() === "areas" ||
             name2.toLowerCase().trim() === "areas"
           );
           const isBaseArea = !service.name.includes("_"); // exclude variations like Bedroom_Small
-          
+
           return isAreasCategory && isBaseArea;
         });
 
@@ -106,11 +106,7 @@ const AreaSelection = ({ selectedAreas, setSelectedAreas, setCanProceed }) => {
                 <span className="text-base sm:text-lg font-medium leading-snug">
                   {area.name}
                 </span>
-                {area.priceFixed && (
-                  <span className={`text-xs mt-0.5 ${active ? 'text-blue-200' : 'text-gray-400'}`}>
-                    +£{area.priceFixed}
-                  </span>
-                )}
+                {/* ❌ Price display removed */}
               </div>
 
               <input

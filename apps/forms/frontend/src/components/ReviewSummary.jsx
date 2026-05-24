@@ -45,13 +45,15 @@ export default function ReviewSummary({
           <tr>
             <th className="px-4 py-3 text-left">Item</th>
             <th className="px-4 py-3 text-center">Qty</th>
+            {/* ❌ Price column commented out – uncomment when needed
             <th className="px-4 py-3 text-right">Total</th>
+            */}
           </tr>
         </thead>
         <tbody className={`transition-opacity ${loading ? "opacity-50" : "opacity-100"}`}>
           {breakdown.length === 0 ? (
             <tr>
-              <td colSpan="3" className="px-4 py-4 text-center text-gray-400">
+              <td colSpan="2" className="px-4 py-4 text-center text-gray-400">
                 No items selected yet.
               </td>
             </tr>
@@ -60,17 +62,19 @@ export default function ReviewSummary({
               <tr key={idx} className="border-t border-gray-800/50">
                 <td className="px-4 py-3">{line.name}</td>
                 <td className="px-4 py-3 text-center">{line.quantity || "-"}</td>
-                {/* Dynamically color negative discounts vs positive charges */}
+                {/* ❌ Price cell commented out
                 <td className={`px-4 py-3 text-right ${line.total < 0 ? 'text-green-400' : ''}`}>
                   {line.total < 0 ? "-" : ""}£{Math.abs(line.total).toFixed(2)}
                 </td>
+                */}
               </tr>
             ))
           )}
         </tbody>
       </table>
 
-      {/* Quote Summary */}
+      {/* ❌ Quote Summary block (subtotal, fees, discount, final price) – commented out */}
+      {/*
       <div className="bg-black/60 p-4 rounded-xl text-white space-y-2">
         <div className="flex justify-between text-gray-300">
           <span>Subtotal:</span>
@@ -96,8 +100,10 @@ export default function ReviewSummary({
           <span>£{finalTotal.toFixed(2)}</span>
         </div>
       </div>
+      */}
 
-      {/* Discount Code Input */}
+      {/* ❌ Discount Code Input – also commented out (because it affects pricing) */}
+      {/*
       {!hideDiscountInput && (
         <div className="mt-6">
           <input
@@ -112,6 +118,7 @@ export default function ReviewSummary({
           )}
         </div>
       )}
+      */}
     </div>
   );
 }
