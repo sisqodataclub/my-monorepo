@@ -54,7 +54,7 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     setQuantities((prev) => ({ ...prev, [id]: newQty }));
   };
 
-  // Build UI groups
+  // Build UI groups with stable ordering
   const renderGroups = [];
   const baseIdsToRender = new Set(selectedAreas);
   Object.keys(quantities).forEach(id => {
@@ -66,7 +66,20 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     }
   });
 
-  baseIdsToRender.forEach(baseId => {
+  // Sort base IDs to maintain a consistent order: first by order in selectedAreas, then by ID
+  const sortedBaseIds = Array.from(baseIdsToRender).sort((a, b) => {
+    const indexA = selectedAreas.indexOf(a);
+    const indexB = selectedAreas.indexOf(b);
+    // Both in selectedAreas → sort by selection order
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    // One is in selectedAreas → put the selected one first
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    // Neither in selectedAreas → sort by ID (ascending)
+    return a - b;
+  });
+
+  sortedBaseIds.forEach(baseId => {
     const baseArea = allAreas.find((a) => a.id === baseId);
     if (!baseArea) return;
     if (SIZED_AREAS_NAMES.includes(baseArea.name)) {
