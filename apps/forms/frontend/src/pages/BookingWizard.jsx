@@ -134,7 +134,7 @@ export default function BookingWizard() {
     setError(null);
   }, []);
 
-  // Scroll to top on step change inside the scroll container
+  // Scroll to top on step change
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
@@ -198,7 +198,7 @@ export default function BookingWizard() {
 
   useAutoSnapshot(sessionId, snapshotPayload);
 
-  // ✅ CORRECTED handleSubmit – uses service IDs for all items
+  // ✅ CORRECTED handleSubmit – includes variation IDs regardless of selectedAreas
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -213,31 +213,28 @@ export default function BookingWizard() {
     const normalAreas = selectedAreas.filter((a) => !SIZED_AREAS.includes(a));
     const sizedAreas = {};
 
-    // Helper to get ID from area name
     const getId = (name) => areaNameToId[name];
 
-    // Process sized areas (Kitchen, Bedroom) – use variation IDs
+    // Process sized areas – directly use variation quantities
     SIZED_AREAS.forEach(area => {
-      if (selectedAreas.includes(area)) {
-        const sizes = ["Small", "Medium", "Large"];
-        sizes.forEach(size => {
-          const variationName = `${area}_${size}`;
-          const varId = getId(variationName);
-          if (varId && (quantities[varId] || 0) > 0) {
-            sizedAreas[varId] = quantities[varId];
-          }
-        });
-      }
+      const sizes = ["Small", "Medium", "Large"];
+      sizes.forEach(size => {
+        const variationName = `${area}_${size}`;
+        const varId = getId(variationName);
+        if (varId && (quantities[varId] || 0) > 0) {
+          sizedAreas[varId] = quantities[varId];
+        }
+      });
     });
 
-    // Process normal areas (non‑sized) – use area IDs
+    // Process normal areas (non‑sized)
     const normalQuantities = {};
     normalAreas.forEach(area => {
       const areaId = getId(area);
       if (areaId && (quantities[areaId] || 0) > 0) {
         normalQuantities[areaId] = quantities[areaId];
-      } else if (!areaId) {
-        // Fallback (should not happen)
+      } else {
+        // Fallback – should not happen
         normalQuantities[area] = quantities[area] ?? 1;
       }
     });
@@ -245,12 +242,14 @@ export default function BookingWizard() {
     const allQuantities = {
       ...sizedAreas,
       ...normalQuantities,
-      ...carpets,    // already using IDs
-      ...appliances, // already using IDs
+      ...carpets,
+      ...appliances,
       furnished_fee: furnishedFee,
       biohazard_fee: details.biohazard ? biohazardFee : 0,
       discount: discount ?? 0,
     };
+
+    console.log("allQuantities before submit:", allQuantities); // Debug
 
     try {
       const payload = {
