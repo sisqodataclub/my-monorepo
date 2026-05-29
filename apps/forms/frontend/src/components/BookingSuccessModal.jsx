@@ -41,12 +41,6 @@ export default function BookingSuccessModal({ show, onClose, type = "booking" })
           >
             Make a New Booking
           </a>
-          <button
-            onClick={onClose}
-            className="w-full text-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-xl transition-colors"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
