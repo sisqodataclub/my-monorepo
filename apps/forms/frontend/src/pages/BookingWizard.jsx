@@ -386,7 +386,7 @@ export default function BookingWizard() {
           <WizardNavigation step={step} stepsOrder={stepsOrder} canProceed={canProceed} details={details} goNext={goNext} goPrev={goPrev} resetAll={resetAll} loading={loading} />
         </div>
       </footer>
-      <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} type="quote"   // ✅ add this />
+      <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} type="quote" />
     </div>
   );
 }
