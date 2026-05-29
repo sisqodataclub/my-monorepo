@@ -89,6 +89,15 @@ export default function BookingWizard() {
     return allServices.filter((s) => s.category_name?.toLowerCase() === "areas");
   }, [allServices]);
 
+  // Build a map from area name to service ID
+  const areaNameToId = useMemo(() => {
+    const map = {};
+    allAreas.forEach(area => {
+      map[area.name] = area.id;
+    });
+    return map;
+  }, [allAreas]);
+
   // Step flow
   const normalFlow = useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8, 9], []);
   const carpetFlow = useMemo(() => [1, 4, 5, 6, 7, 8, 9], []);
@@ -189,43 +198,60 @@ export default function BookingWizard() {
 
   useAutoSnapshot(sessionId, snapshotPayload);
 
-  // Submit Handler
+  // ✅ CORRECTED handleSubmit – uses service IDs for all items
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(details.email)) {
       setError("Please enter a valid email address.");
       setLoading(false);
       return;
     }
-    
+
     const normalAreas = selectedAreas.filter((a) => !SIZED_AREAS.includes(a));
     const sizedAreas = {};
+
+    // Helper to get ID from area name
+    const getId = (name) => areaNameToId[name];
+
+    // Process sized areas (Kitchen, Bedroom) – use variation IDs
     SIZED_AREAS.forEach(area => {
       if (selectedAreas.includes(area)) {
-        sizedAreas[`${area}_Small`] = quantities[`${area}_Small`] ?? 0;
-        sizedAreas[`${area}_Medium`] = quantities[`${area}_Medium`] ?? 0;
-        sizedAreas[`${area}_Large`] = quantities[`${area}_Large`] ?? 0;
+        const sizes = ["Small", "Medium", "Large"];
+        sizes.forEach(size => {
+          const variationName = `${area}_${size}`;
+          const varId = getId(variationName);
+          if (varId && (quantities[varId] || 0) > 0) {
+            sizedAreas[varId] = quantities[varId];
+          }
+        });
       }
     });
-    
+
+    // Process normal areas (non‑sized) – use area IDs
     const normalQuantities = {};
     normalAreas.forEach(area => {
-      normalQuantities[area] = quantities[area] ?? 1;
+      const areaId = getId(area);
+      if (areaId && (quantities[areaId] || 0) > 0) {
+        normalQuantities[areaId] = quantities[areaId];
+      } else if (!areaId) {
+        // Fallback (should not happen)
+        normalQuantities[area] = quantities[area] ?? 1;
+      }
     });
-    
+
     const allQuantities = {
       ...sizedAreas,
       ...normalQuantities,
-      ...carpets,
-      ...appliances,
+      ...carpets,    // already using IDs
+      ...appliances, // already using IDs
       furnished_fee: furnishedFee,
       biohazard_fee: details.biohazard ? biohazardFee : 0,
       discount: discount ?? 0,
     };
-    
+
     try {
       const payload = {
         session_id: sessionId,
@@ -236,9 +262,9 @@ export default function BookingWizard() {
         payment_method: details.payment_method,
         items_breakdown: breakdown,
       };
-      
+
       const res = await api.post("/api/bookings/", payload);
-      
+
       if (res.status === 200 || res.status === 201) {
         const paymentlink = res.data.paymentlink;
         if (paymentlink) {
@@ -268,22 +294,15 @@ export default function BookingWizard() {
 
   // -----------------------------------------------------
   // RENDER: Skeleton Loader
-  // Matches the scrolling header/main and fixed footer layout
   // -----------------------------------------------------
   if (servicesLoading) {
     return (
       <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-        
-        {/* Scrollable Container (Skeleton) */}
         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-          
-          {/* Skeleton Header */}
           <header className="pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800 flex flex-col items-center">
             <div className="h-7 sm:h-8 bg-gray-800 rounded w-64 sm:w-80 mb-2 animate-pulse"></div>
             <div className="h-3 sm:h-4 bg-gray-800 rounded w-48 sm:w-64 animate-pulse"></div>
           </header>
-
-          {/* Skeleton Main Content */}
           <main className="p-4 sm:p-6 lg:p-8">
             <div className="max-w-3xl mx-auto w-full pb-4">
               <div className="bg-gray-800/40 rounded-2xl border border-gray-700/50 p-6 animate-pulse">
@@ -298,8 +317,6 @@ export default function BookingWizard() {
             </div>
           </main>
         </div>
-
-        {/* Skeleton Footer (Fixed) */}
         <footer className="flex-shrink-0 p-4 lg:px-8 bg-gray-900/95 backdrop-blur-md border-t border-gray-800 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
           <div className="max-w-3xl mx-auto w-full flex justify-between">
             <div className="h-12 bg-gray-800 rounded-xl w-24 sm:w-32 animate-pulse"></div>
@@ -310,9 +327,6 @@ export default function BookingWizard() {
     );
   }
 
-  // -----------------------------------------------------
-  // RENDER: Error State
-  // -----------------------------------------------------
   if (servicesError) {
     return (
       <div className="h-[100dvh] w-full bg-gray-900 flex items-center justify-center text-white">
@@ -329,11 +343,7 @@ export default function BookingWizard() {
   // -----------------------------------------------------
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
-      
-      {/* Scrollable Container (Contains Header AND Main Content) */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar relative">
-        
-        {/* Header – scrolls naturally with the page */}
         <header className="pt-6 pb-4 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
           <h1 className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 text-center tracking-wide">
             DDEEP CLEANING SERVICES
@@ -345,8 +355,6 @@ export default function BookingWizard() {
             </div>
           )}
         </header>
-
-        {/* Main content */}
         <main className="p-4 sm:p-6 lg:p-8">
           <div className="max-w-3xl mx-auto w-full pb-4">
             <WizardSteps
@@ -370,14 +378,11 @@ export default function BookingWizard() {
           </div>
         </main>
       </div>
-
-      {/* Footer – locked to bottom with a subtle border and shadow */}
       <footer className="flex-shrink-0 p-4 lg:px-8 bg-gray-900/95 backdrop-blur-md border-t border-gray-800 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
         <div className="max-w-3xl mx-auto w-full">
           <WizardNavigation step={step} stepsOrder={stepsOrder} canProceed={canProceed} details={details} goNext={goNext} goPrev={goPrev} resetAll={resetAll} loading={loading} />
         </div>
       </footer>
-
       <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} />
     </div>
   );
