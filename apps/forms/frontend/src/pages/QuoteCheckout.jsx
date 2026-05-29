@@ -256,7 +256,7 @@ export default function QuoteCheckout() {
         </div>
         
       </div>
-      <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} type="booking"   // optional, but explicit />
+      <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} type="booking" />
     </div>
   );
 }
