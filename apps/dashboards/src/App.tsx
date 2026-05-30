@@ -1,3 +1,5 @@
+
+
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import { LayoutDashboard, MessageSquare, Settings, Bell, Search } from 'lucide-react';
@@ -5,12 +7,14 @@ import { LayoutDashboard, MessageSquare, Settings, Bell, Search } from 'lucide-r
 import OverviewPage from './pages/OverviewPage';
 import InquiriesPage from './pages/InquiriesPage';
 import LoginPage from './pages/LoginPage';
+import BookingsPage from './pages/BookingsPage';
 
 function Sidebar() {
   const location = useLocation();
 
   const navItems = [
     { name: 'Overview', path: '/', icon: LayoutDashboard },
+    { name: 'Bookings', path: '/bookings', icon: Calendar },
     { name: 'Inquiries', path: '/inquiries', icon: MessageSquare },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
@@ -101,6 +105,8 @@ export default function App() {
                     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
                       <Routes>
                         <Route path="/" element={<OverviewPage />} />
+			<Route path="bookings" element={<BookingsPage />} />
+
                         <Route path="/inquiries" element={<InquiriesPage />} />
                       </Routes>
                     </main>
