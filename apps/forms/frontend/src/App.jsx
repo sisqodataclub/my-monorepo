@@ -1,6 +1,9 @@
+// src/App.jsx
 import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { Helmet } from "react-helmet-async"; // <-- ADDED HELMET IMPORT
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -18,9 +21,6 @@ import BookingWizard from "./pages/BookingWizard";
 import PerfumeAnalyticsDashboard from "./pages/Dashboard";
 import ManVanAnalyticsDashboard from "./pages/ManVanAnalyticsDashboard";
 import QuoteCheckout from "./pages/QuoteCheckout";
-
-
-
 
 import {
   About,
@@ -44,9 +44,25 @@ function Home() {
 
   return (
     <div className="relative z-0 bg-primary min-h-screen text-white">
+      
+      {/* --- ADDED SEO HELMET BLOCK --- */}
+      <Helmet>
+        <title>Select a Service | D Deep Cleaning Services</title>
+        <meta name="description" content="Choose your cleaning service category to get started with instant online booking." />
+        <meta property="og:title" content="Select a Service | D Deep Cleaning" />
+        <meta property="og:description" content="Instant online booking for cleaning services in Manchester and the North West." />
+        <meta property="og:image" content="https://www.ddeepcleaningservices.com/logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        
+        {/* Canonical link pushing SEO authority to your main website */}
+        <link rel="canonical" href="https://www.ddeepcleaningservices.com/" />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
+      {/* ------------------------------ */}
+
       {/* Top Section: Selection Menu */}
       <div className="bg-hero-pattern bg-cover bg-no-repeat bg-center min-h-[80vh] flex flex-col items-center justify-center pb-20 pt-24">
-        
+
         {!showContact ? (
           <>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-12 text-center px-4">
@@ -118,13 +134,13 @@ function Home() {
         ) : (
           /* Contact Section - Replaces the cards entirely when shown */
           <div className="w-full max-w-6xl px-4 flex flex-col items-center">
-            <button 
+            <button
               onClick={() => setShowContact(false)}
               className="self-start mb-6 text-gray-300 hover:text-white flex items-center gap-2 transition-colors text-lg font-bold bg-white/5 px-6 py-2 rounded-full border border-white/10 shadow-lg hover:bg-white/10 z-10"
             >
               ← Back to Services
             </button>
-            
+
             <div className="relative z-0 w-full bg-[#100d25] rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
               <Contact />
               <StarsCanvas />
@@ -199,7 +215,7 @@ const App = () => {
           <Route path="/form" element={<BookingWizard />} />
           <Route path="/dashboard" element={<PerfumeAnalyticsDashboard />} />
           <Route path="/manvan" element={<ManVanAnalyticsDashboard />} />
-	  <Route path="/booking" element={<QuoteCheckout />} />
+          <Route path="/booking" element={<QuoteCheckout />} />
 
           {/* Protected Routes */}
           <Route path="/profile" element={

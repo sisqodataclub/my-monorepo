@@ -1,18 +1,15 @@
-"use client"; 
-
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { useRef } from "react";
-import type { ReactNode } from "react";
+// app/routes/_index.tsx
+import type { MetaFunction } from "react-router";
 
 // ==========================================
-// 1. SERVER-RENDERED SEO & SCHEMA (React Router v7)
+// 1. SERVER-RENDERED SEO & SCHEMA
 // ==========================================
-export function meta() {
+export const meta: MetaFunction = () => {
   const businessSchema = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "D DEEP Cleaning Services",
-    "image": "https://www.ddeepcleaningservices.com/logo.png", // Ensure you have a logo.png in your public folder!
+    "image": "https://www.ddeepcleaningservices.com/logo.png",
     "@id": "https://www.ddeepcleaningservices.com",
     "url": "https://www.ddeepcleaningservices.com",
     "telephone": "07459416262",
@@ -67,10 +64,9 @@ export function meta() {
       content: "Deep Cleaning Manchester, End of Tenancy Cleaning Liverpool, Regular Cleaners Manchester, After Builders Cleaning, Office Cleaning Liverpool, Restaurant Cleaning, Student Accommodation Turnaround, Clinical Cleaning CQC, Carpet Cleaning Manchester, Appliance Cleaning, Move out cleaning, HMO cleaning North West"
     },
     { name: "robots", content: "index, follow" },
-    // Google reads the Schema directly from the document head!
-    { "script:ld+json": businessSchema } 
+    { "script:ld+json": businessSchema }
   ];
-}
+};
 
 // ==========================================
 // 2. IMPORTS
@@ -83,67 +79,23 @@ import HomeProcess from "../components/home/HomeProcess";
 import HomeAreas from "../components/home/HomeAreas";
 import HomeReviews from "../components/home/HomeReviews";
 import HomeCTA from "../components/home/HomeCTA";
-import FixedCTA2 from "../components/mobilenav"; 
+import FixedCTA2 from "../components/mobilenav"; // Kept if you use it globally
+
+// Client Components
+// Instead of importing from a "ui" folder:
+import StoryCard from "../components/home/StoryCard";
+import ScrollProgress from "../components/home/ScrollProgress";
+
+
+
+
+
 
 // ==========================================
-// 3. STORYCARD COMPONENT
-// ==========================================
-interface StoryCardProps {
-  children: ReactNode;
-  bgImage?: string;
-}
-
-function StoryCard({ children, bgImage }: StoryCardProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-
-  // The math is still calculating, but we are not applying it to the elements below
-  const y = useTransform(scrollYProgress, [0, 1], [30, -30]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.97, 1]);
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.5], [0, 0.5, 1]);
-
-  return (
-    <section
-      ref={ref}
-      // DISABLED SNAP SCROLLING: Removed 'snap-start' to allow normal scrolling
-      className="relative w-full min-h-screen flex items-center justify-center overflow-hidden"
-    >
-      {bgImage && (
-        <motion.div
-          className="absolute inset-0 bg-center bg-cover"
-          // DISABLED PARALLAX: Commented out the scale transform
-          style={{ backgroundImage: `url(${bgImage})` }}
-        />
-      )}
-      {bgImage && <div className="absolute inset-0 bg-black/30" />}
-
-      <motion.div
-        className="relative max-w-6xl px-6 text-center w-full"
-        // DISABLED PARALLAX & SCROLL FADE: Commented out dynamic styles
-        // style={{ y, opacity }}
-        
-        // Note: Kept the entry animation active so the text still fades in nicely once. 
-        // If you want ZERO animation, comment out these next 4 lines too.
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      >
-        {children}
-      </motion.div>
-    </section>
-  );
-}
-
-// ==========================================
-// 4. MAIN PAGE COMPONENT
+// 3. MAIN PAGE COMPONENT
 // ==========================================
 export default function HomePage() {
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 120, damping: 35, restDelta: 0.001 });
-
-  return (
-    // DISABLED SNAP SCROLLING: Removed 'snap-y snap-mandatory'
+  return गुलाबी (
     <main className="scroll-smooth">
       <StoryCard>
         <HomeHero />
@@ -177,10 +129,8 @@ export default function HomePage() {
         <HomeCTA />
       </StoryCard>
 
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-2 bg-blue-500 rounded-full origin-left shadow-lg z-50"
-        style={{ scaleX }}
-      />
+      {/* The blue progress bar at the top */}
+      <ScrollProgress />
 
       <style>{`
         /* DISABLED CSS SNAP SCROLLING TO MATCH INACTIVE ANIMATIONS */

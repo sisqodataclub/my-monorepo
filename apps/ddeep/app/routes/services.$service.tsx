@@ -1,9 +1,11 @@
-import { Navigate, useParams } from "react-router"; 
-import type { MetaFunction } from "react-router"; 
-// Import BOTH the component and the newly exported faqData
-import DynamicServicePage, { faqData } from "../components/landing/dynamic";
+// app/routes/services.$service.tsx
+import { Navigate, useParams } from "react-router";
+import type { MetaFunction } from "react-router";
+
+// SAFE IMPORTS: Only import the default component, no data variables from the client!
+import DynamicServicePage from "../components/landing/dynamic";
 import { servicesContent } from "../components/landing/servicesContent";
-import { getSeoMeta } from "../utils/seo"; 
+import { getSeoMeta } from "../utils/seo";
 
 export const meta: MetaFunction = ({ params, location }) => {
   const serviceId = params.service;
@@ -45,11 +47,11 @@ export const meta: MetaFunction = ({ params, location }) => {
     ]
   };
 
-  // B. FAQ Schema (Automatically mapped from the array we imported from dynamic.tsx!)
-  const faqSchema = {
+  // B. FAQ Schema (Automatically mapped from the service-specific data)
+  const faqSchema = serviceData.faqs && serviceData.faqs.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": faqData.map((faq) => ({
+    "mainEntity": serviceData.faqs.map((faq) => ({
       "@type": "Question",
       "name": faq.question,
       "acceptedAnswer": {
@@ -57,23 +59,25 @@ export const meta: MetaFunction = ({ params, location }) => {
         "text": faq.answer,
       },
     })),
-  };
+  } : null;
 
-  // 3. Return BOTH schemas using the Array feature
+  // Filter out null schemas if a service happens to have no FAQs
+  const schemas = [serviceSchema, faqSchema].filter(Boolean);
+
   return getSeoMeta({
     title: `${serviceData.heroTitle} | D Deep`,
     description: serviceData.heroSubtitle,
     url: currentUrl,
-    schema: [serviceSchema, faqSchema] 
+    schema: schemas
   });
 };
 
 export default function ServiceRoute() {
-  const { service } = useParams<"service">(); 
+  const { service } = useParams<"service">();
 
   if (!service || !servicesContent[service]) {
-    return <Navigate to="/" replace />; 
+    return <Navigate to="/" replace />;
   }
 
-  return <DynamicServicePage data={servicesContent[service]} />; 
+  return <DynamicServicePage data={servicesContent[service]} />;
 }

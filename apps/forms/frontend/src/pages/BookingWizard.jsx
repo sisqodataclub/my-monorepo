@@ -1,6 +1,7 @@
 // src/pages/BookingWizard.jsx
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async"; // <-- ADDED HELMET IMPORT
 import WizardSteps from "../components/booking/WizardSteps";
 import WizardNavigation from "../components/booking/WizardNavigation";
 import useQuoteCalculator from "../hooks/useQuoteCalculator";
@@ -289,6 +290,30 @@ export default function BookingWizard() {
     }
   };
 
+  // --- ADDED: Define the Schema for the Booking Action ---
+  const bookingSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Secure Booking Portal | D Deep Cleaning Services",
+    "description": "Book your professional cleaning service online. Select your service, view real-time availability, and secure your slot instantly.",
+    "potentialAction": {
+      "@type": "ReserveAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://api.ddeepcleaningservices.com/form", // Actual booking URL
+        "inLanguage": "en-GB",
+        "actionPlatform": [
+          "http://schema.org/DesktopWebPlatform",
+          "http://schema.org/MobileWebPlatform"
+        ]
+      },
+      "result": {
+        "@type": "Reservation",
+        "name": "Cleaning Service Booking"
+      }
+    }
+  };
+
   // -----------------------------------------------------
   // RENDER: Skeleton Loader
   // -----------------------------------------------------
@@ -341,6 +366,28 @@ export default function BookingWizard() {
   // -----------------------------------------------------
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-gradient-to-br from-gray-900 to-black overflow-hidden">
+      
+      {/* --- ADDED: SEO HELMET BLOCK --- */}
+      <Helmet>
+        <title>Book a Cleaning Service Online | D Deep Cleaning</title>
+        <meta name="description" content="Schedule your professional cleaning service in Manchester and the North West. Fast, secure, and instant online booking for deep cleans, end of tenancy, and more." />
+        <meta property="og:title" content="Secure Online Booking | D Deep Cleaning" />
+        <meta property="og:description" content="Book your cleaning service instantly with real-time availability and pricing." />
+        <meta property="og:image" content="https://www.ddeepcleaningservices.com/logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta property="og:type" content="website" />
+        
+        {/* Option 2: Cross-domain canonical pointing to your main site */}
+        <link rel="canonical" href="https://www.ddeepcleaningservices.com/" />
+        <meta name="robots" content="index, follow" />
+        
+        {/* Inject the Schema */}
+        <script type="application/ld+json">
+          {JSON.stringify(bookingSchema)}
+        </script>
+      </Helmet>
+      {/* ------------------------------- */}
+
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar relative">
         {/* Tighter Header Padding */}
         <header className="pt-4 pb-3 px-4 lg:px-8 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
@@ -354,7 +401,7 @@ export default function BookingWizard() {
             </div>
           )}
         </header>
-        
+
         {/* Tighter Main Layout Padding */}
         <main className="p-3 sm:p-4 lg:p-6">
           <div className="max-w-3xl mx-auto w-full pb-2">
@@ -379,7 +426,7 @@ export default function BookingWizard() {
           </div>
         </main>
       </div>
-      
+
       {/* Tighter Footer Padding */}
       <footer className="flex-shrink-0 p-3 lg:px-6 bg-gray-900/95 backdrop-blur-md border-t border-gray-800 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
         <div className="max-w-3xl mx-auto w-full">
