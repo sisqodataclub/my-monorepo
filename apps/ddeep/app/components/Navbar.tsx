@@ -8,132 +8,19 @@ import {
   FaEnvelope,
   FaChevronRight,
   FaClipboardList,
-  FaTimes,
 } from "react-icons/fa";
+import { useContactModal } from "../context/ContactModalContext";
 
 const CONTACT_EMAIL = "clean@ddeepcleaningservices.com";
 const CONTACT_PHONE = "07459416262";
 const CONTACT_WHATSAPP = "447459416262";
 
-/* ---------- Contact Modal (internal component) ---------- */
-function ContactModal({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  if (!open) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-[1500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-fade-in"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 className="text-xl font-extrabold text-slate-900">
-            Get in Touch
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
-            aria-label="Close modal"
-          >
-            <FaTimes size={14} />
-          </button>
-        </div>
-
-        {/* Contact Options – same design as HomeCTA */}
-        <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-          {/* Instant Quote */}
-          <a
-            href="https://api.ddeepcleaningservices.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="col-span-2 sm:col-span-2 flex items-center gap-4 p-4 rounded-2xl bg-green-50 border border-green-100 hover:bg-green-100 transition-colors group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-green-700 shadow-sm group-hover:scale-110 transition-transform shrink-0">
-              <FaClipboardList />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider leading-none mb-1">
-                Book Online
-              </p>
-              <p className="text-sm font-bold text-green-950">
-                Instant Quote
-              </p>
-            </div>
-          </a>
-
-          {/* Phone */}
-          <a
-            href={`tel:${CONTACT_PHONE}`}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-green-50 border border-green-100 hover:bg-green-100 transition-colors group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-green-700 shadow-sm group-hover:scale-110 transition-transform shrink-0">
-              <FaPhoneAlt />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider leading-none mb-1">
-                Call
-              </p>
-              <p className="text-sm font-bold text-green-950 whitespace-nowrap">
-                {CONTACT_PHONE}
-              </p>
-            </div>
-          </a>
-
-          {/* Email */}
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-green-50 border border-green-100 hover:bg-green-100 transition-colors group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-green-700 shadow-sm group-hover:scale-110 transition-transform shrink-0">
-              <FaEnvelope />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider leading-none mb-1">
-                Email
-              </p>
-              <p className="text-[11px] font-bold text-green-950 break-all leading-tight">
-                {CONTACT_EMAIL}
-              </p>
-            </div>
-          </a>
-
-          {/* WhatsApp */}
-          <a
-            href={`https://wa.me/${CONTACT_WHATSAPP.replace(/\D/g, "")}`}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-green-600 hover:bg-green-700 text-white transition-colors group shadow-md shadow-green-900/10"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform shrink-0">
-              <FaWhatsapp className="text-xl" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-green-100 uppercase tracking-wider leading-none mb-1">
-                WhatsApp
-              </p>
-              <p className="text-sm font-bold">Live Chat</p>
-            </div>
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Main Navbar ---------- */
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [contactModalOpen, setContactModalOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { openModal } = useContactModal();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -161,17 +48,16 @@ export function Navbar() {
     }
   };
 
-  // Open the contact modal
-  const openContactModal = () => {
-    setMenuOpen(false); // close mobile menu if open
-    setContactModalOpen(true);
+  // Open modal helper – closes mobile menu first
+  const handleContactClick = () => {
+    setMenuOpen(false);
+    openModal();
   };
 
   const links = [
     { label: "Home", action: () => handleNavClick("home") },
     { label: "Services", action: () => handleNavClick("services") },
-    // Contact Us now opens the modal
-    { label: "Contact Us", action: openContactModal },
+    { label: "Contact Us", action: handleContactClick },
     { href: "/tc", label: "T&C", action: null },
   ];
 
@@ -199,7 +85,7 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop nav */}
+          {/* Desktop navigation */}
           <div className="hidden lg:flex items-center gap-8">
             <ul className="flex gap-6 text-[12px] font-black uppercase tracking-widest text-slate-500 border-r border-slate-200 pr-8">
               {links.map((link) => (
@@ -245,8 +131,9 @@ export function Navbar() {
                 <FaWhatsapp size={18} />
               </a>
 
+              {/* Get Free Quote → opens modal */}
               <button
-                onClick={openContactModal}
+                onClick={handleContactClick}
                 className="bg-slate-900 hover:bg-green-600 text-white px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all hover:shadow-xl active:scale-95"
               >
                 Get Free Quote
@@ -313,13 +200,9 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Contact Modal */}
-      <ContactModal
-        open={contactModalOpen}
-        onClose={() => setContactModalOpen(false)}
-      />
+      {/* The modal is now rendered globally by ContactModalProvider in root.tsx */}
 
-      {/* MOBILE QUICK-ACTION TAB BAR */}
+      {/* MOBILE QUICK-ACTION TAB BAR (unchanged) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[1001] bg-slate-900 border-t border-white/10">
         <div className="flex items-center justify-between shadow-2xl">
           <a
