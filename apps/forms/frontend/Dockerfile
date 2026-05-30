@@ -1,6 +1,12 @@
 # ================= BUILD STAGE =================
 FROM node:20-alpine AS build
 
+# ---> ADDED: Install Chromium for the Vite Prerenderer (Puppeteer) <---
+RUN apk add --no-cache chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# ----------------------------------------------------------------------
+
 # Install pnpm globally
 RUN npm install -g pnpm
 
@@ -20,7 +26,6 @@ RUN pnpm install --frozen-lockfile
 # 4. Copy the rest of the app source code
 COPY apps/forms/frontend/ ./apps/forms/frontend/
 
-# ---> ADDED THESE TWO LINES <---
 # Accept the build argument from docker-compose and set it for Vite
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
