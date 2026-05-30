@@ -1,24 +1,26 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import vitePrerender from 'vite-plugin-prerender'
 import path from 'path'
+import { fileURLToPath } from 'url'
+import { createRequire } from 'module'
 
-// https://vitejs.dev/config/
+// 1. Manually recreate __dirname for the ES Module environment
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// 2. Force Node to load the stable CommonJS version of the plugin to bypass the ESM bug
+const require = createRequire(import.meta.url)
+const vitePrerender = require('vite-plugin-prerender')
+
 export default defineConfig({
   plugins: [
     react(),
     vitePrerender({
-      // 1. Point the plugin to your build output directory
       staticDir: path.join(__dirname, 'dist'),
-      
-      // 2. List the specific routes Google needs to index
       routes: [
         '/',
         '/form'
       ],
-      
-      // 3. Instruct the headless browser to wait for your React app 
-      // to fully render and inject the Helmet SEO tags before taking the snapshot.
       renderer: new vitePrerender.PuppeteerRenderer({
         renderAfterDocumentEvent: 'custom-render-trigger',
       }),
