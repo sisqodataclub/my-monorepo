@@ -79,23 +79,17 @@ import HomeProcess from "../components/home/HomeProcess";
 import HomeAreas from "../components/home/HomeAreas";
 import HomeReviews from "../components/home/HomeReviews";
 import HomeCTA from "../components/home/HomeCTA";
-import FixedCTA2 from "../components/mobilenav"; // Kept if you use it globally
+import FixedCTA2 from "../components/mobilenav"; 
 
 // Client Components
-// Instead of importing from a "ui" folder:
 import StoryCard from "../components/home/StoryCard";
 import ScrollProgress from "../components/home/ScrollProgress";
-
-
-
-
-
 
 // ==========================================
 // 3. MAIN PAGE COMPONENT
 // ==========================================
 export default function HomePage() {
-  return गुलाबी (
+  return (
     <main className="scroll-smooth">
       <StoryCard>
         <HomeHero />
