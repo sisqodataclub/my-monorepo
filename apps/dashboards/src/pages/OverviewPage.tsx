@@ -18,12 +18,11 @@ import RecentMessagesTable from '../components/RecentMessagesTable';
 // Data
 import { funnelData, contactMessages } from '../mockData';
 
-// Initial placeholder KPIs (will be replaced by real data)
 const MOCK_KPIS: KPI[] = [
   { id: '1', title: 'Total Bookings', value: '...', change: 0 },
-  { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' },
-  { id: '3', title: 'New Inquiries', value: '38', change: -2.4 },
-  { id: '4', title: 'Conversion Rate', value: '64.2', change: 0, prefix: '%' },
+  { id: '2', title: 'Totals Confirmed', value: '...', change: 0 },
+  { id: '3', title: 'Page Views', value: '...', change: 0 },
+  { id: '4', title: 'Unique Visitors', value: '...', change: 0 },
 ];
 
 export default function OverviewPage() {
@@ -51,8 +50,8 @@ export default function OverviewPage() {
         const token = await getToken();
         const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
-        // 1. Original API call (works)
         const queryParams = new URLSearchParams({
+          chart_ids: '1,2', // <-- Tell Django to fetch both Chart 1 and Chart 2
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
@@ -60,61 +59,33 @@ export default function OverviewPage() {
           startDate: customStartDate,
           endDate: customEndDate
         });
-        const overviewRes = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${queryParams}`, {
-          headers: { Authorization: `Bearer ${token}` }
+
+        const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${queryParams}`, {
+            headers: { Authorization: `Bearer ${token}` }
         });
 
-        // 2. New API call to get chart 2 (Total Confirmed)
-        let confirmedCount = 0;
-        try {
-          const supersetParams = new URLSearchParams({
-            chart_ids: '2',
-            preset: timePreset,
-            unit: granularity,
-            compare: isComparing.toString(),
-            compareType: compareType,
-            startDate: customStartDate,
-            endDate: customEndDate
-          });
-          const supersetRes = await axios.get(`${API_BASE}/api/core/superset-dashboard-data/?${supersetParams}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (supersetRes.data.superset_charts && supersetRes.data.superset_charts['2']) {
-            const chartData = supersetRes.data.superset_charts['2'];
-            confirmedCount = chartData[0]?.count ?? 0;
-          }
-        } catch (err) {
-          console.error('Failed to fetch confirmed bookings:', err);
-          // Don't break the whole dashboard if this fails
-        }
+        // 1. Extract the new backend dictionaries
+        const supersetCharts = response.data.superset_charts || {};
+        const umamiKpis = response.data.kpis || []; // Contains the 2 Umami KPIs
 
-        // 3. Build KPI array
-        if (overviewRes.data.kpis) {
-          const fetchedKpis = overviewRes.data.kpis; // [TotalBookings, PageViews, UniqueVisitors]
-          
-          // Create the confirmed KPI object
-          const confirmedKpi: KPI = {
-            id: 'confirmed',
-            title: 'Total Confirmed',
-            value: confirmedCount,
-            change: 0,        // you can compute change later if needed
-            prefix: ''
-          };
-          
-          // Build new array: [TotalBookings, TotalConfirmed, TotalRevenue(mock), PageViews, UniqueVisitors]
-          const newKpis = [
-            fetchedKpis[0],           // Total Bookings from backend
-            confirmedKpi,             // New confirmed KPI
-            MOCK_KPIS[1],             // Total Revenue (mock, keep as is)
-            fetchedKpis[1],           // Page Views (or New Inquiries)
-            fetchedKpis[2]            // Unique Visitors (or Conversion Rate)
-          ];
-          setKpis(newKpis);
-        }
+        // 2. Safely extract Chart 1 (Total Bookings)
+        const chart1Data = supersetCharts['1'];
+        const totalBookings = chart1Data && chart1Data.length > 0 ? chart1Data[0].count : 'N/A';
 
-        // Set chart data (traffic and device)
-        if (overviewRes.data.traffic_chart) setTrafficChartData(overviewRes.data.traffic_chart);
-        if (overviewRes.data.device_chart) setDeviceChartData(overviewRes.data.device_chart);
+        // 3. Safely extract Chart 2 (Totals Confirmed)
+        const chart2Data = supersetCharts['2'];
+        const totalsConfirmed = chart2Data && chart2Data.length > 0 ? chart2Data[0].count : 'N/A';
+
+        // 4. Build the final KPI array
+        setKpis([
+          { id: '1', title: 'Total Bookings', value: totalBookings, change: 0, prefix: '' },
+          { id: '2', title: 'Totals Confirmed', value: totalsConfirmed, change: 0, prefix: '' },
+          umamiKpis[0] || MOCK_KPIS[2], // Fallback to mock if Umami fails
+          umamiKpis[1] || MOCK_KPIS[3]
+        ]);
+
+        if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
+        if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -172,12 +143,9 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* KPI Grid – now supports 5+ cards with responsive columns */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {loading ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />
-            ))
+            [1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />)
           ) : (
             kpis.map((kpi, idx) => <KPICard key={kpi.id} kpi={kpi} index={idx} />)
           )}
@@ -192,26 +160,37 @@ export default function OverviewPage() {
             compareType={compareType}
             customStartDate={customStartDate}
             customEndDate={customEndDate}
+
             onPresetChange={(preset) => {
               setTimePreset(preset);
+
               let newDays = 7;
               if (preset === '24h') newDays = 1;
               else if (preset === '30D') newDays = 30;
               else if (preset === 'This Year') newDays = 365;
               else if (preset === 'Custom') newDays = (new Date(customEndDate).getTime() - new Date(customStartDate).getTime()) / (1000 * 3600 * 24);
 
-              if (preset === '24h') setGranularity('hour');
-              else if (preset === 'This Year' && granularity === 'hour') setGranularity('month');
-              else if (granularity === 'hour' && newDays > 2) setGranularity('day');
-              else if (granularity === 'week' && newDays <= 14) setGranularity('day');
-              else if (granularity === 'month' && newDays < 30) setGranularity('day');
+              if (preset === '24h') {
+                setGranularity('hour');
+              } else if (preset === 'This Year' && granularity === 'hour') {
+                setGranularity('month');
+              } else if (granularity === 'hour' && newDays > 2) {
+                setGranularity('day');
+              } else if (granularity === 'week' && newDays <= 14) {
+                setGranularity('day');
+              } else if (granularity === 'month' && newDays < 30) {
+                setGranularity('day');
+              }
             }}
+
             onGranularityChange={setGranularity}
             onCompareToggle={setIsComparing}
             onCompareTypeChange={setCompareType}
+
             onCustomDateChange={(start, end) => {
               setCustomStartDate(start);
               setCustomEndDate(end);
+
               const newDays = (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 3600 * 24);
               if (granularity === 'hour' && newDays > 2) setGranularity('day');
               if (granularity === 'week' && newDays <= 14) setGranularity('day');
