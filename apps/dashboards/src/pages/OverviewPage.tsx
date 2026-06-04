@@ -18,6 +18,7 @@ import RecentMessagesTable from '../components/RecentMessagesTable';
 // Data
 import { funnelData, contactMessages } from '../mockData';
 
+// Initial placeholder KPIs
 const MOCK_KPIS: KPI[] = [
   { id: '1', title: 'Total Bookings', value: '...', change: 0 },
   { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' },
@@ -35,7 +36,7 @@ export default function OverviewPage() {
   const [granularity, setGranularity] = useState<'hour' | 'day' | 'week' | 'month'>('day');
   const [isComparing, setIsComparing] = useState(false);
   const [compareType, setCompareType] = useState<'prev_period' | 'prev_year'>('prev_period');
-  
+
   const defaultStart = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const defaultEnd = new Date().toISOString().split('T')[0];
   const [customStartDate, setCustomStartDate] = useState(defaultStart);
@@ -49,8 +50,9 @@ export default function OverviewPage() {
       try {
         const token = await getToken();
         const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
-        
-        const queryParams = new URLSearchParams({
+
+        // 1. Fetch existing overview data (KPIs from chart1 + Umami)
+        const overviewParams = new URLSearchParams({
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
@@ -58,18 +60,52 @@ export default function OverviewPage() {
           startDate: customStartDate,
           endDate: customEndDate
         });
-
-        const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${queryParams}`, {
-            headers: { Authorization: `Bearer ${token}` }
+        const overviewRes = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${overviewParams}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (response.data.kpis) {
-          const fetchedKpis = response.data.kpis;
-          setKpis([fetchedKpis[0], MOCK_KPIS[1], fetchedKpis[1], fetchedKpis[2]]);
+        let newKpis: KPI[] = [];
+        if (overviewRes.data.kpis) {
+          const fetched = overviewRes.data.kpis; // [TotalBookings, PageViews, UniqueVisitors]
+          newKpis = [fetched[0], MOCK_KPIS[1], fetched[1], fetched[2]];
         }
 
-        if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
-        if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
+        // 2. Fetch "Total Confirmed" from Superset Chart ID 2
+        const confirmedParams = new URLSearchParams({
+          chart_ids: '2',
+          preset: timePreset,
+          unit: granularity,
+          compare: isComparing.toString(),
+          compareType: compareType,
+          startDate: customStartDate,
+          endDate: customEndDate
+        });
+        const confirmedRes = await axios.get(`${API_BASE}/api/core/superset-dashboard-data/?${confirmedParams}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        let confirmedCount = 0;
+        if (confirmedRes.data.superset_charts && confirmedRes.data.superset_charts['2']) {
+          const chartData = confirmedRes.data.superset_charts['2'];
+          // Assume chart2 returns an array with a 'count' field (like chart1)
+          confirmedCount = chartData[0]?.count ?? 0;
+        }
+
+        // Create a new KPI for confirmed bookings
+        const confirmedKpi: KPI = {
+          id: 'confirmed',
+          title: 'Total Confirmed',
+          value: confirmedCount,
+          change: 0,      // you can implement change calculation later
+          prefix: ''
+        };
+
+        // Insert the new KPI after Total Bookings (position 1)
+        newKpis.splice(1, 0, confirmedKpi);
+
+        setKpis(newKpis);
+        if (overviewRes.data.traffic_chart) setTrafficChartData(overviewRes.data.traffic_chart);
+        if (overviewRes.data.device_chart) setDeviceChartData(overviewRes.data.device_chart);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -114,7 +150,7 @@ export default function OverviewPage() {
 
           <div className="flex items-center space-x-3">
             <button className="flex items-center px-4 py-2.5 bg-white border border-slate-200/80 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 shadow-sm transition-all duration-200 group">
-              <Download className="w-4 h-4 mr-2 text-slate-400 group-hover:text-slate-600 transition-colors" /> 
+              <Download className="w-4 h-4 mr-2 text-slate-400 group-hover:text-slate-600 transition-colors" />
               Export Report
             </button>
             <button
@@ -127,16 +163,19 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* KPI Grid – now supports 5+ cards with flex wrap */}
+        <motion.div variants={itemVariants} className="flex flex-wrap gap-6 mb-8">
           {loading ? (
-            [1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />)
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex-1 min-w-[200px] h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />
+            ))
           ) : (
             kpis.map((kpi, idx) => <KPICard key={kpi.id} kpi={kpi} index={idx} />)
           )}
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <TrafficLineChart 
+          <TrafficLineChart
             data={trafficChartData}
             activePreset={timePreset}
             activeGranularity={granularity}
@@ -144,40 +183,27 @@ export default function OverviewPage() {
             compareType={compareType}
             customStartDate={customStartDate}
             customEndDate={customEndDate}
-            
-            // Auto-Fallback Logic for Preset Changes
+
             onPresetChange={(preset) => {
               setTimePreset(preset);
-              
               let newDays = 7;
               if (preset === '24h') newDays = 1;
               else if (preset === '30D') newDays = 30;
               else if (preset === 'This Year') newDays = 365;
               else if (preset === 'Custom') newDays = (new Date(customEndDate).getTime() - new Date(customStartDate).getTime()) / (1000 * 3600 * 24);
 
-              // Force safe intervals
-              if (preset === '24h') {
-                setGranularity('hour');
-              } else if (preset === 'This Year' && granularity === 'hour') {
-                setGranularity('month');
-              } else if (granularity === 'hour' && newDays > 2) {
-                setGranularity('day'); // Fallback if > 2 days
-              } else if (granularity === 'week' && newDays <= 14) {
-                setGranularity('day'); // Fallback if <= 14 days
-              } else if (granularity === 'month' && newDays < 30) {
-                setGranularity('day'); // Fallback if < 30 days
-              }
+              if (preset === '24h') setGranularity('hour');
+              else if (preset === 'This Year' && granularity === 'hour') setGranularity('month');
+              else if (granularity === 'hour' && newDays > 2) setGranularity('day');
+              else if (granularity === 'week' && newDays <= 14) setGranularity('day');
+              else if (granularity === 'month' && newDays < 30) setGranularity('day');
             }}
-            
             onGranularityChange={setGranularity}
             onCompareToggle={setIsComparing}
             onCompareTypeChange={setCompareType}
-            
-            // Auto-Fallback Logic for Custom Dates
             onCustomDateChange={(start, end) => {
               setCustomStartDate(start);
               setCustomEndDate(end);
-              
               const newDays = (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 3600 * 24);
               if (granularity === 'hour' && newDays > 2) setGranularity('day');
               if (granularity === 'week' && newDays <= 14) setGranularity('day');
