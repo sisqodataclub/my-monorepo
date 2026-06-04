@@ -18,16 +18,8 @@ import RecentMessagesTable from '../components/RecentMessagesTable';
 // Data
 import { funnelData, contactMessages } from '../mockData';
 
-// Initial placeholder KPIs
-const MOCK_KPIS: KPI[] = [
-  { id: '1', title: 'Total Bookings', value: '...', change: 0 },
-  { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' },
-  { id: '3', title: 'New Inquiries', value: '38', change: -2.4 },
-  { id: '4', title: 'Conversion Rate', value: '64.2', change: 0, prefix: '%' },
-];
-
 export default function OverviewPage() {
-  const [kpis, setKpis] = useState<KPI[]>(MOCK_KPIS);
+  const [kpis, setKpis] = useState<KPI[]>([]);
   const [trafficChartData, setTrafficChartData] = useState([]);
   const [deviceChartData, setDeviceChartData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +43,9 @@ export default function OverviewPage() {
         const token = await getToken();
         const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
-        // 1. Fetch existing overview data (KPIs from chart1 + Umami)
-        const overviewParams = new URLSearchParams({
+        // Build query parameters (same as before)
+        const params = new URLSearchParams({
+          chart_ids: '1,2',           // fetch both charts in one request
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
@@ -60,55 +53,56 @@ export default function OverviewPage() {
           startDate: customStartDate,
           endDate: customEndDate
         });
-        const overviewRes = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${overviewParams}`, {
+
+        const response = await axios.get(`${API_BASE}/api/core/superset-dashboard-data/?${params}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        let newKpis: KPI[] = [];
-        if (overviewRes.data.kpis) {
-          const fetched = overviewRes.data.kpis; // [TotalBookings, PageViews, UniqueVisitors]
-          newKpis = [fetched[0], MOCK_KPIS[1], fetched[1], fetched[2]];
+        const data = response.data;
+
+        // --- Extract KPIs ---
+        // 1. Total Bookings from chart 1
+        let totalBookings = 0;
+        if (data.superset_charts && data.superset_charts['1']) {
+          const chart1Data = data.superset_charts['1'];
+          totalBookings = chart1Data[0]?.count ?? 0;
         }
 
-        // 2. Fetch "Total Confirmed" from Superset Chart ID 2
-        const confirmedParams = new URLSearchParams({
-          chart_ids: '2',
-          preset: timePreset,
-          unit: granularity,
-          compare: isComparing.toString(),
-          compareType: compareType,
-          startDate: customStartDate,
-          endDate: customEndDate
-        });
-        const confirmedRes = await axios.get(`${API_BASE}/api/core/superset-dashboard-data/?${confirmedParams}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        let confirmedCount = 0;
-        if (confirmedRes.data.superset_charts && confirmedRes.data.superset_charts['2']) {
-          const chartData = confirmedRes.data.superset_charts['2'];
-          // Assume chart2 returns an array with a 'count' field (like chart1)
-          confirmedCount = chartData[0]?.count ?? 0;
+        // 2. Total Confirmed from chart 2
+        let totalConfirmed = 0;
+        if (data.superset_charts && data.superset_charts['2']) {
+          const chart2Data = data.superset_charts['2'];
+          totalConfirmed = chart2Data[0]?.count ?? 0;
         }
 
-        // Create a new KPI for confirmed bookings
-        const confirmedKpi: KPI = {
-          id: 'confirmed',
-          title: 'Total Confirmed',
-          value: confirmedCount,
-          change: 0,      // you can implement change calculation later
-          prefix: ''
-        };
+        // 3. Umami KPIs (already in response.kpis)
+        let pageViews = 0;
+        let uniqueVisitors = 0;
+        if (data.kpis && data.kpis.length >= 3) {
+          // data.kpis order: [TotalBookings (from old hardcoded), PageViews, UniqueVisitors]
+          // But we prefer our chart1 value, so ignore the first.
+          pageViews = typeof data.kpis[1]?.value === 'number' ? data.kpis[1].value : 0;
+          uniqueVisitors = typeof data.kpis[2]?.value === 'number' ? data.kpis[2].value : 0;
+        }
 
-        // Insert the new KPI after Total Bookings (position 1)
-        newKpis.splice(1, 0, confirmedKpi);
+        // Build the KPI array (match your existing UI expectations)
+        const fetchedKpis: KPI[] = [
+          { id: '1', title: 'Total Bookings', value: totalBookings, change: 0, prefix: '' },
+          { id: 'confirmed', title: 'Total Confirmed', value: totalConfirmed, change: 0, prefix: '' },
+          { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' }, // static mock
+          { id: '3', title: 'New Inquiries', value: pageViews, change: 0 },    // using page views as placeholder
+          { id: '4', title: 'Unique Visitors', value: uniqueVisitors, change: 0 }
+        ];
 
-        setKpis(newKpis);
-        if (overviewRes.data.traffic_chart) setTrafficChartData(overviewRes.data.traffic_chart);
-        if (overviewRes.data.device_chart) setDeviceChartData(overviewRes.data.device_chart);
+        setKpis(fetchedKpis);
+
+        // Set chart data
+        if (data.traffic_chart) setTrafficChartData(data.traffic_chart);
+        if (data.device_chart) setDeviceChartData(data.device_chart);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
+        // Optionally set error state or fallback KPIs
       } finally {
         setLoading(false);
       }
@@ -163,7 +157,7 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* KPI Grid – now supports 5+ cards with flex wrap */}
+        {/* KPI Grid */}
         <motion.div variants={itemVariants} className="flex flex-wrap gap-6 mb-8">
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (
@@ -183,7 +177,6 @@ export default function OverviewPage() {
             compareType={compareType}
             customStartDate={customStartDate}
             customEndDate={customEndDate}
-
             onPresetChange={(preset) => {
               setTimePreset(preset);
               let newDays = 7;
