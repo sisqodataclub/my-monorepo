@@ -18,8 +18,16 @@ import RecentMessagesTable from '../components/RecentMessagesTable';
 // Data
 import { funnelData, contactMessages } from '../mockData';
 
+// Initial placeholder KPIs (will be replaced by real data)
+const MOCK_KPIS: KPI[] = [
+  { id: '1', title: 'Total Bookings', value: '...', change: 0 },
+  { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' },
+  { id: '3', title: 'New Inquiries', value: '38', change: -2.4 },
+  { id: '4', title: 'Conversion Rate', value: '64.2', change: 0, prefix: '%' },
+];
+
 export default function OverviewPage() {
-  const [kpis, setKpis] = useState<KPI[]>([]);
+  const [kpis, setKpis] = useState<KPI[]>(MOCK_KPIS);
   const [trafficChartData, setTrafficChartData] = useState([]);
   const [deviceChartData, setDeviceChartData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,9 +51,8 @@ export default function OverviewPage() {
         const token = await getToken();
         const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
-        // Build query parameters (same as before)
-        const params = new URLSearchParams({
-          chart_ids: '1,2',           // fetch both charts in one request
+        // 1. Original API call (works)
+        const queryParams = new URLSearchParams({
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
@@ -53,56 +60,64 @@ export default function OverviewPage() {
           startDate: customStartDate,
           endDate: customEndDate
         });
-
-        const response = await axios.get(`${API_BASE}/api/core/superset-dashboard-data/?${params}`, {
+        const overviewRes = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${queryParams}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        const data = response.data;
-
-        // --- Extract KPIs ---
-        // 1. Total Bookings from chart 1
-        let totalBookings = 0;
-        if (data.superset_charts && data.superset_charts['1']) {
-          const chart1Data = data.superset_charts['1'];
-          totalBookings = chart1Data[0]?.count ?? 0;
+        // 2. New API call to get chart 2 (Total Confirmed)
+        let confirmedCount = 0;
+        try {
+          const supersetParams = new URLSearchParams({
+            chart_ids: '2',
+            preset: timePreset,
+            unit: granularity,
+            compare: isComparing.toString(),
+            compareType: compareType,
+            startDate: customStartDate,
+            endDate: customEndDate
+          });
+          const supersetRes = await axios.get(`${API_BASE}/api/core/superset-dashboard-data/?${supersetParams}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (supersetRes.data.superset_charts && supersetRes.data.superset_charts['2']) {
+            const chartData = supersetRes.data.superset_charts['2'];
+            confirmedCount = chartData[0]?.count ?? 0;
+          }
+        } catch (err) {
+          console.error('Failed to fetch confirmed bookings:', err);
+          // Don't break the whole dashboard if this fails
         }
 
-        // 2. Total Confirmed from chart 2
-        let totalConfirmed = 0;
-        if (data.superset_charts && data.superset_charts['2']) {
-          const chart2Data = data.superset_charts['2'];
-          totalConfirmed = chart2Data[0]?.count ?? 0;
+        // 3. Build KPI array
+        if (overviewRes.data.kpis) {
+          const fetchedKpis = overviewRes.data.kpis; // [TotalBookings, PageViews, UniqueVisitors]
+          
+          // Create the confirmed KPI object
+          const confirmedKpi: KPI = {
+            id: 'confirmed',
+            title: 'Total Confirmed',
+            value: confirmedCount,
+            change: 0,        // you can compute change later if needed
+            prefix: ''
+          };
+          
+          // Build new array: [TotalBookings, TotalConfirmed, TotalRevenue(mock), PageViews, UniqueVisitors]
+          const newKpis = [
+            fetchedKpis[0],           // Total Bookings from backend
+            confirmedKpi,             // New confirmed KPI
+            MOCK_KPIS[1],             // Total Revenue (mock, keep as is)
+            fetchedKpis[1],           // Page Views (or New Inquiries)
+            fetchedKpis[2]            // Unique Visitors (or Conversion Rate)
+          ];
+          setKpis(newKpis);
         }
 
-        // 3. Umami KPIs (already in response.kpis)
-        let pageViews = 0;
-        let uniqueVisitors = 0;
-        if (data.kpis && data.kpis.length >= 3) {
-          // data.kpis order: [TotalBookings (from old hardcoded), PageViews, UniqueVisitors]
-          // But we prefer our chart1 value, so ignore the first.
-          pageViews = typeof data.kpis[1]?.value === 'number' ? data.kpis[1].value : 0;
-          uniqueVisitors = typeof data.kpis[2]?.value === 'number' ? data.kpis[2].value : 0;
-        }
-
-        // Build the KPI array (match your existing UI expectations)
-        const fetchedKpis: KPI[] = [
-          { id: '1', title: 'Total Bookings', value: totalBookings, change: 0, prefix: '' },
-          { id: 'confirmed', title: 'Total Confirmed', value: totalConfirmed, change: 0, prefix: '' },
-          { id: '2', title: 'Total Revenue', value: '24,500', change: 12.5, prefix: '£' }, // static mock
-          { id: '3', title: 'New Inquiries', value: pageViews, change: 0 },    // using page views as placeholder
-          { id: '4', title: 'Unique Visitors', value: uniqueVisitors, change: 0 }
-        ];
-
-        setKpis(fetchedKpis);
-
-        // Set chart data
-        if (data.traffic_chart) setTrafficChartData(data.traffic_chart);
-        if (data.device_chart) setDeviceChartData(data.device_chart);
+        // Set chart data (traffic and device)
+        if (overviewRes.data.traffic_chart) setTrafficChartData(overviewRes.data.traffic_chart);
+        if (overviewRes.data.device_chart) setDeviceChartData(overviewRes.data.device_chart);
 
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
-        // Optionally set error state or fallback KPIs
       } finally {
         setLoading(false);
       }
@@ -157,11 +172,11 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* KPI Grid */}
-        <motion.div variants={itemVariants} className="flex flex-wrap gap-6 mb-8">
+        {/* KPI Grid – now supports 5+ cards with responsive columns */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex-1 min-w-[200px] h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />
+              <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />
             ))
           ) : (
             kpis.map((kpi, idx) => <KPICard key={kpi.id} kpi={kpi} index={idx} />)
