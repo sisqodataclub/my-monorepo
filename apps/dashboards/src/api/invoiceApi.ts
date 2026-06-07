@@ -14,10 +14,10 @@ export interface InvoiceItem {
   id: number;
   description: string;
   quantity: number;
+  measurement: string;
   unit_price: number;
-  tax_rate: number;
-  discount_rate?: number;
-  total: number;
+  discount_rate: number;
+  total_price: number;
 }
 
 export interface Invoice {
@@ -26,21 +26,13 @@ export interface Invoice {
   title?: string;
   status: string;
   currency?: string;
-  invoice_date: string;       // renamed from issue_date
+  invoice_date: string;
   due_date: string;
   total_amount: number;
-  customer_name: string;      // direct field on invoice
-  contacts?: {                // JSON field storing email and phone
-    email?: string;
-    phone?: string;
-  };
+  customer_name: string;
+  contacts?: { email?: string; phone?: string };
   items: InvoiceItem[];
   created_at: string;
-  // optional fields
-  receipt?: boolean;
-  notes?: string;
-  template_choice?: string;
-  category?: any;
 }
 
 const getValidToken = (token: string | null): string => {
@@ -59,7 +51,6 @@ export const fetchInvoices = async (token: string | null): Promise<Invoice[]> =>
   const res = await axios.get(`${API_BASE}/api/payments/invoices/`, {
     headers: { Authorization: `Bearer ${getValidToken(token)}` }
   });
-  // Ensure we return an array (backend may return object on error)
   return Array.isArray(res.data) ? res.data : [];
 };
 
@@ -74,7 +65,7 @@ export const createInvoice = async (
     currency?: string;
     template_choice?: string;
     notes?: string;
-    invoice_date?: string;    // renamed from issue_date
+    invoice_date?: string;
     due_date?: string;
     receipt?: boolean;
     items: Array<{
@@ -84,6 +75,7 @@ export const createInvoice = async (
       unit_price?: number;
       tax_rate?: number;
       discount?: number;
+      measurement_unit?: string;
     }>;
   }
 ): Promise<Invoice> => {
