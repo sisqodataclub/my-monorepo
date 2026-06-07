@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
-import { LayoutDashboard, MessageSquare, Settings, Bell, Search, Calendar } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Settings, Bell, Search, Calendar, FileText } from 'lucide-react';
 
 import OverviewPage from './pages/OverviewPage';
 import InquiriesPage from './pages/InquiriesPage';
 import LoginPage from './pages/LoginPage';
 import BookingsPage from './pages/BookingsPage';
+import InvoicesPage from './pages/InvoicesPage';   // <-- NEW IMPORT
 
 function Sidebar() {
   const location = useLocation();
@@ -13,6 +14,7 @@ function Sidebar() {
   const navItems = [
     { name: 'Overview', path: '/', icon: LayoutDashboard },
     { name: 'Bookings', path: '/bookings', icon: Calendar },
+    { name: 'Invoices', path: '/invoices', icon: FileText },   // <-- NEW ITEM
     { name: 'Inquiries', path: '/inquiries', icon: MessageSquare },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
@@ -60,8 +62,6 @@ function Topbar() {
           <Bell className="w-6 h-6" />
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
-
-        {/* CLERK: Drop-in User Profile & Settings Menu */}
         <div className="h-8 w-8 flex items-center justify-center">
           <UserButton afterSignOutUrl="/login" />
         </div>
@@ -74,7 +74,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* PUBLIC ROUTE: The Login Screen */}
+        {/* PUBLIC ROUTE */}
         <Route
           path="/login"
           element={
@@ -84,17 +84,15 @@ export default function App() {
           }
         />
 
-        {/* SECURE ROUTES: Protected Dashboard */}
+        {/* SECURE ROUTES */}
         <Route
           path="/*"
           element={
             <>
-              {/* Security Wall: Kick unauthenticated users back to login */}
               <SignedOut>
                 <Navigate to="/login" replace />
               </SignedOut>
 
-              {/* Secure Area: Only renders if Clerk verifies the user */}
               <SignedIn>
                 <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
                   <Sidebar />
@@ -104,6 +102,7 @@ export default function App() {
                       <Routes>
                         <Route path="/" element={<OverviewPage />} />
                         <Route path="bookings" element={<BookingsPage />} />
+                        <Route path="invoices" element={<InvoicesPage />} />   {/* NEW ROUTE */}
                         <Route path="/inquiries" element={<InquiriesPage />} />
                       </Routes>
                     </main>
