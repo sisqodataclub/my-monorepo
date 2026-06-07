@@ -39,24 +39,21 @@ export interface Invoice {
   created_at: string;
 }
 
-// Helper to ensure token is string (not null)
 const getValidToken = (token: string | null): string => {
   if (!token) throw new Error('No authentication token available');
   return token;
 };
 
 export const fetchServices = async (token: string | null): Promise<Service[]> => {
-  const validToken = getValidToken(token);
   const res = await axios.get(`${API_BASE}/api/payments/services/`, {
-    headers: { Authorization: `Bearer ${validToken}` }
+    headers: { Authorization: `Bearer ${getValidToken(token)}` }
   });
   return res.data;
 };
 
 export const fetchInvoices = async (token: string | null): Promise<Invoice[]> => {
-  const validToken = getValidToken(token);
   const res = await axios.get(`${API_BASE}/api/payments/invoices/`, {
-    headers: { Authorization: `Bearer ${validToken}` }
+    headers: { Authorization: `Bearer ${getValidToken(token)}` }
   });
   return res.data;
 };
@@ -83,19 +80,15 @@ export const createInvoice = async (
     }>;
   }
 ): Promise<Invoice> => {
-  const validToken = getValidToken(token);
   const res = await axios.post(`${API_BASE}/api/payments/invoices/create_with_items/`, data, {
-    headers: { Authorization: `Bearer ${validToken}` }
+    headers: { Authorization: `Bearer ${getValidToken(token)}` }
   });
   return res.data;
 };
 
 export const downloadInvoicePdf = (invoiceId: number, token: string | null) => {
-  const validToken = getValidToken(token);
   const url = `${API_BASE}/api/payments/invoices/${invoiceId}/pdf/`;
-  fetch(url, {
-    headers: { Authorization: `Bearer ${validToken}` }
-  })
+  fetch(url, { headers: { Authorization: `Bearer ${getValidToken(token)}` } })
     .then(response => response.blob())
     .then(blob => {
       const blobUrl = URL.createObjectURL(blob);

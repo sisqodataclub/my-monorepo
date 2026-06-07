@@ -12,14 +12,13 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Mega Form State
   const [formData, setFormData] = useState({
     title: '',
     customerEmail: '',
     customerName: '',
     issueDate: '',
     dueDate: '',
-    status: 'draft',
+    status: 'draft',      // 'draft' or 'paid'
     currency: 'USD',
     templateChoice: 'quotation_1',
     notes: ''
@@ -55,8 +54,6 @@ export default function InvoicesPage() {
   const handleItemChange = (idx: number, field: string, value: any) => {
     const newItems = [...items];
     newItems[idx] = { ...newItems[idx], [field]: value };
-
-    // If a predefined service is selected, auto-fill its price and name
     if (field === 'service_id' && value !== '') {
       const svc = services.find(s => s.id.toString() === value);
       if (svc) {
@@ -72,8 +69,8 @@ export default function InvoicesPage() {
   };
 
   const handleRemoveItem = (idx: number) => {
-    const newItems = items.filter((_, i) => i !== idx);
-    setItems(newItems);
+    if (items.length === 1) return;
+    setItems(items.filter((_, i) => i !== idx));
   };
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
@@ -103,7 +100,6 @@ export default function InvoicesPage() {
     try {
       await createInvoice(token, payload);
       setShowCreateForm(false);
-      // Reset Form on Success
       setFormData({
         title: '', customerEmail: '', customerName: '', issueDate: '',
         dueDate: '', status: 'draft', currency: 'USD', templateChoice: 'quotation_1', notes: ''
@@ -170,15 +166,14 @@ export default function InvoicesPage() {
                 <div>
                   <label className="block text-xs text-gray-500 mb-1 font-medium">Status</label>
                   <select name="status" value={formData.status} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="draft">Draft</option>
-                    <option value="UNPAID">Unpaid</option>
-                    <option value="PAID">Paid</option>
+                    <option value="draft">Draft (Unpaid)</option>
+                    <option value="paid">Paid</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* Config Section */}
+            {/* Design & Formatting */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Design & Formatting</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -201,7 +196,7 @@ export default function InvoicesPage() {
               </div>
             </div>
 
-            {/* Line Items Section */}
+            {/* Line Items */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Line Items</h3>
               <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -217,20 +212,19 @@ export default function InvoicesPage() {
                         <option value="">Custom Manual Item...</option>
                         {services.map(s => (<option key={s.id} value={s.id}>{s.name} (${s.price})</option>))}
                       </select>
-                      {/* If no service is selected, allow them to type a custom description */}
                       {!item.service_id && (
-                         <input 
-                           type="text" 
-                           placeholder="Custom item description" 
-                           value={item.description}
-                           onChange={e => handleItemChange(idx, 'description', e.target.value)}
-                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                         />
+                        <input 
+                          type="text" 
+                          placeholder="Custom item description" 
+                          value={item.description}
+                          onChange={e => handleItemChange(idx, 'description', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
                       )}
                     </div>
                     <div className="w-24">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Unit Price</label>
-                      <input type="number" value={item.unit_price} onChange={e => handleItemChange(idx, 'unit_price', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" disabled={!!item.service_id} />
+                      <input type="number" step="0.01" value={item.unit_price} onChange={e => handleItemChange(idx, 'unit_price', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" disabled={!!item.service_id} />
                     </div>
                     <div className="w-20">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Qty</label>
@@ -238,17 +232,15 @@ export default function InvoicesPage() {
                     </div>
                     <div className="w-24">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Tax %</label>
-                      <input type="number" value={item.tax_rate} onChange={e => handleItemChange(idx, 'tax_rate', parseFloat(e.target.value))} step="0.1" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <input type="number" step="0.1" value={item.tax_rate} onChange={e => handleItemChange(idx, 'tax_rate', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
                     <div className="w-24">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Discnt %</label>
-                      <input type="number" value={item.discount} onChange={e => handleItemChange(idx, 'discount', parseFloat(e.target.value))} step="0.1" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <input type="number" step="0.1" value={item.discount} onChange={e => handleItemChange(idx, 'discount', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
-                    {items.length > 1 && (
-                      <button type="button" onClick={() => handleRemoveItem(idx)} className="text-red-500 font-bold mb-2 ml-2 hover:text-red-700 w-8 h-8 flex items-center justify-center rounded hover:bg-red-50 transition-colors">
-                        X
-                      </button>
-                    )}
+                    <button type="button" onClick={() => handleRemoveItem(idx)} className="text-red-500 font-bold mb-2 ml-2 hover:text-red-700 w-8 h-8 flex items-center justify-center rounded hover:bg-red-50 transition-colors">
+                      X
+                    </button>
                   </div>
                 ))}
                 <button type="button" onClick={handleAddItem} className="text-blue-600 font-medium text-sm mt-2 hover:underline">
@@ -257,7 +249,7 @@ export default function InvoicesPage() {
               </div>
             </div>
 
-            {/* Notes Section */}
+            {/* Notes */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Additional Notes</h3>
               <textarea name="notes" placeholder="Terms & Conditions, Payment details, etc." value={formData.notes} onChange={handleInputChange} rows={3} className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
@@ -309,10 +301,9 @@ export default function InvoicesPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      ['paid', 'PAID'].includes(inv.status) ? 'bg-green-100 text-green-800' :
-                      ['draft', 'DRAFT'].includes(inv.status) ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'
+                      inv.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {inv.status.toUpperCase()}
+                      {inv.status === 'paid' ? 'PAID' : 'DRAFT'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
