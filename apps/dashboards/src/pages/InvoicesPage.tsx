@@ -12,16 +12,19 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  // Form state – using backend field names
   const [formData, setFormData] = useState({
     title: '',
-    customerEmail: '',
     customerName: '',
-    issueDate: '',
+    customerEmail: '',
+    customerPhone: '',
+    invoiceDate: '',   // was issueDate
     dueDate: '',
-    status: 'draft',      // 'draft' or 'paid'
+    status: 'draft',
     currency: 'USD',
     templateChoice: 'quotation_1',
-    notes: ''
+    notes: '',
+    receipt: false,    // new boolean field
   });
 
   const [items, setItems] = useState([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '' }]);
@@ -38,8 +41,9 @@ export default function InvoicesPage() {
         fetchInvoices(token),
         fetchServices(token)
       ]);
-      setInvoices(invoicesData);
-      setServices(servicesData);
+      // Ensure arrays
+      setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+      setServices(Array.isArray(servicesData) ? servicesData : []);
     } catch (err) {
       console.error('Failed to load invoices/services', err);
     } finally {
@@ -48,7 +52,11 @@ export default function InvoicesPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target as any;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleItemChange = (idx: number, field: string, value: any) => {
@@ -76,17 +84,19 @@ export default function InvoicesPage() {
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = await getToken();
-    
+
     const payload = {
       title: formData.title,
-      customer_email: formData.customerEmail,
       customer_name: formData.customerName,
-      issue_date: formData.issueDate || undefined,
+      customer_email: formData.customerEmail,
+      customer_phone: formData.customerPhone,
+      invoice_date: formData.invoiceDate || undefined,   // renamed from issue_date
       due_date: formData.dueDate || undefined,
       status: formData.status,
       currency: formData.currency,
       template_choice: formData.templateChoice,
       notes: formData.notes,
+      receipt: formData.receipt,
       items: items.map(item => ({
         service_id: item.service_id ? parseInt(item.service_id) : undefined,
         description: item.description,
@@ -100,9 +110,19 @@ export default function InvoicesPage() {
     try {
       await createInvoice(token, payload);
       setShowCreateForm(false);
+      // Reset form
       setFormData({
-        title: '', customerEmail: '', customerName: '', issueDate: '',
-        dueDate: '', status: 'draft', currency: 'USD', templateChoice: 'quotation_1', notes: ''
+        title: '',
+        customerName: '',
+        customerEmail: '',
+        customerPhone: '',
+        invoiceDate: '',
+        dueDate: '',
+        status: 'draft',
+        currency: 'USD',
+        templateChoice: 'quotation_1',
+        notes: '',
+        receipt: false,
       });
       setItems([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '' }]);
       await loadData();
@@ -133,7 +153,7 @@ export default function InvoicesPage() {
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
         >
-          {showCreateForm ? <X size={18} /> : <Plus size={18} />} 
+          {showCreateForm ? <X size={18} /> : <Plus size={18} />}
           {showCreateForm ? 'Cancel Creation' : 'New Invoice'}
         </button>
       </div>
@@ -145,30 +165,35 @@ export default function InvoicesPage() {
           className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200"
         >
           <h2 className="text-xl font-bold mb-6 border-b pb-2">Invoice Configuration</h2>
-          
+
           <form onSubmit={handleCreateInvoice} className="space-y-8">
             {/* Basic Details Section */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Basic Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input name="title" placeholder="Invoice Title (e.g. Website Redesign)" value={formData.title} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none" />
-                <input type="email" name="customerEmail" placeholder="Customer Email *" value={formData.customerEmail} onChange={handleInputChange} required className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none" />
-                <input type="text" name="customerName" placeholder="Customer Name" value={formData.customerName} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none" />
-                
+                <input name="title" placeholder="Invoice Title" value={formData.title} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full" />
+                <input type="text" name="customerName" placeholder="Customer Name *" value={formData.customerName} onChange={handleInputChange} required className="border border-gray-300 rounded-lg px-4 py-2 w-full" />
+                <input type="email" name="customerEmail" placeholder="Customer Email *" value={formData.customerEmail} onChange={handleInputChange} required className="border border-gray-300 rounded-lg px-4 py-2 w-full" />
+                <input type="tel" name="customerPhone" placeholder="Customer Phone" value={formData.customerPhone} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full" />
+
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1 font-medium">Issue Date</label>
-                  <input type="date" name="issueDate" value={formData.issueDate} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-xs text-gray-500 mb-1 font-medium">Invoice Date</label>
+                  <input type="date" name="invoiceDate" value={formData.invoiceDate} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1 font-medium">Due Date</label>
-                  <input type="date" name="dueDate" value={formData.dueDate} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input type="date" name="dueDate" value={formData.dueDate} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1 font-medium">Status</label>
-                  <select name="status" value={formData.status} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                  <select name="status" value={formData.status} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white">
                     <option value="draft">Draft (Unpaid)</option>
                     <option value="paid">Paid</option>
                   </select>
+                </div>
+                <div className="flex items-center">
+                  <input type="checkbox" name="receipt" checked={formData.receipt} onChange={handleInputChange} className="mr-2" />
+                  <label className="text-sm">This is a receipt (not an invoice)</label>
                 </div>
               </div>
             </div>
@@ -179,7 +204,7 @@ export default function InvoicesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1 font-medium">Currency</label>
-                  <select name="currency" value={formData.currency} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                  <select name="currency" value={formData.currency} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white">
                     <option value="USD">US Dollar (USD)</option>
                     <option value="EUR">Euro (EUR)</option>
                     <option value="GBP">British Pound (GBP)</option>
@@ -187,7 +212,7 @@ export default function InvoicesPage() {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1 font-medium">Template Choice</label>
-                  <select name="templateChoice" value={formData.templateChoice} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                  <select name="templateChoice" value={formData.templateChoice} onChange={handleInputChange} className="border border-gray-300 rounded-lg px-4 py-2 w-full bg-white">
                     <option value="quotation_1">Standard Invoice 1</option>
                     <option value="quotation_2">Modern Invoice 2</option>
                     <option value="receipt1">Basic Receipt</option>
@@ -196,7 +221,7 @@ export default function InvoicesPage() {
               </div>
             </div>
 
-            {/* Line Items */}
+            {/* Line Items (unchanged) */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Line Items</h3>
               <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -204,59 +229,55 @@ export default function InvoicesPage() {
                   <div key={idx} className="flex flex-wrap gap-3 items-end pb-3 border-b border-gray-200 last:border-0 last:pb-0">
                     <div className="flex-1 min-w-[200px]">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Service / Description</label>
-                      <select 
-                        value={item.service_id} 
-                        onChange={e => handleItemChange(idx, 'service_id', e.target.value)} 
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                      <select
+                        value={item.service_id}
+                        onChange={e => handleItemChange(idx, 'service_id', e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white mb-2"
                       >
                         <option value="">Custom Manual Item...</option>
                         {services.map(s => (<option key={s.id} value={s.id}>{s.name} (${s.price})</option>))}
                       </select>
                       {!item.service_id && (
-                        <input 
-                          type="text" 
-                          placeholder="Custom item description" 
+                        <input
+                          type="text"
+                          placeholder="Custom item description"
                           value={item.description}
                           onChange={e => handleItemChange(idx, 'description', e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
                         />
                       )}
                     </div>
                     <div className="w-24">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Unit Price</label>
-                      <input type="number" step="0.01" value={item.unit_price} onChange={e => handleItemChange(idx, 'unit_price', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" disabled={!!item.service_id} />
+                      <input type="number" step="0.01" value={item.unit_price} onChange={e => handleItemChange(idx, 'unit_price', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2" disabled={!!item.service_id} />
                     </div>
                     <div className="w-20">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Qty</label>
-                      <input type="number" value={item.quantity} onChange={e => handleItemChange(idx, 'quantity', parseInt(e.target.value))} min="1" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <input type="number" value={item.quantity} onChange={e => handleItemChange(idx, 'quantity', parseInt(e.target.value))} min="1" className="w-full border border-gray-300 rounded-lg px-3 py-2" />
                     </div>
                     <div className="w-24">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Tax %</label>
-                      <input type="number" step="0.1" value={item.tax_rate} onChange={e => handleItemChange(idx, 'tax_rate', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <input type="number" step="0.1" value={item.tax_rate} onChange={e => handleItemChange(idx, 'tax_rate', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
                     </div>
                     <div className="w-24">
                       <label className="block text-xs text-gray-500 mb-1 font-medium">Discnt %</label>
-                      <input type="number" step="0.1" value={item.discount} onChange={e => handleItemChange(idx, 'discount', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <input type="number" step="0.1" value={item.discount} onChange={e => handleItemChange(idx, 'discount', parseFloat(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
                     </div>
-                    <button type="button" onClick={() => handleRemoveItem(idx)} className="text-red-500 font-bold mb-2 ml-2 hover:text-red-700 w-8 h-8 flex items-center justify-center rounded hover:bg-red-50 transition-colors">
-                      X
-                    </button>
+                    <button type="button" onClick={() => handleRemoveItem(idx)} className="text-red-500 font-bold mb-2 ml-2 hover:text-red-700">X</button>
                   </div>
                 ))}
-                <button type="button" onClick={handleAddItem} className="text-blue-600 font-medium text-sm mt-2 hover:underline">
-                  + Add Row
-                </button>
+                <button type="button" onClick={handleAddItem} className="text-blue-600 font-medium text-sm mt-2 hover:underline">+ Add Row</button>
               </div>
             </div>
 
             {/* Notes */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Additional Notes</h3>
-              <textarea name="notes" placeholder="Terms & Conditions, Payment details, etc." value={formData.notes} onChange={handleInputChange} rows={3} className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+              <textarea name="notes" placeholder="Terms & Conditions, Payment details, etc." value={formData.notes} onChange={handleInputChange} rows={3} className="border border-gray-300 rounded-lg px-4 py-2 w-full"></textarea>
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-              <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md transition-all active:scale-95">Generate Invoice</button>
+              <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700">Generate Invoice</button>
             </div>
           </form>
         </motion.div>
@@ -271,12 +292,12 @@ export default function InvoicesPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice #</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
@@ -292,12 +313,11 @@ export default function InvoicesPage() {
                     {inv.title && <div className="text-xs text-gray-500">{inv.title}</div>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{inv.customer_detail?.name || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">{inv.customer_detail?.email}</div>
+                    <div className="text-sm text-gray-900">{inv.customer_name || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{inv.contacts?.email || ''}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    {inv.currency === 'EUR' ? '€' : inv.currency === 'GBP' ? '£' : '$'}
-                    {inv.total_amount}
+                    {inv.currency === 'EUR' ? '€' : inv.currency === 'GBP' ? '£' : '$'}{inv.total_amount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -307,7 +327,7 @@ export default function InvoicesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString() : 'N/A'}
+                    {inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
