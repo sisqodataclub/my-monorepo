@@ -16,7 +16,6 @@ export interface InvoiceItem {
   quantity: number;
   measurement: string;
   unit_price: number;
-  discount_rate: number;
   total_price: number;
 }
 
@@ -28,9 +27,16 @@ export interface Invoice {
   currency?: string;
   invoice_date: string;
   due_date: string;
-  total_amount: number;
   customer_name: string;
-  contacts?: { email?: string; phone?: string };
+  contacts?: { 
+    'Contact Info'?: { email?: string; phone?: string } 
+  };
+  expense?: {
+    subtotal: number;
+    total_amount: number;
+    tax_amount: number;
+    discount_amount: number;
+  };
   items: InvoiceItem[];
   created_at: string;
 }
@@ -65,7 +71,7 @@ export const createInvoice = async (
     currency?: string;
     template_choice?: string;
     notes?: string;
-    invoice_date?: string;
+    issue_date?: string; 
     due_date?: string;
     receipt?: boolean;
     items: Array<{
@@ -75,7 +81,7 @@ export const createInvoice = async (
       unit_price?: number;
       tax_rate?: number;
       discount?: number;
-      measurement_unit?: string;
+      measurement?: string;
     }>;
   }
 ): Promise<Invoice> => {

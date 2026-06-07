@@ -26,7 +26,7 @@ export default function InvoicesPage() {
     receipt: false,
   });
 
-  const [items, setItems] = useState([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement_unit: '' }]);
+  const [items, setItems] = useState([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement: '' }]);
 
   useEffect(() => {
     loadData();
@@ -50,7 +50,10 @@ export default function InvoicesPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target as any;
+    const { name, value, type } = e.target;
+    // TypeScript safe-check for checkbox
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -71,7 +74,7 @@ export default function InvoicesPage() {
   };
 
   const handleAddItem = () => {
-    setItems([...items, { service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement_unit: '' }]);
+    setItems([...items, { service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement: '' }]);
   };
 
   const handleRemoveItem = (idx: number) => {
@@ -88,7 +91,7 @@ export default function InvoicesPage() {
       customer_name: formData.customerName,
       customer_email: formData.customerEmail,
       customer_phone: formData.customerPhone,
-      invoice_date: formData.invoiceDate || undefined,
+      issue_date: formData.invoiceDate || undefined, // Backend maps issue_date -> invoice_date
       due_date: formData.dueDate || undefined,
       status: formData.status,
       currency: formData.currency,
@@ -102,7 +105,7 @@ export default function InvoicesPage() {
         unit_price: item.unit_price,
         tax_rate: item.tax_rate,
         discount: item.discount,
-        measurement_unit: item.measurement_unit,
+        measurement: item.measurement, // Properly named measurement
       }))
     };
 
@@ -114,7 +117,7 @@ export default function InvoicesPage() {
         invoiceDate: '', dueDate: '', status: 'draft', currency: 'USD',
         templateChoice: 'quotation_1', notes: '', receipt: false,
       });
-      setItems([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement_unit: '' }]);
+      setItems([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement: '' }]);
       await loadData();
     } catch (err) {
       console.error('Failed to create invoice', err);
@@ -233,7 +236,7 @@ export default function InvoicesPage() {
                     </div>
                     <div className="w-20">
                       <label className="block text-xs text-gray-500 mb-1">Unit</label>
-                      <input type="text" placeholder="measure" value={item.measurement_unit} onChange={e => handleItemChange(idx, 'measurement_unit', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                      <input type="text" placeholder="measure" value={item.measurement} onChange={e => handleItemChange(idx, 'measurement', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
                     </div>
                     <div className="w-24">
                       <label className="block text-xs text-gray-500 mb-1">Tax %</label>
@@ -243,10 +246,10 @@ export default function InvoicesPage() {
                       <label className="block text-xs text-gray-500 mb-1">Disc %</label>
                       <input type="number" step="0.1" value={item.discount} onChange={e => handleItemChange(idx, 'discount', parseFloat(e.target.value))} className="w-full border rounded-lg px-3 py-2" />
                     </div>
-                    <button type="button" onClick={() => handleRemoveItem(idx)} className="text-red-500 font-bold mb-2">X</button>
+                    <button type="button" onClick={() => handleRemoveItem(idx)} className="text-red-500 font-bold mb-2 hover:text-red-700">X</button>
                   </div>
                 ))}
-                <button type="button" onClick={handleAddItem} className="text-blue-600 text-sm mt-2">+ Add Row</button>
+                <button type="button" onClick={handleAddItem} className="text-blue-600 font-medium text-sm mt-2 hover:underline">+ Add Row</button>
               </div>
             </div>
 
@@ -255,8 +258,8 @@ export default function InvoicesPage() {
               <textarea name="notes" placeholder="Terms & Conditions, Payment details, etc." value={formData.notes} onChange={handleInputChange} rows={3} className="border rounded-lg px-4 py-2 w-full"></textarea>
             </div>
 
-            <div className="flex justify-end gap-3">
-              <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700">Generate Invoice</button>
+            <div className="flex justify-end gap-3 pt-4">
+              <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md">Generate Invoice</button>
             </div>
           </form>
         </motion.div>
@@ -280,22 +283,29 @@ export default function InvoicesPage() {
             ) : (
               invoices.map(inv => (
                 <tr key={inv.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inv.invoice_number}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{inv.invoice_number}</div>
+                    {inv.title && <div className="text-xs text-gray-500">{inv.title}</div>}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{inv.customer_name}</div>
-                    <div className="text-sm text-gray-500">{inv.contacts?.email}</div>
+                    <div className="text-sm text-gray-500">{inv.contacts?.['Contact Info']?.email || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    {inv.currency === 'EUR' ? '€' : inv.currency === 'GBP' ? '£' : '$'}{inv.total_amount}
+                    {inv.currency === 'EUR' ? '€' : inv.currency === 'GBP' ? '£' : '$'}{inv.expense?.total_amount || '0.00'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${inv.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                       {inv.status === 'paid' ? 'PAID' : 'DRAFT'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString() : 'N/A'}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button onClick={() => handleDownload(inv.id)} className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded"> <Download size={16} /> PDF</button>
+                    <button onClick={() => handleDownload(inv.id)} className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded"> 
+                      <Download size={16} /> PDF
+                    </button>
                   </td>
                 </tr>
               ))
