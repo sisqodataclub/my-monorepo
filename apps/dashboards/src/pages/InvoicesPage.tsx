@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
-import { Plus, Download, RefreshCw } from 'lucide-react';
-import { fetchServices, fetchInvoices, createInvoice, downloadInvoicePdf, Service, Invoice } from '../api/invoiceApi';
+import { Plus, Download } from 'lucide-react';
+import type { Service, Invoice } from '../api/invoiceApi';
+import { fetchServices, fetchInvoices, createInvoice, downloadInvoicePdf } from '../api/invoiceApi';
 
 export default function InvoicesPage() {
   const { getToken } = useAuth();
@@ -11,7 +12,6 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Form state
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [items, setItems] = useState([{ service_id: '', quantity: 1, tax_rate: 0 }]);
@@ -62,11 +62,10 @@ export default function InvoicesPage() {
     try {
       await createInvoice(token, payload);
       setShowCreateForm(false);
-      // Reset form
       setCustomerEmail('');
       setCustomerName('');
       setItems([{ service_id: '', quantity: 1, tax_rate: 0 }]);
-      await loadData(); // refresh list
+      await loadData();
     } catch (err) {
       console.error('Failed to create invoice', err);
       alert('Error creating invoice');
@@ -80,10 +79,6 @@ export default function InvoicesPage() {
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.05 } }
-  };
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0 }
   };
 
   if (loading) {
@@ -178,7 +173,12 @@ export default function InvoicesPage() {
         </motion.div>
       )}
 
-      <motion.div variants={containerVariants} initial="hidden" animate="show" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      >
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
