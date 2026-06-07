@@ -28,8 +28,8 @@ export interface Invoice {
   invoice_date: string;
   due_date: string;
   customer_name: string;
-  contacts?: { 
-    'Contact Info'?: { email?: string; phone?: string } 
+  contacts?: {
+    'Contact Info'?: { email?: string; phone?: string }
   };
   expense?: {
     subtotal: number;
@@ -46,17 +46,34 @@ const getValidToken = (token: string | null): string => {
   return token;
 };
 
+// Helper to get tenant header (optional but recommended for multi-tenancy)
+const getTenantHeader = () => {
+  // You can hardcode or retrieve from environment / user metadata
+  return 'DDEEP';
+};
+
 export const fetchServices = async (token: string | null): Promise<Service[]> => {
   const res = await axios.get(`${API_BASE}/api/payments/services/`, {
-    headers: { Authorization: `Bearer ${getValidToken(token)}` }
+    headers: {
+      Authorization: `Bearer ${getValidToken(token)}`,
+      'X-Tenant': getTenantHeader(),
+    }
   });
   return res.data;
 };
 
 export const fetchInvoices = async (token: string | null): Promise<Invoice[]> => {
   const res = await axios.get(`${API_BASE}/api/payments/invoices/`, {
-    headers: { Authorization: `Bearer ${getValidToken(token)}` }
+    headers: {
+      Authorization: `Bearer ${getValidToken(token)}`,
+      'X-Tenant': getTenantHeader(),
+    }
   });
+  // Handle DRF pagination response: { count, next, previous, results }
+  if (res.data && res.data.results && Array.isArray(res.data.results)) {
+    return res.data.results;
+  }
+  // Fallback for non-paginated responses
   return Array.isArray(res.data) ? res.data : [];
 };
 
@@ -71,7 +88,7 @@ export const createInvoice = async (
     currency?: string;
     template_choice?: string;
     notes?: string;
-    issue_date?: string; 
+    issue_date?: string;
     due_date?: string;
     receipt?: boolean;
     items: Array<{
@@ -86,14 +103,22 @@ export const createInvoice = async (
   }
 ): Promise<Invoice> => {
   const res = await axios.post(`${API_BASE}/api/payments/invoices/create_with_items/`, data, {
-    headers: { Authorization: `Bearer ${getValidToken(token)}` }
+    headers: {
+      Authorization: `Bearer ${getValidToken(token)}`,
+      'X-Tenant': getTenantHeader(),
+    }
   });
   return res.data;
 };
 
 export const downloadInvoicePdf = (invoiceId: number, token: string | null) => {
   const url = `${API_BASE}/api/payments/invoices/${invoiceId}/pdf/`;
-  fetch(url, { headers: { Authorization: `Bearer ${getValidToken(token)}` } })
+  fetch(url, {
+    headers: {
+      Authorization: `Bearer ${getValidToken(token)}`,
+      'X-Tenant': getTenantHeader(),
+    }
+  })
     .then(response => response.blob())
     .then(blob => {
       const blobUrl = URL.createObjectURL(blob);
