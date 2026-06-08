@@ -62,7 +62,7 @@ export default function InvoicesPage() {
 
   const handleEdit = (invoice: Invoice) => {
     setEditingInvoice(invoice);
-    // Safely extract note content
+    // Extract note content (if any)
     let noteContent = '';
     if (invoice.notes && Array.isArray(invoice.notes) && invoice.notes.length > 0) {
       noteContent = invoice.notes[0].content || '';
@@ -85,7 +85,7 @@ export default function InvoicesPage() {
       description: item.description,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      tax_rate: 0,   // not stored per item – acceptable trade-off
+      tax_rate: 0,   // not stored per item
       discount: 0,
       measurement: item.measurement || '',
     })));
@@ -323,7 +323,11 @@ export default function InvoicesPage() {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {invoices.length === 0 ? (
-              <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No invoices yet. Click "New Invoice" to create one.</td></tr>
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  No invoices yet. Click "New Invoice" to create one.
+                </td>
+              </tr>
             ) : (
               invoices.map(inv => (
                 <tr key={inv.id} className="hover:bg-gray-50">
@@ -354,7 +358,7 @@ export default function InvoicesPage() {
                       <Download size={16} /> PDF
                     </button>
                   </td>
-                </td>
+                </tr>
               ))
             )}
           </tbody>
