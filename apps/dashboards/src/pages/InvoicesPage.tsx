@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
-import { Plus, Download, X } from 'lucide-react';
+import { Plus, Download, Edit, X } from 'lucide-react';
 import type { Service, Invoice } from '../api/invoiceApi';
-import { fetchServices, fetchInvoices, createInvoice, downloadInvoicePdf } from '../api/invoiceApi';
+import { fetchServices, fetchInvoices, createInvoice, updateInvoice, downloadInvoicePdf } from '../api/invoiceApi';
 
 export default function InvoicesPage() {
   const { getToken } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -49,11 +50,51 @@ export default function InvoicesPage() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      title: '', customerName: '', customerEmail: '', customerPhone: '',
+      invoiceDate: '', dueDate: '', status: 'draft', currency: 'USD',
+      templateChoice: 'quotation_1', notes: '', receipt: false,
+    });
+    setItems([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement: '' }]);
+    setEditingInvoice(null);
+  };
+
+  const handleEdit = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    // Safely extract note content
+    let noteContent = '';
+    if (invoice.notes && Array.isArray(invoice.notes) && invoice.notes.length > 0) {
+      noteContent = invoice.notes[0].content || '';
+    }
+    setFormData({
+      title: invoice.title || '',
+      customerName: invoice.customer_name,
+      customerEmail: invoice.contacts?.['Contact Info']?.email || '',
+      customerPhone: invoice.contacts?.['Contact Info']?.phone || '',
+      invoiceDate: invoice.invoice_date,
+      dueDate: invoice.due_date,
+      status: invoice.status,
+      currency: invoice.currency || 'USD',
+      templateChoice: invoice.template_choice || 'quotation_1',
+      notes: noteContent,
+      receipt: invoice.receipt || false,
+    });
+    setItems(invoice.items.map(item => ({
+      service_id: '',
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      tax_rate: 0,   // not stored per item – acceptable trade-off
+      discount: 0,
+      measurement: item.measurement || '',
+    })));
+    setShowForm(true);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    // TypeScript safe-check for checkbox
     const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
-    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -82,16 +123,15 @@ export default function InvoicesPage() {
     setItems(items.filter((_, i) => i !== idx));
   };
 
-  const handleCreateInvoice = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = await getToken();
-
     const payload = {
       title: formData.title,
       customer_name: formData.customerName,
       customer_email: formData.customerEmail,
       customer_phone: formData.customerPhone,
-      issue_date: formData.invoiceDate || undefined, // Backend maps issue_date -> invoice_date
+      issue_date: formData.invoiceDate || undefined,
       due_date: formData.dueDate || undefined,
       status: formData.status,
       currency: formData.currency,
@@ -105,23 +145,21 @@ export default function InvoicesPage() {
         unit_price: item.unit_price,
         tax_rate: item.tax_rate,
         discount: item.discount,
-        measurement: item.measurement, // Properly named measurement
+        measurement: item.measurement,
       }))
     };
-
     try {
-      await createInvoice(token, payload);
-      setShowCreateForm(false);
-      setFormData({
-        title: '', customerName: '', customerEmail: '', customerPhone: '',
-        invoiceDate: '', dueDate: '', status: 'draft', currency: 'USD',
-        templateChoice: 'quotation_1', notes: '', receipt: false,
-      });
-      setItems([{ service_id: '', quantity: 1, tax_rate: 0, discount: 0, unit_price: 0, description: '', measurement: '' }]);
+      if (editingInvoice) {
+        await updateInvoice(token, editingInvoice.id, payload);
+      } else {
+        await createInvoice(token, payload);
+      }
+      setShowForm(false);
+      resetForm();
       await loadData();
     } catch (err) {
-      console.error('Failed to create invoice', err);
-      alert('Error creating invoice. Please check the console.');
+      console.error('Failed to save invoice', err);
+      alert('Error saving invoice. Please check the console.');
     }
   };
 
@@ -143,23 +181,27 @@ export default function InvoicesPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Invoices & Billing</h1>
         <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
+          onClick={() => { resetForm(); setShowForm(true); }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
         >
-          {showCreateForm ? <X size={18} /> : <Plus size={18} />}
-          {showCreateForm ? 'Cancel Creation' : 'New Invoice'}
+          <Plus size={18} /> New Invoice
         </button>
       </div>
 
-      {showCreateForm && (
+      {showForm && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200"
         >
-          <h2 className="text-xl font-bold mb-6 border-b pb-2">Invoice Configuration</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">{editingInvoice ? 'Edit Invoice' : 'Invoice Configuration'}</h2>
+            <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700">
+              <X size={24} />
+            </button>
+          </div>
 
-          <form onSubmit={handleCreateInvoice} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Basic Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -259,7 +301,9 @@ export default function InvoicesPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md">Generate Invoice</button>
+              <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md">
+                {editingInvoice ? 'Update Invoice' : 'Generate Invoice'}
+              </button>
             </div>
           </form>
         </motion.div>
@@ -302,12 +346,15 @@ export default function InvoicesPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString() : 'N/A'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button onClick={() => handleDownload(inv.id)} className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded"> 
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
+                    <button onClick={() => handleEdit(inv)} className="text-green-600 hover:text-green-900 flex items-center gap-1 bg-green-50 px-3 py-1 rounded">
+                      <Edit size={16} /> Edit
+                    </button>
+                    <button onClick={() => handleDownload(inv.id)} className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded">
                       <Download size={16} /> PDF
                     </button>
                   </td>
-                </tr>
+                </td>
               ))
             )}
           </tbody>
