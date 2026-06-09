@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
-import { Plus, Download, Edit, X } from 'lucide-react';
+import { Plus, Download, Edit, Mail, X } from 'lucide-react';
 import type { Service, Invoice } from '../api/invoiceApi';
-import { fetchServices, fetchInvoices, createInvoice, updateInvoice, downloadInvoicePdf } from '../api/invoiceApi';
+import { fetchServices, fetchInvoices, createInvoice, updateInvoice, downloadInvoicePdf, emailInvoice } from '../api/invoiceApi';
 
 export default function InvoicesPage() {
   const { getToken } = useAuth();
@@ -62,7 +62,6 @@ export default function InvoicesPage() {
 
   const handleEdit = (invoice: Invoice) => {
     setEditingInvoice(invoice);
-    // Extract note content (if any)
     let noteContent = '';
     if (invoice.notes && Array.isArray(invoice.notes) && invoice.notes.length > 0) {
       noteContent = invoice.notes[0].content || '';
@@ -85,7 +84,7 @@ export default function InvoicesPage() {
       description: item.description,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      tax_rate: 0,   // not stored per item
+      tax_rate: 0,
       discount: 0,
       measurement: item.measurement || '',
     })));
@@ -165,6 +164,17 @@ export default function InvoicesPage() {
 
   const handleDownload = (invoiceId: number) => {
     getToken().then(token => downloadInvoicePdf(invoiceId, token));
+  };
+
+  const handleEmail = async (invoiceId: number) => {
+    const token = await getToken();
+    try {
+      await emailInvoice(invoiceId, token);
+      alert('Invoice emailed successfully');
+    } catch (err) {
+      console.error('Failed to email invoice', err);
+      alert('Error sending email. Please try again.');
+    }
   };
 
   const containerVariants: Variants = {
@@ -350,12 +360,15 @@ export default function InvoicesPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString() : 'N/A'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2 flex-wrap">
                     <button onClick={() => handleEdit(inv)} className="text-green-600 hover:text-green-900 flex items-center gap-1 bg-green-50 px-3 py-1 rounded">
                       <Edit size={16} /> Edit
                     </button>
                     <button onClick={() => handleDownload(inv.id)} className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded">
                       <Download size={16} /> PDF
+                    </button>
+                    <button onClick={() => handleEmail(inv.id)} className="text-purple-600 hover:text-purple-900 flex items-center gap-1 bg-purple-50 px-3 py-1 rounded">
+                      <Mail size={16} /> Email
                     </button>
                   </td>
                 </tr>

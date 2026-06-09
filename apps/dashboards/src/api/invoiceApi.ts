@@ -47,7 +47,7 @@ export interface Invoice {
   };
   items: InvoiceItem[];
   created_at: string;
-  notes?: any;      // JSON array or null
+  notes?: any;
   receipt?: boolean;
   template_choice?: string;
 }
@@ -61,9 +61,7 @@ const getValidToken = (token: string | null): string => {
   return token;
 };
 
-// Helper to get tenant header (optional but recommended for multi-tenancy)
 const getTenantHeader = (): string | null => {
-  // You can hardcode or retrieve from environment / user metadata
   return 'DDEEP'; // Change to your tenant identifier or null if not used
 };
 
@@ -86,11 +84,9 @@ export const fetchInvoices = async (token: string | null): Promise<Invoice[]> =>
   if (tenant) headers['X-Tenant'] = tenant;
 
   const res = await axios.get(`${API_BASE}/api/payments/invoices/`, { headers });
-  // Handle DRF pagination response: { count, next, previous, results }
   if (res.data && res.data.results && Array.isArray(res.data.results)) {
     return res.data.results;
   }
-  // Fallback for non-paginated responses
   return Array.isArray(res.data) ? res.data : [];
 };
 
@@ -154,4 +150,13 @@ export const downloadInvoicePdf = (invoiceId: number, token: string | null) => {
       URL.revokeObjectURL(blobUrl);
     })
     .catch(err => console.error('PDF download failed:', err));
+};
+
+// ========== NEW: Email Invoice ==========
+export const emailInvoice = async (invoiceId: number, token: string | null): Promise<void> => {
+  const headers: any = { Authorization: `Bearer ${getValidToken(token)}` };
+  const tenant = getTenantHeader();
+  if (tenant) headers['X-Tenant'] = tenant;
+
+  await axios.post(`${API_BASE}/api/payments/invoices/${invoiceId}/email/`, {}, { headers });
 };
