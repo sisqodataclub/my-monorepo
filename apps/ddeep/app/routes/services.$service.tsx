@@ -1,54 +1,40 @@
 // app/routes/services.$service.tsx
-import { Navigate, useParams } from "react-router";
-import type { MetaFunction } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData } from "react-router";
 
-// SAFE IMPORTS: Only import the default component, no data variables from the client!
-import DynamicServicePage from "../components/landing/dynamic";
+// Import your data and component
 import { servicesContent } from "../components/landing/servicesContent";
+import DynamicServicePage from "../components/landing/dynamic";
 import { getSeoMeta } from "../utils/seo";
 
-export const meta: MetaFunction = ({ params, location }) => {
-  const serviceId = params.service;
-  const serviceData = serviceId ? servicesContent[serviceId] : null;
-
-  const baseUrl = "https://www.ddeepcleaningservices.com";
-  const currentUrl = `${baseUrl}${location.pathname}`;
-
-  if (!serviceData) {
-    return getSeoMeta({
-      title: "Service Not Found | D Deep",
-      description: "The requested cleaning service could not be found.",
-      url: currentUrl
-    });
+// ==========================================
+// 1. DATA LOADER
+// ==========================================
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const slug = params.service; 
+  
+  if (!slug || !servicesContent[slug]) {
+    throw new Response("Service Not Found", { status: 404 });
   }
 
-  // --- BUILD THE SCHEMAS ---
-
-  // A. Local Business & Service Schema
-  const serviceSchema = {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    "name": serviceData.heroTitle,
-    "description": serviceData.heroSubtitle,
-    "provider": {
-      "@type": "LocalBusiness",
-      "name": "D Deep Cleaning",
-      "address": {
-        "@type": "PostalAddress",
-        "addressRegion": "North West",
-        "addressCountry": "UK"
-      }
-    },
-    "areaServed": [
-      { "@type": "City", "name": "Manchester" },
-      { "@type": "City", "name": "Liverpool" },
-      { "@type": "City", "name": "Bolton" },
-      { "@type": "City", "name": "Stockport" }
-    ]
+  return {
+    slug,
+    serviceData: servicesContent[slug]
   };
+};
 
-  // B. FAQ Schema (Automatically mapped from the service-specific data)
-  const faqSchema = serviceData.faqs && serviceData.faqs.length > 0 ? {
+// ==========================================
+// 2. DYNAMIC SEO & SCHEMA INJECTION
+// ==========================================
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if (!data) {
+    return [{ title: "Service Not Found | D DEEP Cleaning" }];
+  }
+
+  const { slug, serviceData } = data;
+
+  // A. Generate the FAQ Schema dynamically (ONLY if FAQs exist)
+  const faqSchema = serviceData.faqs?.length ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": serviceData.faqs.map((faq) => ({
@@ -56,28 +42,47 @@ export const meta: MetaFunction = ({ params, location }) => {
       "name": faq.question,
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": faq.answer,
-      },
-    })),
+        "text": faq.answer
+      }
+    }))
   } : null;
 
-  // Filter out null schemas if a service happens to have no FAQs
+  // B. Generate the Service Schema with Knowledge Graph Anchors
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": serviceData.heroTitle,
+    "provider": {
+      "@type": "LocalBusiness",
+      "name": "D DEEP Cleaning Services",
+      "url": "https://www.ddeepcleaningservices.com",
+      "telephone": "07459416262",
+      "address": {
+        "@type": "PostalAddress",
+        "addressRegion": "Greater Manchester",
+        "addressCountry": "GB"
+      },
+      "priceRange": "From £50"
+    }
+  };
+
+  // Filter out any null schemas (like missing FAQs) before passing to utility
   const schemas = [serviceSchema, faqSchema].filter(Boolean);
 
+  // C. Pass everything through your SEO Utility
   return getSeoMeta({
-    title: `${serviceData.heroTitle} | D Deep`,
+    title: `${serviceData.heroTitle} Manchester | 5★ D DEEP`,
     description: serviceData.heroSubtitle,
-    url: currentUrl,
+    url: `https://www.ddeepcleaningservices.com/services/${slug}/`,
+    image: "https://www.ddeepcleaningservices.com/logo.png",
     schema: schemas
   });
 };
 
+// ==========================================
+// 3. PAGE COMPONENT
+// ==========================================
 export default function ServiceRoute() {
-  const { service } = useParams<"service">();
-
-  if (!service || !servicesContent[service]) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <DynamicServicePage data={servicesContent[service]} />;
+  const { serviceData } = useLoaderData<typeof loader>();
+  return <DynamicServicePage data={serviceData} />;
 }

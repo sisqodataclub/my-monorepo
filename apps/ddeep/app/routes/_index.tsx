@@ -1,5 +1,6 @@
 // app/routes/_index.tsx
 import type { MetaFunction } from "react-router";
+import { getSeoMeta } from "../utils/seo";
 
 // ==========================================
 // 1. SERVER-RENDERED SEO & SCHEMA
@@ -13,6 +14,12 @@ export const meta: MetaFunction = () => {
     "@id": "https://www.ddeepcleaningservices.com",
     "url": "https://www.ddeepcleaningservices.com",
     "telephone": "07459416262",
+    "priceRange": "From £50", // Clears GSC Schema Warning & adds price floor
+    "aggregateRating": {      // Clears GSC Schema Warning & enables search result stars
+      "@type": "AggregateRating",
+      "ratingValue": "4.9", 
+      "reviewCount": "82"   
+    },
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Manchester",
@@ -48,24 +55,14 @@ export const meta: MetaFunction = () => {
     }
   };
 
-  return [
-    { title: "Deep Cleaning Manchester & Liverpool | D DEEP Cleaning Services" },
-    {
-      name: "description",
-      content: "Professional cleaning in Manchester & Liverpool. Specialists in Deep Cleaning, End of Tenancy, Regular Domestic, Office, After Builders, Hospitality, Student Accommodation, and CQC Healthcare Cleaning."
-    },
-    { property: "og:title", content: "D DEEP Cleaning | Commercial & Residential Cleaning Experts" },
-    {
-      property: "og:description",
-      content: "Complete cleaning solutions across the North West: From domestic deep cleans and carpet stain removal to clinical healthcare and office maintenance."
-    },
-    {
-      name: "keywords",
-      content: "Deep Cleaning Manchester, End of Tenancy Cleaning Liverpool, Regular Cleaners Manchester, After Builders Cleaning, Office Cleaning Liverpool, Restaurant Cleaning, Student Accommodation Turnaround, Clinical Cleaning CQC, Carpet Cleaning Manchester, Appliance Cleaning, Move out cleaning, HMO cleaning North West"
-    },
-    { name: "robots", content: "index, follow" },
-    { "script:ld+json": businessSchema }
-  ];
+  return getSeoMeta({
+    title: "Deep & Domestic Cleaning Manchester & Liverpool | 5★ D DEEP",
+    description: "Top-rated professional home & commercial cleaners. Specialists in deep cleaning, regular domestic house cleaning, and end of tenancy across Manchester & Liverpool. Fully insured & vetted. Get a free quote today!",
+    url: "https://www.ddeepcleaningservices.com/", // Forces canonical URL with trailing slash
+    image: "https://www.ddeepcleaningservices.com/logo.png",
+    keywords: "Deep Cleaning Manchester, Domestic Cleaners Manchester, Regular Cleaning Liverpool, End of Tenancy Cleaning Manchester, After Builders Cleaning, Office Cleaning Liverpool, House Cleaning Manchester",
+    schema: businessSchema
+  });
 };
 
 // ==========================================
