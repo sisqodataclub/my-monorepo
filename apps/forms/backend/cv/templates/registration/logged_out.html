@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logged Out - ResumeCraft</title>
+    
+    <style>
+        /* ===================================
+           CSS RESET & BASE STYLES
+        =================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+            color: #e4e4e7;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ambient background gradient - subtle depth */
+        .ambient-bg {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            will-change: opacity, transform;
+        }
+
+        /* ===================================
+           MAIN CARD CONTAINER
+        =================================== */
+        .logout-container {
+            background: rgba(24, 24, 27, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(63, 63, 70, 0.4);
+            border-radius: 24px;
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.02),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 40px 120px rgba(0, 0, 0, 0.3);
+            padding: 64px 48px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            will-change: opacity, transform;
+        }
+
+        /* ===================================
+           ICON / VISUAL ELEMENT
+        =================================== */
+        .logout-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 32px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            will-change: opacity, transform;
+        }
+
+        /* Glow effect - now a real element */
+        .icon-glow {
+            position: absolute;
+            inset: -20px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            will-change: opacity;
+        }
+
+        .logout-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: #6366f1;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===================================
+           HEADING & TEXT
+        =================================== */
+        .logout-heading {
+            font-size: 32px;
+            font-weight: 600;
+            color: #fafafa;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            will-change: opacity, transform;
+        }
+
+        .logout-text {
+            font-size: 15px;
+            color: #a1a1aa;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            will-change: opacity, transform;
+        }
+
+        /* ===================================
+           BUTTONS & LINKS
+        =================================== */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            will-change: opacity, transform;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: -0.01em;
+            transition: border-color 0.2s ease;
+            will-change: transform;
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid #6366f1;
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: #ffffff;
+            box-shadow: 
+                0 0 0 1px rgba(99, 102, 241, 0.1),
+                0 2px 8px rgba(99, 102, 241, 0.2),
+                0 4px 16px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Gradient overlay - now a real element */
+        .btn-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+            pointer-events: none;
+            will-change: opacity;
+        }
+
+        .btn-secondary {
+            background: rgba(39, 39, 42, 0.6);
+            color: #d4d4d8;
+            border: 1px solid rgba(63, 63, 70, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* Reduced motion - instant states */
+        @media (prefers-reduced-motion: reduce) {
+            .ambient-bg,
+            .logout-container,
+            .logout-icon,
+            .logout-heading,
+            .logout-text,
+            .button-group,
+            .btn {
+                will-change: auto;
+            }
+        }
+
+        /* ===================================
+           RESPONSIVE DESIGN
+        =================================== */
+        @media (max-width: 480px) {
+            .logout-container {
+                padding: 48px 28px;
+                border-radius: 20px;
+            }
+
+            .logout-heading {
+                font-size: 28px;
+            }
+
+            .logout-text {
+                font-size: 14px;
+                margin-bottom: 32px;
+            }
+
+            .logout-icon {
+                width: 64px;
+                height: 64px;
+                margin-bottom: 28px;
+            }
+
+            .logout-icon svg {
+                width: 28px;
+                height: 28px;
+            }
+
+            .btn {
+                padding: 13px 24px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Ambient background (real DOM element for GSAP) -->
+    <div class="ambient-bg"></div>
+
+    <!-- ===================================
+         MAIN LOGOUT CARD
+    =================================== -->
+    <div class="logout-container">
+        
+        <!-- Icon with checkmark -->
+        <div class="logout-icon">
+            <div class="icon-glow"></div>
+            <svg viewBox="0 0 24 24">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+
+        <!-- Heading -->
+        <h1 class="logout-heading">Session ended</h1>
+
+        <!-- Supportive text -->
+        <p class="logout-text">
+            You've been securely logged out. Thanks for using ResumeCraft.
+        </p>
+
+        <!-- Action buttons -->
+        <div class="button-group">
+            <a href="{% url 'login' %}" class="btn btn-primary" id="loginBtn">
+                <span class="btn-overlay"></span>
+                Log in again
+            </a>
+            <a href="/" class="btn btn-secondary" id="homeBtn">
+                Go to home
+            </a>
+        </div>
+
+    </div>
+
+    <!-- ===================================
+         GSAP ANIMATION LIBRARY
+    =================================== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+    <script>
+        /* ===================================
+           REDUCED MOTION CHECK
+        =================================== */
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        /* ===================================
+           PAGE LOAD ANIMATIONS
+        =================================== */
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Instant visibility for reduced motion
+            if (prefersReducedMotion) {
+                gsap.set(['.logout-container', '.logout-icon', '.icon-glow', '.logout-heading', '.logout-text', '.button-group'], {
+                    opacity: 1,
+                    clearProps: 'transform'
+                });
+                gsap.set('.ambient-bg', {
+                    opacity: 0.4
+                });
+                return;
+            }
+
+            // Set initial states explicitly
+            gsap.set('.logout-container', { opacity: 0, y: 40, scale: 0.96 });
+            gsap.set('.logout-icon', { opacity: 0, scale: 0.8, rotation: -5 });
+            gsap.set('.icon-glow', { opacity: 0 });
+            gsap.set('.logout-heading', { opacity: 0, y: 20 });
+            gsap.set('.logout-text', { opacity: 0, y: 20 });
+            gsap.set('.button-group', { opacity: 0, y: 20 });
+            gsap.set('.ambient-bg', { opacity: 0.4, scale: 1 });
+
+            // Master timeline - optimized sequencing
+            const tl = gsap.timeline();
+
+            tl.to('.logout-container', {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.8,
+                ease: 'expo.out'
+            })
+            .to('.logout-icon', {
+                opacity: 1,
+                scale: 1,
+                rotation: 0,
+                duration: 0.6,
+                ease: 'back.out(1.4)'
+            }, '-=0.5')
+            .to('.icon-glow', {
+                opacity: 1,
+                duration: 0.4,
+                ease: 'power2.out'
+            }, '-=0.3')
+            .to('.logout-heading', {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                ease: 'power2.out'
+            }, '-=0.4')
+            .to('.logout-text', {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                ease: 'power2.out'
+            }, '-=0.35')
+            .to('.button-group', {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                ease: 'power2.out'
+            }, '-=0.35');
+
+            // Ambient glow breathing
+            gsap.to('.icon-glow', {
+                opacity: 0.6,
+                duration: 3,
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1,
+                delay: 1
+            });
+
+            // Background ambient pulse
+            gsap.to('.ambient-bg', {
+                opacity: 0.6,
+                scale: 1.1,
+                duration: 8,
+                ease: 'sine.inOut',
+                yoyo: true,
+                repeat: -1
+            });
+
+            /* ===================================
+               BUTTON INTERACTIONS
+            =================================== */
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const homeBtn = document.getElementById('homeBtn');
+            const btnOverlay = document.querySelector('.btn-overlay');
+
+            // Primary button hover
+            loginBtn.addEventListener('mouseenter', function() {
+                gsap.to(loginBtn, { y: -2, duration: 0.3, ease: 'power2.out' });
+                gsap.to(btnOverlay, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+            });
+
+            loginBtn.addEventListener('mouseleave', function() {
+                gsap.to(loginBtn, { y: 0, duration: 0.3, ease: 'power2.out' });
+                gsap.to(btnOverlay, { opacity: 0, duration: 0.3, ease: 'power2.out' });
+            });
+
+            // Secondary button hover
+            homeBtn.addEventListener('mouseenter', function() {
+                gsap.to(homeBtn, { y: -2, duration: 0.3, ease: 'power2.out' });
+            });
+
+            homeBtn.addEventListener('mouseleave', function() {
+                gsap.to(homeBtn, { y: 0, duration: 0.3, ease: 'power2.out' });
+            });
+
+            // Press states for both buttons
+            [loginBtn, homeBtn].forEach(btn => {
+                btn.addEventListener('mousedown', function() {
+                    gsap.to(btn, { scale: 0.97, duration: 0.1, ease: 'power1.in' });
+                });
+
+                btn.addEventListener('mouseup', function() {
+                    gsap.to(btn, { scale: 1, duration: 0.2, ease: 'power2.out' });
+                });
+
+                // Exit animation on click
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetUrl = btn.getAttribute('href');
+                    
+                    gsap.to('.logout-container', {
+                        opacity: 0,
+                        scale: 0.96,
+                        y: -10,
+                        duration: 0.3,
+                        ease: 'power2.in',
+                        onComplete: () => {
+                            window.location.href = targetUrl;
+                        }
+                    });
+                });
+
+                // Keyboard focus states
+                btn.addEventListener('focus', function() {
+                    gsap.to(btn, { scale: 1.02, duration: 0.2, ease: 'power2.out' });
+                });
+
+                btn.addEventListener('blur', function() {
+                    gsap.to(btn, { scale: 1, duration: 0.2, ease: 'power2.out' });
+                });
+
+                // Keyboard press states
+                btn.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        gsap.to(btn, { scale: 0.97, duration: 0.1, ease: 'power1.in' });
+                    }
+                });
+
+                btn.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        gsap.to(btn, { 
+                            scale: 1.02, 
+                            duration: 0.2, 
+                            ease: 'power2.out',
+                            onComplete: () => {
+                                btn.click();
+                            }
+                        });
+                    }
+                });
+            });
+
+        });
+    </script>
+
+</body>
+</html>

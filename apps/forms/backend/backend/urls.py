@@ -7,17 +7,22 @@ from api.admin import dashboard_admin_site
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("dashboard-admin/", dashboard_admin_site.urls),
-    
-    # 🌟 User Registration
+
+    # User Registration
     path("api/user/register/", CreateUserView.as_view(), name="register"),
-    
-    # 🌟 JWT Authentication Endpoints
+
+    # JWT Authentication Endpoints
     path("api/token/", TokenObtainPairView.as_view(), name="get_token"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"),
-    
+
     # Standard DRF Auth (Session-based, good for browsable API)
     path("api-auth/", include("rest_framework.urls")),
-    
-    # 🌟 Your main API routes (this automatically includes api/contact/, api/blogs/, etc.)
+
+    # Main API routes (forms: contact, blogs, etc.)
     path("api/", include("api.urls")),
+
+    # ==========================================
+    # NEW: CV app (resumes + job applications)
+    # ==========================================
+    path("cv/", include("cv.urls")),   # <-- ADD THIS LINE
 ]

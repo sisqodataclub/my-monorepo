@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ resume.full_name }}'s Professional Resume</title>
+    
+    <link rel="stylesheet" href="{% static 'resumesite/style.css' %}">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="top-nav-controls">
+        {% if user.is_authenticated %}
+            <a href="{% url 'react_demo' %}" class="control-link">
+                <i class="fas fa-home"></i> DASHBOARD
+            </a>
+            
+            <span class="control-separator">|</span>
+
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="control-link logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> LOGOUT
+                </button>
+            </form>
+        {% endif %}
+    </div>
+    
+    <div id="mn" class="resume-container">
+        
+        <div class="resume-header">
+            <h1>{{ resume.full_name }}</h1>
+            <p class="summary-section">{{ resume.about }}</p> 
+            <div class="contact-info">
+                <span><i class="fas fa-envelope"></i> {{ resume.email }}</span>
+                <span><i class="fas fa-phone"></i> +91-{{ resume.phone }}</span>
+                <span><i class="fas fa-user"></i> Age: {{ resume.age }}</span>
+            </div>
+        </div>
+        
+        <div class="main">
+            
+            <div class="left">
+                
+                <h2>Skills</h2>
+                <ul class="skills-list">
+                    {% for skill in skills_list %}
+                        <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+
+                <h2>Education</h2>
+                {% if resume.education1 %}<pre class="education-entry">{{ resume.education1 }}</pre>{% endif %}
+                {% if resume.education2 %}<pre class="education-entry">{{ resume.education2 }}</pre>{% endif %}
+                {% if resume.education3 %}<pre class="education-entry">{{ resume.education3 }}</pre>{% endif %}
+
+                <h2>Languages</h2>
+                <ul class="languages-list">
+                    {% for lang in languages_list %}
+                        <li>{{ lang }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="right">
+                
+                <h2>Work Experience</h2>
+                {% if resume.experience1 %}<pre class="job-entry">{{ resume.experience1 }}</pre>{% endif %}
+                {% if resume.experience2 %}<pre class="job-entry">{{ resume.experience2 }}</pre>{% endif %}
+
+                <h2>Projects</h2>
+                <pre class="project-entry">{{ resume.project1 }}</pre>
+                {% if resume.project2 %}<pre class="project-entry">{{ resume.project2 }}</pre>{% endif %}
+
+                <h2>Achievements</h2>
+                <ul class="achievements-list">
+                    {% for ach in achievements_list %}
+                        <li>{{ ach }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <button onclick="generatePDF('mn')" type="button" class="btn1">Download PDF</button>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <script type="text/javascript">
+        function generatePDF(containerId) {
+            const container = document.getElementById(containerId);
+
+            const pdfOptions = {
+                margin: 10,
+                filename: '{{ resume.full_name|default:"resume" }}_resume.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Hide the download button before generating PDF
+            const downloadButton = document.querySelector('.btn1');
+            if (downloadButton) downloadButton.style.display = 'none';
+
+            html2pdf().from(container).set(pdfOptions).save();
+            
+            // Restore button after generation is initiated
+            if (downloadButton) setTimeout(() => downloadButton.style.display = 'block', 100);
+        }
+    </script>
+</body>
+</html>

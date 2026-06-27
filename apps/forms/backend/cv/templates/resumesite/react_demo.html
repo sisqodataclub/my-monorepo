@@ -1,0 +1,237 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV-BUILDER PRO. | Professional Resume Design Platform</title>
+    
+    <!-- External Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/locomotive-scroll@3.5.4/dist/locomotive-scroll.css">
+    
+    <!-- Custom CSS (Dark Theme, Dashboard, Animations) -->
+    <link rel="stylesheet" href="{% static 'resumesite/main.css' %}"> 
+    
+</head>
+
+<body>
+    <!-- 1. NAVIGATION (Fixed Header) -->
+    <nav>
+        <h1>RESUME CRAFT.</h1>
+        <div class="nav-part2">
+            <div class="nav-elem"><h4><a href="{% url 'react_demo' %}">BUILDER</a></h4><h5><span>Start Building</span></h5></div>
+            <div class="nav-elem"><h4><a href="{% url 'react_demo' %}">MY RESUMES</a></h4><h5><span>View Resumes</span></h5></div>
+            <div class="nav-elem"><h4>TEMPLATES</h4><h5><span>Browse Designs</span></h5></div>
+            <div class="nav-elem">
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'logout' %}" id="logout-form" style="display: none;">
+                        {% csrf_token %}
+                    </form>
+                    
+                    <div class="logout-link-wrapper">
+                        <h4>
+                            <a href="#" 
+                               onclick="document.getElementById('logout-form').submit(); return false;">
+                                LOGOUT
+                            </a>
+                        </h4>
+                        <h5><span>End Session</span></h5>
+                    </div>
+                {% else %}
+                    <h4><a href="{% url 'register' %}">REGISTER</a></h4><h5><span>Sign Up</span></h5>
+                {% endif %}
+            </div>
+            </div>
+        </div>
+        <button 
+        onclick="window.location.href='{% if user.is_authenticated %}/resume/create/{% else %}{% url 'login' %}{% endif %}'"
+    >
+        Start Building <i class="ri-arrow-right-up-line"></i>
+    </button>
+        <div id="nav-bottom"></div>
+    </nav>
+    
+    <!-- 2. MAIN SCROLL CONTAINER -->
+    <div id="main">
+        
+        <!-- #PAGE1: HERO SECTION / REACT MOUNT POINT -->
+        <div id="page1">
+            <div id="react-root">
+                <!-- React App mounts LandingPage or BuilderDashboard here -->
+                <h1>Loading App...</h1> 
+            </div>
+        </div>
+
+        <!-- #PAGE2: FEATURE SECTION -->
+        <div id="page2">
+            <div id="page2-left">
+                <p>Build your profile with modern design.</p>
+                <h5>Our tool creates documents that pass ATS and effectively highlight your achievements.</h5>
+            </div>
+            <div id="page2-right">
+                <!-- Placeholder for dynamic hover elements (.right-elem) -->
+            </div>
+        </div>
+        
+        <!-- #PAGE3: VIDEO PREVIEW (Targets page3VideoAnimation() for theater mode) -->
+        <div id="page3">
+    
+    <video muted loop controls playsinline preload="auto" 
+           src="{% static 'resumesite/la-reel--min.mp4' %}" 
+           poster="{% static 'resumesite/reel-cover.webp' %}">
+    </video>
+    
+    <div class="page3-center">
+        <div class="icon"><i class="ri-play-fill"></i></div>
+        <h5>Watch Sample Preview</h5>
+    </div>
+</div>
+        
+        <!-- 🛑 #PAGE4: PROJECT SHOWCASE (Targets page3VideoAnimation() for hover effect) 🛑 -->
+        <div id="page4">
+            <!-- Project 1 Section -->
+            <div class="section">
+                <div class="sec-left">
+                    <h2>Interactive Resume Preview</h2>
+                    <p>Showcase your projects with dynamic previews. Upload a short clip or an animated GIF to make your work stand out immediately.</p>
+                </div>
+                <div class="sec-right">
+                    <!-- Placeholder for image/video toggle on hover -->
+                    <img src="{% static 'resumesite/project_cover_1.webp' %}" alt="Project Preview Cover">
+                    <video muted src="{% static 'resumesite/project_video_1.mp4' %}"></video>
+                </div>
+            </div>  
+            <!-- Project 2 Section -->
+            <div class="section">
+                <div class="sec-left">
+                    <h2>Professional Portfolio Link</h2>
+                    <p>Embed key performance metrics or testimonials directly alongside your experience. Perfect for tracking applications.</p>
+                </div>
+                <div class="sec-right">
+                    <img src="{% static 'resumesite/project_cover_2.webp' %}" alt="Project Preview Cover">
+                    <video muted src="{% static 'resumesite/project_video_2.mp4' %}"></video>
+                </div>
+            </div>
+        </div>
+
+        <!-- #PAGE5: Services/Accordion Content -->
+        <div id="page5">
+            
+            <button onclick="window.location.href='{% if user.is_authenticated %}{% url 'resume_create' %}{% else %}{% url 'login' %}{% endif %}'">
+                View Pricing
+            </button>
+
+            <div id="page5-right">
+                
+                <p>
+                    <span style="font-weight: 700; color: #fff;">Crafting your career narrative</span> requires more than just filling out a form. We provide unparalleled technical support and design integrity at every interaction. 
+                    We ensure your profile stands out, whether you are targeting an entry-level job or a c-suite role.
+                </p>
+                
+                <div id="page5-content">
+                    
+                    <div class="uiux">
+                        <details>
+                            <summary>
+                                <h1>ATS & Content Optimization</h1>
+                                <div id="flex">
+                                    <h4>AI Scoring</h4>
+                                    <h4>Keyword Match</h4>
+                                    <h4>Layout Integrity</h4>
+                                </div>
+                            </summary>
+                            <div class="page5-elem">
+                                <div class="over"></div>
+                                <h3>ATS Readability Check</h3>
+                                <p>Our system validates your resume structure against modern Applicant Tracking System standards, suggesting adjustments to keywords and formatting for a guaranteed pass rate.</p>
+                                <i class="ri-arrow-right-up-line"></i>
+                            </div>
+                            <div class="page5-elem">
+                                <div class="over"></div>
+                                <h3>Impactful Metrics</h3>
+                                <p>We guide you on transforming simple job descriptions into quantified achievement statements, using data and metrics recruiters actively seek.</p>
+                                <i class="ri-arrow-right-up-line"></i>
+                            </div>
+                        </details>
+                    </div>
+                    
+                    <div class="product">
+                        <details>
+                            <summary>
+                                <h1>Design & PDF Export</h1>
+                                <div id="flex">
+                                    <h4>Pixel Perfect</h4>
+                                    <h4>Multi-Page Support</h4>
+                                    <h4>Print Ready</h4>
+                                </div>
+                            </summary>
+                            <div class="page5-elem">
+                                <div class="over"></div>
+                                <h3>Dynamic Templates</h3>
+                                <p>Choose from professional, minimalist, or creative designs. Our interface allows clean customization without breaking the layout integrity across devices.</p>
+                                <i class="ri-arrow-right-up-line"></i>
+                            </div>
+                            <div class="page5-elem">
+                                <div class="over"></div>
+                                <h3>One-Click PDF Generation</h3>
+                                <p>Generate pixel-perfect PDFs instantly, optimized for A4 paper size and ready for printing or digital submission. Includes options for link embedding.</p>
+                                <i class="ri-arrow-right-up-line"></i>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- #PAGE6: SCROLL TRIGGER SECTION -->
+        <div id="page6">
+            <h1>Digital Resume Crafting Process</h1>
+            <div id="page6-content">
+                </div>
+            <div id="page6-bottom">
+                <div id="btm6-part2" class="btm6-parts">
+                    <h5>Workflow</h5>
+                    <h4><span>1</span>Gather Info</h4>
+                    <h4><span>2</span>Select Template</h4>
+                    <h4><span>3</span>Final Review</h4>
+                </div>
+            </div>
+        </div>
+        
+        <!-- #PAGE7: FINAL CTA/FOOTER -->
+        <div id="page7">
+            <div class="page7-inner-content">
+                <h1>Ready to Build Your Future?</h1>
+                <button class="cta-btn" onclick="window.location.href='{% if user.is_authenticated %}{% url 'resume_create' %}{% else %}{% url 'register' %}{% endif %}'">
+                    Start Your Resume Now <i class="ri-arrow-right-up-line"></i>
+                </button>
+                <div class="page7-footer-links">
+                    <a href="mailto:support@resumecraft.com">support@resumecraft.com</a>
+                    <div class="social-icons">
+                        <a href="#"><i class="ri-linkedin-fill"></i></a>
+                        <a href="#"><i class="ri-github-fill"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+    
+    <footer>
+        <p>© {% now "Y" %} Resume Craft. All rights reserved.</p>
+    </footer>
+
+
+    <!-- 3. SCRIPTS (MUST BE AT THE END) -->
+    <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@3.5.4/dist/locomotive-scroll.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    
+    <!-- Custom animation logic (script.js) -->
+    <script src="{% static 'resumesite/script.js' %}"></script>
+    
+    <!-- Compiled React application (main.bundle.js) -->
+    <script src="{% static 'resumesite/main.bundle.js' %}"></script>
+</body>
+</html>

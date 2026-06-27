@@ -1,0 +1,1682 @@
+/* resumesite/static/resumesite/main.css - LAZAREV-INSPIRED DARK THEME */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* 🛑 NEW FONT: Using Inter (Minimal and Aesthetic) 🛑 */
+    font-family: 'Inter', sans-serif; 
+    color: #fff;
+}
+
+html,
+body {
+    height: 100%;
+    width: 100%;
+    background-color: #111; /* Ensure dark background */
+}
+.resume-list-grid {
+    display: grid;
+    /* This makes the grid responsive, allowing cards to wrap */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+    gap: 30px;
+}
+
+/* 1. FIX THE RESUME CARD STYLES */
+.dashboard-card {
+    /* ... other styles ... */
+    display: flex;
+    flex-direction: column;
+    /* 🛑 REMOVE FIXED WIDTH: Let the grid control the width 🛑 */
+    /* width: 300px; <--- Delete this if it's present! */ 
+    height: auto; /* Allow content to define height */
+}
+
+/* 3. FIX BUTTONS AND ACTIONS */
+.resume-actions {
+    margin-top: 20px; 
+    display: flex;
+    gap: 5px; 
+    flex-wrap: wrap; 
+}
+/* --- DASHBOARD-SPECIFIC STYLES (Added to main.css) --- */
+.dashboard-container {
+    /* Pushes content down below the fixed 12vh navigation bar */
+    padding-top: 18vh; 
+    padding-left: 10vw;
+    padding-right: 10vw;
+    padding-bottom: 5vh; 
+    min-height: 100vh;
+    color: #fff;
+}
+
+/* Also ensure the Resume Dashboard header text is styled correctly: */
+
+
+
+.dashboard-header {
+    border-bottom: 1px solid #333;
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-header h2 {
+    font-size: 2vw; /* Ensure text size is reasonable and not massive */
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+/* Style for the list of resumes */
+.resume-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+/* Style for each individual resume card/item */
+.dashboard-card {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
+}
+
+.dashboard-card h3 {
+    font-size: 1.5vw; /* Large title for resume */
+    margin-bottom: 10px;
+    color: #0BA34E; /* Green accent from navigation */
+}
+
+.no-resumes-message {
+    padding: 50px 0;
+    text-align: center;
+    width: 100%;
+}
+
+/* --- NAVIGATION STYLES --- */
+nav {
+    position: fixed;
+    display: flex;
+    align-items: flex-start;
+    height: 12vh;
+    width: 100%;
+    padding: 2vw 10.4vw;
+    justify-content: space-between;
+    background-color: #111;
+    z-index: 10;
+}
+
+nav h1 {
+    font-size: 1.6vw;
+}
+
+.nav-part2 {
+    display: flex;
+    gap: 2vw;
+    align-items: flex-start;
+    padding: 1vh 0;
+    position: relative;
+    z-index: 10;
+}
+
+.nav-part2 h4 {
+    font-size: 0.73vw;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 2.6vw;
+}
+
+.nav-part2 h5 {
+    margin-bottom: 1vw;
+    display: none;
+    overflow: hidden;
+}
+
+.nav-part2 h5 span {
+    font-size: 0.77vw;
+    font-weight: 400;
+    transform: translateY(25px);
+    display: inline-block;
+}
+
+nav button {
+    background-color: #0BA34E;
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    font-size: 0.85vw;
+    text-transform: uppercase;
+    font-weight: 700;
+    border-radius: 50px;
+    border: none;
+}
+
+nav button svg {
+    height: 0.8vw;
+    margin-left: 1.6vw;
+}
+
+#nav-bottom {
+    width: 79%;
+    height: 0vh;
+    position: absolute;
+    top: 100%;
+    background-color: #111;
+    z-index: 9;
+    border-bottom: 1px solid #fff;
+}
+
+/* --- PAGE 1 (HERO/REACT CONTAINER) STYLES --- */
+#page1 {
+    height: 100vh;
+    width: 100%;
+    background-color: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+#page1 h1 {
+    font-size: 8.5vw;
+    text-transform: uppercase;
+    font-weight: 900;
+    line-height: 8.5vw;
+}
+
+#page1 h1 svg {
+    height: 6vw;
+    border-radius: 50%;
+    width: 6vw;
+    background-color: #0BA34E;
+}
+
+#page1 p {
+    text-align: center;
+    font-weight: 400;
+    margin-top: 3vh;
+    font-size: 1vw;
+}
+
+#page1-something {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#page1-something h4 {
+    font-weight: 400;
+    font-size: 1vw;
+    text-transform: lowercase;
+    margin-top: 0.5vw;
+    padding: 9px 18px;
+    border: 1px solid hsl(0, 0%, 65%);
+    border-radius: 50px;
+}
+
+#page1-something h4:nth-last-child(2) {
+    border: none;
+    padding: 2px;
+}
+
+#moving-div {
+    display: flex; 
+    flex-direction: row; 
+    white-space: nowrap;
+    margin-top: 10vh;
+    position: absolute;
+    bottom: 3%;
+    white-space: nowrap;
+    padding: 1.2vw;
+    overflow: hidden;
+    width: 100%;
+}
+.move {
+    display: inline-flex; 
+    flex-direction: row;
+    align-items: center;
+    width: auto; 
+}
+#moving-div .move {
+    display: inline-block;
+    animation-name: mobe;
+    animation-duration: 9s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+#moving-div .move img {
+    height: 1vw;
+    margin: 0 1.2vw;
+}
+
+@keyframes mobe {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+#blur-left {
+    height: 100%;
+    width: 20%;
+    background: linear-gradient(to right, #111, transparent);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+#blur-right {
+    height: 100%;
+    width: 20%;
+    background: linear-gradient(to right, transparent, #111);
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+}
+
+
+/* --- PAGE 2 STYLES --- */
+#page2 {
+    min-height: 100vh;
+    width: 100%;
+    background-color: #111;
+    position: relative;
+    padding: 0vw 10.5vw;
+    padding-bottom: 8vw;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #333;
+    justify-content: space-between;
+}
+
+#page2-left {
+    height: 100%;
+    width: 40%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-direction: column;
+    padding: 3vw 0;
+}
+
+#page2-left p {
+    font-size: 0.8vw;
+}
+
+#page2-left h5 {
+    width: 75%;
+    font-weight: 400;
+    font-size: 1.1vw;
+}
+
+
+#page2-right {
+    height: 100%;
+    width: 50%;
+}
+
+.right-elem {
+    position: relative;
+    padding-top: 2vw;
+    padding-bottom: 5vw;
+    border-bottom: 1px solid #333;
+}
+
+.right-elem h2 {
+    font-size: 1.4vw;
+    font-weight: 400;
+}
+
+.right-elem img {
+    height: 7vw;
+    width: 7vw;
+    border-radius: 50%;
+    object-fit: cover;
+    opacity: 0;
+    position: absolute;
+    scale: 0;
+}
+
+/* --- PAGE 3 STYLES --- */
+#page3 {
+    height: 100vh;
+    width: 100%;
+    background-color: #111;
+    position: relative;
+    background-image: url(https://lazarev.kiev.ua/la24/reel-cover.webp);
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page3-center {
+    display: flex;
+    align-items: center;
+    padding: 1vw;
+    flex-direction: column;
+}
+
+.page3-center .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3.3vw;
+    border-radius: 50%;
+    background-color: #fff;
+}
+
+.page3-center .icon i {
+    color: #000;
+    font-size: 2.8vw;
+}
+
+.page3-center h5 {
+    font-size: 0.8vw;
+    background-color: #fff;
+    color: #000;
+    border-radius: 50px;
+    padding: 12px 26px 10px 26px;
+    margin-top: 0.5vw;
+    font-weight: 700;
+    opacity: 0;
+    transition: all ease 0.5s;
+    transform: translateY(16%);
+    text-transform: uppercase;
+}
+
+.page3-center:hover h5 {
+    opacity: 1;
+    transform: translateY(0%);
+}
+
+#page3 video {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    object-fit: cover;
+    transform: scaleX(0.7) scaleY(0);
+    opacity: 0;
+    border-radius: 30px;
+    z-index: 99999;
+}
+
+/* --- PAGE 4 STYLES --- */
+#page4 {
+    min-height: 100vh;
+    width: 100%;
+    background-color: #fff;
+    position: relative;
+    padding-bottom: 13vh;
+}
+
+.section {
+    width: 100%;
+    height: 72vh;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13vh 10vw;
+    padding-bottom: 0;
+}
+
+.sec-left {
+    height: 100%;
+    width: 25%;
+    padding-top: 3vh;
+    border-top: 2px solid #000;
+}
+
+.sec-left h2 {
+    font-size: 2.1vw;
+    font-weight: 500;
+    color: #000;
+}
+
+.sec-left p {
+    color: #000;
+    margin-top: 10vh;
+    font-size: 1.2vw;
+}
+
+.sec-right {
+    height: 100%;
+    width: 70%;
+    background-color: blanchedalmond;
+    position: relative;
+}
+
+.sec-right img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.sec-right video {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity ease 0.1s;
+}
+
+/* --- PAGE 5 STYLES --- */
+#page5 {
+    min-height: 100vh;
+    background-color: #111;
+    width: 100%;
+    position: relative;
+    padding: 5vh 10.5vw;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+#page5 button {
+    background-color: #0BA34E;
+    padding: 0.9vw 2.5vw;
+    font-weight: 600;
+    font-size: 1vw;
+    border-radius: 50px;
+    border: none;
+    position: sticky;
+    top: 15%;
+}
+
+#page5-right {
+    width: 70%;
+}
+
+#page5-right > p {
+    font-size: 2.1vw;
+}
+
+#page5-right > p span {
+    width: 15vw;
+    display: inline-block;
+}
+
+#page5-content {
+    width: 100%;
+    margin-top: 5vh;
+    padding: 5vh 0;
+}
+
+#page5-content h1 {
+    font-size: 3vw;
+    font-weight: 500;
+}
+
+#page5-content #flex {
+    display: flex;
+    margin-top: 4vh;
+    margin-bottom: 4vh;
+}
+
+#page5-content #flex h4 {
+    border-radius: 50px;
+    border: 1px solid #fff;
+    padding: 10px 20px;
+    font-weight: 400;
+    font-size: 0.8vw;
+}
+
+.page5-elem {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    transition: all cubic-bezier(0.19, 1, 0.22, 1) 1s;
+    padding-top: 3vh;
+    padding-bottom: 9vh;
+    overflow: hidden;
+    border-top: 1px solid #333;
+    position: relative;
+}
+
+.page5-elem p {
+    width: 55%;
+    font-size: 0.8vw;
+    position: relative;
+    z-index: 8;
+}
+
+.page5-elem h3 {
+    font-size: 1.6vw;
+    font-weight: 400;
+    position: relative;
+    transition: all cubic-bezier(0.19, 1, 0.22, 1) 1s;
+    z-index: 8;
+}
+
+.page5-elem i {
+    font-size: 1vw;
+    position: relative;
+    transition: all cubic-bezier(0.19, 1, 0.22, 1) 1s;
+    z-index: 8;
+}
+
+.over {
+    height: 100%;
+    width: 100%;
+    background-color: #222;
+    position: absolute;
+    top: 0;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all cubic-bezier(0.19, 1, 0.22, 1) 1s;
+}
+
+.page5-elem:hover h3 {
+    padding-left: 1vw;
+}
+
+.page5-elem:hover i {
+    padding-right: 1vw;
+}
+
+.page5-elem:hover .over {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.page5-elem:hover {
+    border-top: 2px solid #fff;
+}
+
+
+summary::marker {
+    content: "";
+}
+
+.uiux {
+    border-top: 1px solid #333;
+    padding: 3vh 0;
+}
+
+.product {
+    padding: 3vh 0;
+    border-top: 1px solid #333;
+}
+
+/* --- PAGE 6 STYLES --- */
+#page6 {
+    min-height: 100vh;
+    width: 100%;
+    background-color: #fff;
+    padding: 10vh 10vw;
+}
+
+#page6 > h1 {
+    font-size: 5.5vw;
+    color: #000;
+    padding-left: 23vw;
+    padding-right: 5vw;
+    line-height: 5.8vw;
+    padding-bottom: 10vh;
+    border-bottom: 1px solid #dadada;
+}
+
+#page6-content {
+    color: #000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8vh 0;
+}
+
+#page6-content #right-6 {
+    width: 70%;
+}
+
+#page6-content #right-6 p {
+    font-size: 1.5vw;
+    color: #000;
+    margin-bottom: 5vh;
+    width: 80%;
+}
+
+#blue-btn {
+    background-color: #4f5bff;
+    width: 15vw;
+    height: 3.5vw;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#blue-btn h4 {
+    position: absolute;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.85vw;
+}
+
+#blue-btn h4 i {
+    font-size: 1.1vw;
+    font-weight: 100;
+    margin-left: 0.5vw;
+}
+
+#page6-bottom {
+    height: 44vh;
+    width: 100%;
+    border-top: 1px solid #dadada;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+#btm6-part1 {
+    border-right: 1px solid #dadada;
+    width: 30%;
+    height: 100%;
+}
+
+#btm6-part2 {
+    border-right: 1px solid #dadada;
+    width: 28%;
+    height: 100%;
+}
+
+#btm6-part3 {
+    border-right: 1px solid #dadada;
+    width: 15%;
+    height: 100%;
+}
+
+#btm6-part4 {
+    border-right: 1px solid #dadada;
+    width: 15%;
+    height: 100%;
+}
+
+#btm6-part5 {
+    width: 15%;
+    height: 100%;
+}
+
+.btm6-parts {
+    padding: 3vh 0.6vw;
+}
+
+.btm6-parts h5 {
+    color: #000;
+    font-weight: 500;
+    font-size: 0.9vw;
+    margin-bottom: 4vh;
+}
+
+.btm6-parts h4 {
+    background-color: #111;
+    width: 75%;
+    padding: 5px 10px;
+    margin-bottom: 0.3vh;
+    border-radius: 50px;
+    font-size: 0.85vw;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.btm6-parts h4 span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5vw;
+    height: 1.5vw;
+    background-color: #333;
+    padding: 0.5vw;
+    border-radius: 50%;
+    margin-right: 1vw;
+}
+#btm6-part2 h4:nth-child(2){
+    transform: translateX(0);
+}
+#btm6-part2 h4:nth-child(3){
+    transform: translateX(10%);
+}
+#btm6-part2 h4:nth-child(4){
+    transform: translateX(20%);
+}
+#btm6-part2 h4:nth-child(5){
+    transform: translateX(30%);
+}
+#btm6-part2 h4:nth-child(6){
+    transform: translateX(40%);
+}
+#btm6-part2 h4:nth-child(7){
+    transform: translateX(50%);
+}
+
+
+#page7 {
+    min-height: 50vh; /* Make it large enough to stand out */
+    width: 100%;
+    background-color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10vh 0;
+    border-top: 1px solid #333;
+}
+
+.page7-inner-content h1 {
+    font-size: 5vw; /* Large, impressive font size */
+    font-weight: 900;
+    margin-bottom: 30px;
+    line-height: 1;
+}
+
+#page7 button {
+    /* Uses the nav button style */
+    background-color: #0BA34E; 
+    color: #fff;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-size: 1.1vw;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+}
+
+#page7 button:hover {
+    transform: translateY(-5px);
+}
+
+.page7-footer-links {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #222;
+    color: #555;
+    font-size: 0.9vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+}
+
+.page7-footer-links a {
+    color: #777;
+    text-decoration: none;
+}
+
+.social-icons a {
+    font-size: 1.5vw;
+    margin: 0 10px;
+    color: #444;
+    transition: color 0.3s;
+}
+
+.social-icons a:hover {
+    color: #0BA34E; /* Green hover accent */
+}
+/* ====================================
+   ENHANCED DASHBOARD STYLES
+   Based on Lazarev Agency Design Theme
+   WITH STRUCTURED LIST CARD DESIGN
+   ==================================== */
+
+/* --- DASHBOARD CONTAINER --- */
+/* ====================================
+   ENHANCED DASHBOARD STYLES (FINAL VERSION)
+   ==================================== */
+
+/* ====================================
+   ENHANCED DASHBOARD STYLES
+   Exact Box Design with Diagonal Stripes
+   ==================================== */
+
+/* --- DASHBOARD CONTAINER --- */
+.dashboard-container {
+    margin-top: 25vh; /* Use margin to push it down from the top edge of the fixed nav */
+    margin-bottom: 5vh;
+    padding-top: 20vh; 
+    padding-left: 10vw;
+    padding-right: 10vw;
+    padding-bottom: 8vh; 
+    min-height: 100vh;
+    background-color: #111;
+    position: relative;
+    z-index: 1;
+}
+
+/* Subtle background pattern */
+.dashboard-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background: radial-gradient(circle at 50% 0%, rgba(11, 163, 78, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* --- DASHBOARD HEADER --- */
+.dashboard-header {
+    margin-bottom: 30px; 
+    padding-bottom: 25px;
+    border-bottom: 2px solid #333; 
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    z-index: 5;
+    overflow: visible;
+}
+
+/* Animated underline effect */
+.dashboard-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #0BA34E;
+    transition: width 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+    z-index: 6;
+}
+
+.dashboard-header:hover::after {
+    width: 30%;
+}
+
+/* --- MAIN DASHBOARD HEADING --- */
+.dashboard-header h2 {
+    font-size: clamp(2rem, 3.5vw, 4rem); 
+    font-weight: 900;
+    color: #fff;
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin: 0;
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index: 6;
+    animation: fadeInUp 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Count styling within heading */
+.dashboard-header h2 span {
+    color: #0BA34E;
+    font-weight: 900;
+}
+
+/* --- CREATE NEW BUTTON --- */
+.create-btn {
+    background-color: #0BA34E !important; 
+    color: #fff !important;
+    padding: 14px 32px;
+    border-radius: 50px;
+    font-size: 0.85rem; 
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: auto !important;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    z-index: 6;
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    box-shadow: 0 4px 15px rgba(11, 163, 78, 0.3);
+    animation: fadeInUp 0.8s cubic-bezier(0.19, 1, 0.22, 1) 0.2s backwards;
+}
+
+/* Button hover shine effect */
+.create-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.create-btn:hover::before {
+    left: 100%;
+}
+
+.create-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(11, 163, 78, 0.5);
+    background-color: #0d8a42 !important;
+}
+
+.create-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(11, 163, 78, 0.4);
+}
+
+/* Add icon styling if using icons */
+.create-btn i {
+    font-size: 1rem;
+    transition: transform 0.3s;
+}
+
+.create-btn:hover i {
+    transform: translateX(3px);
+}
+
+/* --- RESUME CARDS GRID --- */
+.resume-list-grid,
+.dashboard-grid {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 2.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+/* --- BOX CARD DESIGN (EXACT REPLICA) --- */
+.dashboard-card,
+.box {
+    --borderradius: 14px;
+    --bgsize: 0.38rem;
+    padding: 2rem;
+    border: 1px solid #333;
+    position: relative;
+    background: white;
+    border-radius: var(--borderradius);
+    transform: translateY(-2px);
+    z-index: 2;
+    transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    cursor: pointer;
+    color: #111
+}
+
+.dashboard-card:hover,
+.box:hover {
+    transform: translateY(-4px);
+}
+
+/* Diagonal stripe pattern background (back layer) */
+.dashboard-card::after,
+.box::after {
+    border-radius: var(--borderradius);
+    background-image: linear-gradient(
+        45deg,
+        #fff 33.33%,
+        rgba(0, 0, 0, 0.95) 33.33%,
+        rgba(0, 0, 0, 0.95) 50%,
+        #fff 50%,
+        #fff 83.33%,
+        rgba(0, 0, 0, 0.95) 83.33%,
+        rgba(0, 0, 0, 0.95) 100%
+    );
+    content: "";
+    display: block;
+    position: absolute;
+    z-index: -2;
+    top: 0.75rem;
+    left: 0.75rem;
+    width: 100%;
+    height: 100%;
+    background-size: var(--bgsize) var(--bgsize);
+}
+
+/* White middle layer */
+.dashboard-card::before,
+.box::before {
+    border-radius: var(--borderradius);
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0rem;
+    left: 0rem;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: -1;
+}
+
+/* --- CARD CONTENT --- */
+.dashboard-card h2,
+.dashboard-card h3,
+.box h2 {
+    margin: 0 0 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111;
+    line-height: 1.3;
+}
+
+.dashboard-card ul,
+.box ul {
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
+    list-style: none;
+    color: #333
+}
+
+.dashboard-card ul li,
+.box ul li {
+    margin-left: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 0.95rem;
+    position: relative;
+}
+
+/* Custom bullet points */
+.dashboard-card ul li::before,
+.box ul li::before {
+    content: "•";
+    position: absolute;
+    left: -1.2rem;
+    color: #111;
+    font-weight: bold;
+}
+
+/* --- CARD WITH ACTION BUTTONS --- */
+.dashboard-card-with-actions {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-content {
+    flex: 1;
+}
+
+/* Divider before actions */
+.card-divider {
+    width: 100%;
+    height: 1px;
+    background: #e0e0e0;
+    margin: 1.5rem 0 1rem 0;
+}
+
+/* --- RESUME ACTIONS --- */
+.resume-actions,
+.card-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+/* --- ACTION BUTTONS --- */
+.btn-submit { 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 100px;
+    font-size: 0.8rem;
+    padding: 10px 18px;
+    border-radius: 50px;
+    text-decoration: none;
+    text-align: center;
+    color: #fff !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    letter-spacing: 0.3px;
+}
+
+/* Button hover effects */
+.edit-btn {
+    background-color: #007bff !important;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.edit-btn:hover {
+    background-color: #0056b3 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.5);
+}
+
+.view-btn {
+    background-color: #555 !important;
+    box-shadow: 0 2px 8px rgba(85, 85, 85, 0.3);
+}
+
+.view-btn:hover {
+    background-color: #666 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(85, 85, 85, 0.5);
+}
+
+.delete-btn {
+    background-color: #dc3545 !important;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.delete-btn:hover {
+    background-color: #c82333 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.5);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* --- EMPTY STATE --- */
+.empty-state {
+    text-align: center;
+    padding: 6rem 2rem;
+    color: rgba(255, 255, 255, 0.5);
+    grid-column: 1 / -1;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: rgba(11, 163, 78, 0.3);
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+.empty-state h3 {
+    font-size: 1.8rem;
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+/* --- LOADING STATE --- */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--borderradius);
+    height: 320px;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* --- CARD ENTRANCE ANIMATION --- */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(-2px);
+    }
+}
+
+.dashboard-card,
+.box {
+    animation: fadeInScale 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    opacity: 0;
+}
+
+/* Stagger animation */
+.dashboard-card:nth-child(1), .box:nth-child(1) { animation-delay: 0.1s; }
+.dashboard-card:nth-child(2), .box:nth-child(2) { animation-delay: 0.2s; }
+.dashboard-card:nth-child(3), .box:nth-child(3) { animation-delay: 0.3s; }
+.dashboard-card:nth-child(4), .box:nth-child(4) { animation-delay: 0.4s; }
+.dashboard-card:nth-child(5), .box:nth-child(5) { animation-delay: 0.5s; }
+.dashboard-card:nth-child(6), .box:nth-child(6) { animation-delay: 0.6s; }
+.dashboard-card:nth-child(n+7), .box:nth-child(n+7) { animation-delay: 0.7s; }
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 1200px) {
+    .resume-list-grid,
+    .dashboard-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding-left: 5vw;
+        padding-right: 5vw;
+        padding-top: 15vh;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-header h2 {
+        font-size: 2rem;
+    }
+    
+    .create-btn {
+        width: 100% !important;
+        justify-content: center;
+    }
+    
+    .resume-list-grid,
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        margin-top: 15px;
+    }
+    
+    .dashboard-card,
+    .box {
+        padding: 1.5rem;
+    }
+    
+    .dashboard-card ul li,
+    .box ul li {
+        font-size: 0.9rem;
+    }
+    
+    .resume-actions,
+    .card-actions {
+        flex-direction: column;
+    }
+    
+    .btn-submit {
+        width: 100% !important;
+    }
+}
+
+/* --- CARD VARIATIONS --- */
+
+/* Compact version with smaller padding */
+.dashboard-card.compact,
+.box.compact {
+    padding: 1.5rem;
+    --bgsize: 0.28rem;
+}
+
+/* Premium version with green accent */
+.dashboard-card.premium::after,
+.box.premium::after {
+    background-image: linear-gradient(
+        45deg,
+        #0BA34E 33.33%,
+        rgba(11, 163, 78, 0.8) 33.33%,
+        rgba(11, 163, 78, 0.8) 50%,
+        #0BA34E 50%,
+        #0BA34E 83.33%,
+        rgba(11, 163, 78, 0.8) 83.33%,
+        rgba(11, 163, 78, 0.8) 100%
+    );
+}
+
+/* Dark theme card (inverted colors) */
+.dashboard-card.dark,
+.box.dark {
+    background: #1a1a1a;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-card.dark h2,
+.box.dark h2 {
+    color: #fff;
+}
+
+.dashboard-card.dark ul li,
+.box.dark ul li {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.dashboard-card.dark ul li::before,
+.box.dark ul li::before {
+    color: #0BA34E;
+}
+
+.dashboard-card.dark::before,
+.box.dark::before {
+    background: #1a1a1a;
+}
+
+/* --- STATUS BADGE --- */
+.card-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background-color: #0BA34E;
+    color: white;
+    z-index: 5;
+}
+
+/* --- Z-INDEX HIERARCHY ---
+   -2:  Diagonal stripe background
+   -1:  White middle layer
+   0:   Background pattern
+   2:   Card content (base)
+   5:   Dashboard header & badges
+   6:   Header text & button
+   10:  Grid container
+   ------------------------- */
+
+
+   /* --- AUTHENTICATION & FORM STYLES (Minimal Dark Theme) --- */
+
+/* Centers the form box on the screen */
+.auth-page-container {
+    max-width: 450px;
+    margin: 10vh auto;
+    padding: 2.5rem;
+    background-color: #1a1a1a; /* Dark card color */
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+    text-align: center;
+    border: 1px solid #333;
+    z-index: 10;
+    position: relative;
+}
+
+.auth-page-container h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Django Form Styling (targets the default <p> wrapped fields) */
+.auth-form p {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.auth-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #0BA34E; /* Accent color for field labels */
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.auth-form input[type="text"],
+.auth-form input[type="password"],
+.auth-form input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background-color: #222; /* Dark input background */
+    color: #fff;
+    box-sizing: border-box; 
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-form input:focus {
+    border-color: #0BA34E;
+    box-shadow: 0 0 0 2px rgba(11, 163, 78, 0.5);
+    outline: none;
+}
+
+/* Submit Button (Uses existing class, but ensures dark theme look) */
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background-color: #0BA34E !important; 
+    color: white !important;
+    border-radius: 50px;
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+/* Error Messages */
+.error-message {
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.auth-link-text {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.auth-link-text a {
+    color: #007bff; /* Use a bright link color */
+    text-decoration: none;
+}
+
+/* --- Vertical Alignment Fix for Dashboard --- */
+.dashboard-vertical-wrapper {
+    /* Ensures the wrapper takes up the full screen height minus the fixed header */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* 🛑 Push content to the visual center 🛑 */
+    justify-content: center; 
+}
+
+/* 1. Force all text inside the primary card header div to dark */
+.dashboard-card p,
+.dashboard-card li,
+.dashboard-card h3,
+.dashboard-card h2 {
+    color: #111 !important; /* Forces black/dark grey text */
+}
+
+/* 2. Specific fix for the metadata text */
+.dashboard-card .card-details ul li {
+    color: #333 !important; /* Dark grey for smaller readability */
+}
+
+/* 3. Ensure the strong/bold tag (Title:) is also dark */
+.dashboard-card strong {
+    color: #111 !important;
+}
+
+/* 4. Ensure list bullets are dark (from your previous rule, confirmed here) */
+.dashboard-card ul li::before {
+    color: #111 !important; 
+}
+
+/* 5. FIX THE BUTTON TEXT COLOR (Must remain white against the dark button background) */
+.resume-actions .btn-submit {
+    color: white !important; /* Must be white */
+    background-color: #007bff; /* Example: Ensures button background is visible */
+}
+
+/* --- RETRO-TECH DARK THEME FORM OVERRIDES --- */
+
+/* Wrapper for vertical centering on auth pages */
+.auth-center-wrapper {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background-color: #111;
+}
+
+/* Base Form Container (.auth-form-box is the core of the retro-tech design) */
+.auth-form-box {
+    /* Set dark color variables for the design */
+    --background: #1a1a1a;
+    --input-focus: #0BA34E;
+    --font-color: #fff;
+    --font-color-sub: #aaa;
+    --bg-color: #0f0f0f;
+    --main-color: #0BA34E;
+    
+    padding: 30px;
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    border-radius: 8px;
+    border: 2px solid var(--main-color);
+    box-shadow: 6px 6px var(--main-color); /* The signature shadow effect */
+    max-width: 400px;
+    width: 100%;
+}
+
+.welcome-text {
+    color: var(--font-color);
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 5px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.welcome-text span {
+    color: var(--font-color-sub);
+    font-weight: 500;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+/* Separator Line */
+.separator {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.separator > div {
+    width: 100%;
+    height: 1px;
+    background-color: #333;
+}
+
+.separator > span {
+    color: var(--font-color-sub);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* OAUTH & ACTION BUTTONS */
+.oauthButton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    height: 45px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    box-shadow: 4px 4px var(--main-color);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--font-color);
+    cursor: pointer;
+    transition: all 250ms;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.oauthButton:hover {
+    color: #e8e8e8;
+    background-color: #212121;
+}
+
+.oauthButton .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: currentColor;
+}
+
+/* Django Form Fields (input and label wrappers) */
+.auth-form-box p {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.auth-form-box label {
+    display: none; /* Hide default Django labels */
+}
+
+.auth-form-box input[type="text"],
+.auth-form-box input[type="password"],
+.auth-form-box input[type="email"] {
+    width: 100%;
+    height: 40px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    box-shadow: 4px 4px var(--main-color);
+    font-size: 15px;
+    color: var(--font-color);
+    padding: 5px 10px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.auth-form-box input:focus {
+    border-color: #0BA34E;
+    box-shadow: 4px 4px var(--main-color), 0 0 0 3px var(--input-focus);
+}
+
+.email-login-btn {
+    background-color: var(--main-color);
+}
+
+.email-login-btn:hover {
+    background-color: #0d8a42 !important;
+    color: #fff;
+}
