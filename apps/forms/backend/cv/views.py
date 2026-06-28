@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated  # <-- changed from AllowAny
 from rest_framework.decorators import action
 from .models import Resume, JobApplication
 from .serializers import ResumeSerializer, JobApplicationSerializer
@@ -14,9 +14,16 @@ def react_demo_view(request):
     return render(request, 'resumesite/react_demo.html')
 
 class ResumeViewSet(viewsets.ModelViewSet):
-    queryset = Resume.objects.all()
     serializer_class = ResumeSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]  # <-- require authentication
+
+    def get_queryset(self):
+        """Return only resumes belonging to the authenticated user."""
+        return Resume.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically set the user when creating a resume."""
+        serializer.save(user=self.request.user)
 
     @action(detail=True, methods=['get'], url_path='pdf')
     def download_pdf(self, request, pk=None):
@@ -81,6 +88,13 @@ class ResumeViewSet(viewsets.ModelViewSet):
             return HttpResponse(f"Error generating PDF: {e}", status=500)
 
 class JobApplicationViewSet(viewsets.ModelViewSet):
-    queryset = JobApplication.objects.all()
     serializer_class = JobApplicationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]  # <-- require authentication
+
+    def get_queryset(self):
+        """Return only applications belonging to the authenticated user."""
+        return JobApplication.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically set the user when creating a job application."""
+        serializer.save(user=self.request.user)

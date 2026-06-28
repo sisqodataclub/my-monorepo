@@ -10,6 +10,15 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ============================================================================
+# HVT Authentication Configuration
+# ============================================================================
+HVT_BASE_URL = os.getenv('HVT_BASE_URL', 'https://auth.franciscodes.com/api/v1')
+HVT_API_KEY = os.getenv('HVT_API_KEY')  # Must be set in .env
+
+# ============================================================================
+# Core Settings
+# ============================================================================
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-m7_-fo@qfi@=r%3hqocvzu86_d1um)xrp=pgs13kncua0=6xq$')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ["*"]
@@ -19,9 +28,22 @@ csrf_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(",")] if cors_env else []
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_env.split(",")] if csrf_env else []
 
+# ============================================================================
+# Authentication Backends
+# ============================================================================
+AUTHENTICATION_BACKENDS = [
+    'backend.authentication.HVTJWTBackend',   # Custom HVT JWT validation
+    'django.contrib.auth.backends.ModelBackend',  # Fallback for admin
+]
+
+# ============================================================================
+# Django REST Framework
+# ============================================================================
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        'backend.authentication.HVTJWTBackend',  # Primary: HVT JWT
+        "rest_framework_simplejwt.authentication.JWTAuthentication",  # Keep for existing forms API
+        "rest_framework.authentication.SessionAuthentication",  # For admin
     ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -47,7 +69,9 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+# ============================================================================
 # Email Configuration
+# ============================================================================
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
@@ -56,6 +80,9 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
+# ============================================================================
+# Application Definition
+# ============================================================================
 INSTALLED_APPS = [
     'daphne',
     'channels',
@@ -70,7 +97,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
-    "cv",  # <-- ADDED
+    "cv",  # CV app
 ]
 
 MIDDLEWARE = [
@@ -103,7 +130,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+ASGI_APPLICATION = 'backend.asgi.application'  # WebSockets
 
+# ============================================================================
+# Database
+# ============================================================================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -111,6 +142,9 @@ DATABASES = {
     }
 }
 
+# ============================================================================
+# Password Validation
+# ============================================================================
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -118,11 +152,17 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ============================================================================
+# Internationalization
+# ============================================================================
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ============================================================================
+# Static Files
+# ============================================================================
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
@@ -131,12 +171,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_CREDENTIALS = True
 
+# ============================================================================
 # Celery & RabbitMQ
+# ============================================================================
 CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
-# Shared Cache
+# ============================================================================
+# Cache
+# ============================================================================
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
@@ -144,9 +188,9 @@ CACHES = {
     }
 }
 
-# WebSockets (ASGI & Channels)
-ASGI_APPLICATION = 'backend.asgi.application'
-
+# ============================================================================
+# WebSockets (Channels)
+# ============================================================================
 REDIS_HOST = os.getenv("REDIS_HOST", "franciscodes-redis")
 CHANNEL_LAYERS = {
     'default': {
