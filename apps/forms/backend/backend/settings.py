@@ -140,7 +140,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/app/shared_cache',
+        'LOCATION': os.path.join(BASE_DIR, 'shared_cache'),
     }
 }
 
