@@ -1,53 +1,63 @@
 import requests
 from django.contrib.auth import get_user_model
-from django.contrib.auth.backends import BaseBackend
 from django.conf import settings
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 
 User = get_user_model()
 
-class HVTJWTBackend(BaseBackend):
-    """Authenticate using JWT from HVT and create local user on the fly."""
+class HVTJWTBackend(BaseAuthentication):
+    """
+    DRF authentication class that validates JWT tokens via HVT introspection.
+    Returns (user, None) on success, raises AuthenticationFailed otherwise.
+    """
 
-    def authenticate(self, request, **kwargs):
+    def authenticate(self, request):
         auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        if not auth_header:
             return None
 
-        token = auth_header.split(' ')[1]
+        # Expect "Bearer <token>"
+        parts = auth_header.split()
+        if len(parts) != 2 or parts[0].lower() != 'bearer':
+            return None
+
+        token = parts[1]
 
         try:
             api_key = settings.HVT_API_KEY
-            introspection_url = f"{settings.HVT_BASE_URL}/auth/token/introspect/"
+            # Use the correct introspection endpoint (with /api/v1)
+            introspection_url = f"{settings.HVT_BASE_URL.rstrip('/')}/api/v1/auth/token/introspect/"
             response = requests.post(
                 introspection_url,
                 headers={"X-API-Key": api_key},
-                data={"token": token}
+                data={"token": token},
+                timeout=5
             )
             if response.status_code != 200:
-                return None
+                raise AuthenticationFailed('Token introspection failed')
+
             data = response.json()
             if not data.get('active'):
-                return None
+                raise AuthenticationFailed('Token is inactive or expired')
 
             user_id = data.get('sub')
             email = data.get('email')
             if not user_id:
-                return None
+                raise AuthenticationFailed('Invalid token payload')
 
+            # Get or create local user
             user, created = User.objects.get_or_create(
                 username=f"hvt_{user_id}",
                 defaults={'email': email, 'is_active': True}
             )
-            return user
-        except Exception:
-            return None
+            # Return (user, None) – the second value is the auth info (unused)
+            return (user, None)
 
-    def get_user(self, user_id):
-        try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
-            return None
+        except requests.RequestException as e:
+            raise AuthenticationFailed(f'Introspection service unavailable: {str(e)}')
+        except Exception as e:
+            raise AuthenticationFailed(f'Authentication error: {str(e)}')
 
-    # 🔥 ADD THIS METHOD
     def authenticate_header(self, request):
         return 'Bearer'
