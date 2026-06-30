@@ -8,7 +8,7 @@ router.register(r'resumes', ResumeViewSet, basename='resume-api')
 router.register(r'applications', JobApplicationViewSet, basename='application-api')
 
 urlpatterns = [
-    # React demo view (optional)
+    # React demo view (optionalll)
     path('', react_demo_view, name='react_demo'),
 
     # CV API endpoints
