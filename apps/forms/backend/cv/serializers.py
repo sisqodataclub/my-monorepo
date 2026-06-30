@@ -61,6 +61,7 @@ class ResumeSerializer(serializers.ModelSerializer):
             'id', 'user', 'full_name', 'about', 'age', 'email', 'phone',
             'educations', 'experiences', 'projects',
             'skills', 'languages', 'achievements',
+            'section_order',  # ✅ added
             'created_at', 'updated_at'
         ]
         read_only_fields = ['user', 'created_at', 'updated_at']
@@ -73,8 +74,15 @@ class ResumeSerializer(serializers.ModelSerializer):
         skills_data = validated_data.pop('skills', [])
         languages_data = validated_data.pop('languages', [])
         achievements_data = validated_data.pop('achievements', [])
+        # section_order is optional; if not provided, default will be used
+        section_order = validated_data.pop('section_order', None)
 
         resume = Resume.objects.create(**validated_data)
+
+        # If section_order was provided, set it
+        if section_order is not None:
+            resume.section_order = section_order
+            resume.save(update_fields=['section_order'])
 
         # Create related objects
         for edu_data in educations_data:
@@ -100,15 +108,17 @@ class ResumeSerializer(serializers.ModelSerializer):
         skills_data = validated_data.pop('skills', None)
         languages_data = validated_data.pop('languages', None)
         achievements_data = validated_data.pop('achievements', None)
+        section_order = validated_data.pop('section_order', None)
 
         # Update core fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+        if section_order is not None:
+            instance.section_order = section_order
         instance.save()
 
         # Helper to update or create related objects
         def update_related(related_manager, data_serializer, data_list):
-            # Clear existing and create new – simple approach
             related_manager.all().delete()
             for item_data in data_list:
                 related_manager.create(**item_data)
