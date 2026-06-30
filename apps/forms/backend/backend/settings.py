@@ -42,7 +42,7 @@ AUTHENTICATION_BACKENDS = [
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         'backend.authentication.HVTJWTBackend',  # Primary: HVT JWT
-        "rest_framework_simplejwt.authentication.JWTAuthentication",  # Keep for existing forms API
+        # REMOVED: rest_framework_simplejwt.authentication.JWTAuthentication
         "rest_framework.authentication.SessionAuthentication",  # For admin
     ),
     "DEFAULT_PERMISSION_CLASSES": [
