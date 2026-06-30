@@ -17,7 +17,6 @@ class HVTJWTBackend(BaseAuthentication):
         if not auth_header:
             return None
 
-        # Expect "Bearer <token>"
         parts = auth_header.split()
         if len(parts) != 2 or parts[0].lower() != 'bearer':
             return None
@@ -26,8 +25,13 @@ class HVTJWTBackend(BaseAuthentication):
 
         try:
             api_key = settings.HVT_API_KEY
-            # Use the correct introspection endpoint (with /api/v1)
-            introspection_url = f"{settings.HVT_BASE_URL.rstrip('/')}/api/v1/auth/token/introspect/"
+            base = settings.HVT_BASE_URL.rstrip('/')
+            # Avoid double /api/v1: if base already ends with /api/v1, use /auth/token/introspect/
+            if base.endswith('/api/v1'):
+                introspection_url = f"{base}/auth/token/introspect/"
+            else:
+                introspection_url = f"{base}/api/v1/auth/token/introspect/"
+
             response = requests.post(
                 introspection_url,
                 headers={"X-API-Key": api_key},
@@ -46,12 +50,10 @@ class HVTJWTBackend(BaseAuthentication):
             if not user_id:
                 raise AuthenticationFailed('Invalid token payload')
 
-            # Get or create local user
             user, created = User.objects.get_or_create(
                 username=f"hvt_{user_id}",
                 defaults={'email': email, 'is_active': True}
             )
-            # Return (user, None) – the second value is the auth info (unused)
             return (user, None)
 
         except requests.RequestException as e:
