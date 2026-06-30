@@ -1,43 +1,141 @@
 from rest_framework import serializers
-from .models import Resume, JobApplication
+from .models import (
+    Resume, Education, Experience, Project,
+    Skill, Language, Achievement, JobApplication
+)
+
+# ========== Nested Serializers ==========
+
+class EducationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Education
+        fields = [
+            'id', 'institution', 'degree', 'field_of_study',
+            'start_date', 'end_date', 'description', 'order'
+        ]
+
+class ExperienceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Experience
+        fields = [
+            'id', 'company', 'position', 'start_date', 'end_date',
+            'description', 'location', 'order'
+        ]
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [
+            'id', 'name', 'description', 'url', 'start_date', 'end_date', 'order'
+        ]
+
+class SkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Skill
+        fields = ['id', 'name', 'proficiency']
+
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = ['id', 'name', 'proficiency']
+
+class AchievementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Achievement
+        fields = ['id', 'description']
+
+
+# ========== Resume Serializer (with nested writes) ==========
 
 class ResumeSerializer(serializers.ModelSerializer):
+    educations = EducationSerializer(many=True, required=False)
+    experiences = ExperienceSerializer(many=True, required=False)
+    projects = ProjectSerializer(many=True, required=False)
+    skills = SkillSerializer(many=True, required=False)
+    languages = LanguageSerializer(many=True, required=False)
+    achievements = AchievementSerializer(many=True, required=False)
+
     class Meta:
         model = Resume
-        fields = (
+        fields = [
             'id', 'user', 'full_name', 'about', 'age', 'email', 'phone',
-            'skills', 'languages', 'education1', 'education2', 'education3',
-            'project1', 'project2', 'experience1', 'experience2',
-            'achievements', 'created_at', 'updated_at'
-        )
-        read_only_fields = ('user', 'created_at', 'updated_at')
+            'educations', 'experiences', 'projects',
+            'skills', 'languages', 'achievements',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['user', 'created_at', 'updated_at']
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        list_fields = ['skills', 'languages', 'achievements']
-        for field_name in list_fields:
-            value = representation.get(field_name)
-            if value:
-                representation[field_name] = [s.strip() for s in value.split(',') if s.strip()]
-            else:
-                representation[field_name] = []
-        return representation
+    def create(self, validated_data):
+        # Pop nested data
+        educations_data = validated_data.pop('educations', [])
+        experiences_data = validated_data.pop('experiences', [])
+        projects_data = validated_data.pop('projects', [])
+        skills_data = validated_data.pop('skills', [])
+        languages_data = validated_data.pop('languages', [])
+        achievements_data = validated_data.pop('achievements', [])
 
-    def to_internal_value(self, data):
-        mutable_data = data.copy()
-        list_fields = ['skills', 'languages', 'achievements']
-        for field_name in list_fields:
-            value = mutable_data.get(field_name)
-            if isinstance(value, list):
-                mutable_data[field_name] = ', '.join([str(s).strip() for s in value if str(s).strip()])
-        return super().to_internal_value(mutable_data)
+        resume = Resume.objects.create(**validated_data)
 
+        # Create related objects
+        for edu_data in educations_data:
+            Education.objects.create(resume=resume, **edu_data)
+        for exp_data in experiences_data:
+            Experience.objects.create(resume=resume, **exp_data)
+        for proj_data in projects_data:
+            Project.objects.create(resume=resume, **proj_data)
+        for skill_data in skills_data:
+            Skill.objects.create(resume=resume, **skill_data)
+        for lang_data in languages_data:
+            Language.objects.create(resume=resume, **lang_data)
+        for ach_data in achievements_data:
+            Achievement.objects.create(resume=resume, **ach_data)
+
+        return resume
+
+    def update(self, instance, validated_data):
+        # Pop nested data
+        educations_data = validated_data.pop('educations', None)
+        experiences_data = validated_data.pop('experiences', None)
+        projects_data = validated_data.pop('projects', None)
+        skills_data = validated_data.pop('skills', None)
+        languages_data = validated_data.pop('languages', None)
+        achievements_data = validated_data.pop('achievements', None)
+
+        # Update core fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Helper to update or create related objects
+        def update_related(related_manager, data_serializer, data_list):
+            # Clear existing and create new – simple approach
+            related_manager.all().delete()
+            for item_data in data_list:
+                related_manager.create(**item_data)
+
+        if educations_data is not None:
+            update_related(instance.educations, EducationSerializer, educations_data)
+        if experiences_data is not None:
+            update_related(instance.experiences, ExperienceSerializer, experiences_data)
+        if projects_data is not None:
+            update_related(instance.projects, ProjectSerializer, projects_data)
+        if skills_data is not None:
+            update_related(instance.skills, SkillSerializer, skills_data)
+        if languages_data is not None:
+            update_related(instance.languages, LanguageSerializer, languages_data)
+        if achievements_data is not None:
+            update_related(instance.achievements, AchievementSerializer, achievements_data)
+
+        return instance
+
+
+# ========== JobApplication Serializer ==========
 
 class JobApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobApplication
-        fields = (
+        fields = [
             'id', 'user', 'job_link', 'company', 'position', 'date_applied',
             'status', 'resume_used', 'notes', 'created_at', 'updated_at'
-        )
-        read_only_fields = ('user', 'created_at', 'updated_at')
+        ]
+        read_only_fields = ['user', 'created_at', 'updated_at']
