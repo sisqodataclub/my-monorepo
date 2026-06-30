@@ -4,7 +4,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +12,11 @@ class HVTRegisterView(APIView):
     """
     Proxy registration to HVT service.
     Expects POST with email, password1, password2.
+    Public endpoint – no authentication required.
     """
+    permission_classes = [AllowAny]
+
     def post(self, request):
-        # Extract expected fields
         email = request.data.get('email')
         password1 = request.data.get('password1')
         password2 = request.data.get('password2')
@@ -49,7 +51,10 @@ class HVTLoginView(APIView):
     """
     Proxy login to HVT service.
     Expects POST with email and password.
+    Public endpoint – no authentication required.
     """
+    permission_classes = [AllowAny]
+
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
