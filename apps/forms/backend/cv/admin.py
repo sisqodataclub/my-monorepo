@@ -44,8 +44,8 @@ class AchievementInline(admin.TabularInline):
 
 @admin.register(Resume)
 class ResumeAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'email', 'phone', 'user', 'created_at')
-    search_fields = ('full_name', 'email', 'user__email')
+    list_display = ('title','full_name', 'email', 'phone', 'user', 'created_at')
+    search_fields = ('title','full_name', 'email', 'user__email')
     list_filter = ('created_at',)
     raw_id_fields = ('user',)
     inlines = [

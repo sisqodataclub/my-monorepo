@@ -1,8 +1,11 @@
 from django.db import models
 from django.conf import settings
 
+
+
 class Resume(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='resumes')
+    title = models.CharField(max_length=200, blank=True, null=True, help_text="Optional CV title (e.g., 'Data Analyst CV')")
     full_name = models.CharField(max_length=100)
     about = models.TextField()
     age = models.IntegerField(null=True, blank=True)
@@ -10,12 +13,11 @@ class Resume(models.Model):
     phone = models.CharField(max_length=15)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    # ✅ Store section order as JSON array (works with SQLite and PostgreSQL)
     section_order = models.JSONField(default=list, blank=True)
 
     def __str__(self):
-        return self.full_name
+        return self.title or self.full_name
+
 
 
 class Education(models.Model):

@@ -58,10 +58,11 @@ class ResumeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resume
         fields = [
-            'id', 'user', 'full_name', 'about', 'age', 'email', 'phone',
+            'id', 'user', 'title',  # <-- added 'title' field
+            'full_name', 'about', 'age', 'email', 'phone',
             'educations', 'experiences', 'projects',
             'skills', 'languages', 'achievements',
-            'section_order',  # ✅ added
+            'section_order',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['user', 'created_at', 'updated_at']
@@ -74,17 +75,14 @@ class ResumeSerializer(serializers.ModelSerializer):
         skills_data = validated_data.pop('skills', [])
         languages_data = validated_data.pop('languages', [])
         achievements_data = validated_data.pop('achievements', [])
-        # section_order is optional; if not provided, default will be used
         section_order = validated_data.pop('section_order', None)
 
         resume = Resume.objects.create(**validated_data)
 
-        # If section_order was provided, set it
         if section_order is not None:
             resume.section_order = section_order
             resume.save(update_fields=['section_order'])
 
-        # Create related objects
         for edu_data in educations_data:
             Education.objects.create(resume=resume, **edu_data)
         for exp_data in experiences_data:
@@ -101,7 +99,6 @@ class ResumeSerializer(serializers.ModelSerializer):
         return resume
 
     def update(self, instance, validated_data):
-        # Pop nested data
         educations_data = validated_data.pop('educations', None)
         experiences_data = validated_data.pop('experiences', None)
         projects_data = validated_data.pop('projects', None)
@@ -110,14 +107,12 @@ class ResumeSerializer(serializers.ModelSerializer):
         achievements_data = validated_data.pop('achievements', None)
         section_order = validated_data.pop('section_order', None)
 
-        # Update core fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if section_order is not None:
             instance.section_order = section_order
         instance.save()
 
-        # Helper to update or create related objects
         def update_related(related_manager, data_serializer, data_list):
             related_manager.all().delete()
             for item_data in data_list:
@@ -145,7 +140,8 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobApplication
         fields = [
-            'id', 'user', 'job_link', 'company', 'position', 'date_applied', 'deadline_date',
+            'id', 'user', 'job_link', 'company', 'position',
+            'date_applied', 'deadline_date',
             'status', 'resume_used', 'notes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['user', 'created_at', 'updated_at']
