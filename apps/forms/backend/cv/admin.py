@@ -99,9 +99,10 @@ class AchievementAdmin(admin.ModelAdmin):
         return obj.description[:50] + '...' if len(obj.description) > 50 else obj.description
     description_short.short_description = 'Description'
 
+
 @admin.register(JobApplication)
 class JobApplicationAdmin(admin.ModelAdmin):
-    list_display = ('company', 'position', 'status', 'user', 'date_applied', 'created_at')
-    list_filter = ('status', 'date_applied')
+    list_display = ('company', 'position', 'status', 'user', 'date_applied', 'deadline_date', 'created_at')
+    list_filter = ('status', 'date_applied', 'deadline_date')
     search_fields = ('company', 'position', 'notes', 'user__email')
     raw_id_fields = ('user', 'resume_used')

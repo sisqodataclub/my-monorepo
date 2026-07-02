@@ -145,7 +145,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobApplication
         fields = [
-            'id', 'user', 'job_link', 'company', 'position', 'date_applied',
+            'id', 'user', 'job_link', 'company', 'position', 'date_applied', 'deadline_date',
             'status', 'resume_used', 'notes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['user', 'created_at', 'updated_at']

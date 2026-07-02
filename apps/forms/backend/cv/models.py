@@ -108,6 +108,7 @@ class JobApplication(models.Model):
     company = models.CharField(max_length=200)
     position = models.CharField(max_length=200)
     date_applied = models.DateField(null=True, blank=True)
+    deadline_date = models.DateField(null=True, blank=True, help_text="Application deadline")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='saved')
     resume_used = models.ForeignKey(
         Resume,
