@@ -1,8 +1,10 @@
 import pdfkit
+import markdown
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -27,10 +29,18 @@ class ResumeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='pdf')
     def download_pdf(self, request, pk=None):
-        """Generate and download a PDF version of the resume."""
+        """Generate and download a PDF version of the resume with Markdown support."""
         resume = self.get_object()
 
-        # Fetch related data (using the new normalized relations)
+        # Helper to convert Markdown to HTML
+        def render_markdown(text):
+            if not text:
+                return ''
+            # Convert Markdown to HTML with extensions for lists, tables, and line breaks
+            html = markdown.markdown(text, extensions=['extra', 'nl2br'])
+            return mark_safe(html)
+
+        # Fetch related data
         educations = resume.educations.all().order_by('order', '-start_date')
         experiences = resume.experiences.all().order_by('order', '-start_date')
         projects = resume.projects.all().order_by('order', '-start_date')
@@ -46,6 +56,7 @@ class ResumeViewSet(viewsets.ModelViewSet):
             'skills': skills,
             'languages': languages,
             'achievements': achievements,
+            'render_markdown': render_markdown,  # Pass function to template
             'now': timezone.now(),
         }
 
@@ -66,10 +77,13 @@ class ResumeViewSet(viewsets.ModelViewSet):
         try:
             pdf = pdfkit.from_string(html, False, options=options)
             response = HttpResponse(pdf, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="CV_{resume.full_name}.pdf"'
+            # Use title or full_name for filename
+            filename = f"CV_{resume.title or resume.full_name}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
         except Exception as e:
             return HttpResponse(f"Error generating PDF: {e}", status=500)
+
 
 class JobApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = JobApplicationSerializer
