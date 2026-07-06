@@ -24,14 +24,14 @@
       color: #1a1a2e;
       letter-spacing: -0.5px;
     }
-    .subhead {
+    .title {
       font-size: 18px;
       color: #555;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       font-weight: 300;
     }
     .contact {
-      margin-bottom: 25px;
+      margin-bottom: 16px;
       font-size: 14px;
       color: #333;
       display: flex;
@@ -42,6 +42,15 @@
       background: #f5f5f5;
       padding: 2px 12px;
       border-radius: 20px;
+    }
+    .about {
+      margin-bottom: 24px;
+      font-size: 16px;
+      color: #444;
+      line-height: 1.7;
+      padding: 10px 0;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
     }
     .section {
       margin-bottom: 24px;
@@ -79,6 +88,23 @@
       padding-left: 12px;
       border-left: 2px solid #ddd;
     }
+    /* Markdown styles */
+    .item-desc ul, .item-desc ol {
+      padding-left: 20px;
+      margin: 4px 0;
+    }
+    .item-desc li {
+      margin-bottom: 2px;
+    }
+    .item-desc p {
+      margin: 4px 0;
+    }
+    .item-desc strong {
+      font-weight: 700;
+    }
+    .item-desc em {
+      font-style: italic;
+    }
     .skill-tag, .lang-tag {
       display: inline-block;
       background: #eef2f7;
@@ -112,12 +138,16 @@
 <body>
 
   <h1>{{ resume.full_name }}</h1>
-  <div class="subhead">{{ resume.about }}</div>
+
   <div class="contact">
     {% if resume.email %}<span>📧 {{ resume.email }}</span>{% endif %}
     {% if resume.phone %}<span>📞 {{ resume.phone }}</span>{% endif %}
     {% if resume.age %}<span>🎂 {{ resume.age }} years</span>{% endif %}
   </div>
+
+  {% if resume.about %}
+    <div class="about">{{ render_markdown(resume.about)|safe }}</div>
+  {% endif %}
 
   <!-- ===== Skills ===== -->
   {% if skills %}
@@ -161,7 +191,7 @@
         {% endif %}
       </div>
       {% if edu.description %}
-        <div class="item-desc">{{ edu.description }}</div>
+        <div class="item-desc">{{ render_markdown(edu.description)|safe }}</div>
       {% endif %}
     </div>
     {% endfor %}
@@ -185,7 +215,7 @@
         {% endif %}
       </div>
       {% if exp.description %}
-        <div class="item-desc">{{ exp.description }}</div>
+        <div class="item-desc">{{ render_markdown(exp.description)|safe }}</div>
       {% endif %}
     </div>
     {% endfor %}
@@ -209,7 +239,7 @@
         {% endif %}
       </div>
       {% if proj.description %}
-        <div class="item-desc">{{ proj.description }}</div>
+        <div class="item-desc">{{ render_markdown(proj.description)|safe }}</div>
       {% endif %}
     </div>
     {% endfor %}
@@ -222,7 +252,7 @@
     <h2>Achievements</h2>
     <ul>
       {% for ach in achievements %}
-        <li class="achievement-item">• {{ ach.description }}</li>
+        <li class="achievement-item">{{ render_markdown(ach.description)|safe }}</li>
       {% endfor %}
     </ul>
   </div>
