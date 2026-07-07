@@ -48,6 +48,23 @@ class ResumeViewSet(viewsets.ModelViewSet):
         languages = resume.languages.all()
         achievements = resume.achievements.all()
 
+        # ---------------------------------------------------------
+        # PRE-RENDER MARKDOWN BEFORE PASSING TO TEMPLATE
+        # ---------------------------------------------------------
+        resume.about_html = render_markdown(resume.about)
+        
+        for edu in educations:
+            edu.description_html = render_markdown(edu.description)
+            
+        for exp in experiences:
+            exp.description_html = render_markdown(exp.description)
+            
+        for proj in projects:
+            proj.description_html = render_markdown(proj.description)
+            
+        for ach in achievements:
+            ach.description_html = render_markdown(ach.description)
+
         context = {
             'resume': resume,
             'educations': educations,
@@ -56,7 +73,6 @@ class ResumeViewSet(viewsets.ModelViewSet):
             'skills': skills,
             'languages': languages,
             'achievements': achievements,
-            'render_markdown': render_markdown,  # Pass function to template
             'now': timezone.now(),
         }
 
