@@ -47,6 +47,8 @@
     .item-header { font-weight: 600; font-size: 16px; color: #1a1a2e; }
     .item-sub { font-weight: 400; color: #444; font-size: 14px; }
     .item-dates { font-size: 13px; color: #777; margin-left: 6px; }
+    
+    /* Updated CSS for Markdown Bullet Points */
     .item-desc {
       font-size: 14px;
       color: #333;
@@ -54,11 +56,32 @@
       padding-left: 12px;
       border-left: 2px solid #ddd;
     }
-    .item-desc ul, .item-desc ol { padding-left: 20px; margin: 4px 0; }
-    .item-desc li { margin-bottom: 2px; }
-    .item-desc p { margin: 4px 0; }
-    .item-desc strong { font-weight: 700; }
-    .item-desc em { font-style: italic; }
+    .item-desc ul {
+      list-style-type: disc;
+      list-style-position: inside;
+      padding-left: 10px;
+      margin: 4px 0;
+    }
+    .item-desc ol {
+      list-style-type: decimal;
+      list-style-position: inside;
+      padding-left: 10px;
+      margin: 4px 0;
+    }
+    .item-desc li {
+      margin-bottom: 2px;
+      display: list-item;
+    }
+    .item-desc p {
+      margin: 4px 0;
+    }
+    .item-desc strong {
+      font-weight: 700;
+    }
+    .item-desc em {
+      font-style: italic;
+    }
+    
     .skill-tag, .lang-tag {
       display: inline-block;
       background: #eef2f7;
