@@ -47,8 +47,6 @@
     .item-header { font-weight: 600; font-size: 16px; color: #1a1a2e; }
     .item-sub { font-weight: 400; color: #444; font-size: 14px; }
     .item-dates { font-size: 13px; color: #777; margin-left: 6px; }
-    
-    /* Updated CSS for Markdown Bullet Points */
     .item-desc {
       font-size: 14px;
       color: #333;
@@ -59,29 +57,19 @@
     .item-desc ul {
       list-style-type: disc;
       list-style-position: inside;
-      padding-left: 10px;
+      padding-left: 20px;
       margin: 4px 0;
     }
     .item-desc ol {
       list-style-type: decimal;
       list-style-position: inside;
-      padding-left: 10px;
+      padding-left: 20px;
       margin: 4px 0;
     }
-    .item-desc li {
-      margin-bottom: 2px;
-      display: list-item;
-    }
-    .item-desc p {
-      margin: 4px 0;
-    }
-    .item-desc strong {
-      font-weight: 700;
-    }
-    .item-desc em {
-      font-style: italic;
-    }
-    
+    .item-desc li { margin-bottom: 2px; }
+    .item-desc p { margin: 4px 0; }
+    .item-desc strong { font-weight: 700; }
+    .item-desc em { font-style: italic; }
     .skill-tag, .lang-tag {
       display: inline-block;
       background: #eef2f7;
@@ -121,108 +109,103 @@
     <div class="about">{{ resume.about_html }}</div>
   {% endif %}
 
-  {% if skills %}
-  <div class="section">
-    <h2>Skills</h2>
-    <div>
-      {% for skill in skills %}
-        <span class="skill-tag">{{ skill.name }}{% if skill.proficiency %} ({{ skill.proficiency }}){% endif %}</span>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  {% if languages %}
-  <div class="section">
-    <h2>Languages</h2>
-    <div>
-      {% for lang in languages %}
-        <span class="lang-tag">{{ lang.name }}{% if lang.proficiency %} ({{ lang.proficiency }}){% endif %}</span>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  {% if educations %}
-  <div class="section">
-    <h2>Education</h2>
-    {% for edu in educations %}
-    <div class="item">
-      <div class="item-header">
-        {{ edu.institution }}
-        {% if edu.degree %}<span class="item-sub">– {{ edu.degree }}</span>{% endif %}
-        {% if edu.field_of_study %}<span class="item-sub">({{ edu.field_of_study }})</span>{% endif %}
-        {% if edu.start_date or edu.end_date %}
-          <span class="item-dates">
-            {% if edu.start_date %}{{ edu.start_date|date:"M Y" }}{% endif %}
-            {% if edu.end_date %} – {{ edu.end_date|date:"M Y" }}{% endif %}
-          </span>
-        {% endif %}
-      </div>
-      {% if edu.description %}
-        <div class="item-desc">{{ edu.description_html }}</div>
+  <!-- ===== DYNAMIC SECTIONS (following resume.section_order) ===== -->
+  {% with section_order=resume.section_order|default:"educations,experiences,projects,skills,languages,achievements" %}
+    {% for section_name in section_order %}
+      {% if section_name == 'skills' and skills %}
+        <div class="section">
+          <h2>Skills</h2>
+          <div>
+            {% for skill in skills %}
+              <span class="skill-tag">{{ skill.name }}{% if skill.proficiency %} ({{ skill.proficiency }}){% endif %}</span>
+            {% endfor %}
+          </div>
+        </div>
+      {% elif section_name == 'languages' and languages %}
+        <div class="section">
+          <h2>Languages</h2>
+          <div>
+            {% for lang in languages %}
+              <span class="lang-tag">{{ lang.name }}{% if lang.proficiency %} ({{ lang.proficiency }}){% endif %}</span>
+            {% endfor %}
+          </div>
+        </div>
+      {% elif section_name == 'educations' and educations %}
+        <div class="section">
+          <h2>Education</h2>
+          {% for edu in educations %}
+            <div class="item">
+              <div class="item-header">
+                {{ edu.institution }}
+                {% if edu.degree %}<span class="item-sub">– {{ edu.degree }}</span>{% endif %}
+                {% if edu.field_of_study %}<span class="item-sub">({{ edu.field_of_study }})</span>{% endif %}
+                {% if edu.start_date or edu.end_date %}
+                  <span class="item-dates">
+                    {% if edu.start_date %}{{ edu.start_date|date:"M Y" }}{% endif %}
+                    {% if edu.end_date %} – {{ edu.end_date|date:"M Y" }}{% endif %}
+                  </span>
+                {% endif %}
+              </div>
+              {% if edu.description %}
+                <div class="item-desc">{{ edu.description_html }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% elif section_name == 'experiences' and experiences %}
+        <div class="section">
+          <h2>Experience</h2>
+          {% for exp in experiences %}
+            <div class="item">
+              <div class="item-header">
+                {{ exp.position }} at {{ exp.company }}
+                {% if exp.location %}<span class="item-sub">({{ exp.location }})</span>{% endif %}
+                {% if exp.start_date or exp.end_date %}
+                  <span class="item-dates">
+                    {% if exp.start_date %}{{ exp.start_date|date:"M Y" }}{% endif %}
+                    {% if exp.end_date %} – {{ exp.end_date|date:"M Y" }}{% endif %}
+                  </span>
+                {% endif %}
+              </div>
+              {% if exp.description %}
+                <div class="item-desc">{{ exp.description_html }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% elif section_name == 'projects' and projects %}
+        <div class="section">
+          <h2>Projects</h2>
+          {% for proj in projects %}
+            <div class="item">
+              <div class="item-header">
+                {{ proj.name }}
+                {% if proj.url %}<span class="item-sub"><a href="{{ proj.url }}" style="color:#1a1a2e; text-decoration:underline;">🔗</a></span>{% endif %}
+                {% if proj.start_date or proj.end_date %}
+                  <span class="item-dates">
+                    {% if proj.start_date %}{{ proj.start_date|date:"M Y" }}{% endif %}
+                    {% if proj.end_date %} – {{ proj.end_date|date:"M Y" }}{% endif %}
+                  </span>
+                {% endif %}
+              </div>
+              {% if proj.description %}
+                <div class="item-desc">{{ proj.description_html }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% elif section_name == 'achievements' and achievements %}
+        <div class="section">
+          <h2>Achievements</h2>
+          <ul>
+            {% for ach in achievements %}
+              <li class="achievement-item">{{ ach.description_html }}</li>
+            {% endfor %}
+          </ul>
+        </div>
       {% endif %}
-    </div>
     {% endfor %}
-  </div>
-  {% endif %}
-
-  {% if experiences %}
-  <div class="section">
-    <h2>Experience</h2>
-    {% for exp in experiences %}
-    <div class="item">
-      <div class="item-header">
-        {{ exp.position }} at {{ exp.company }}
-        {% if exp.location %}<span class="item-sub">({{ exp.location }})</span>{% endif %}
-        {% if exp.start_date or exp.end_date %}
-          <span class="item-dates">
-            {% if exp.start_date %}{{ exp.start_date|date:"M Y" }}{% endif %}
-            {% if exp.end_date %} – {{ exp.end_date|date:"M Y" }}{% endif %}
-          </span>
-        {% endif %}
-      </div>
-      {% if exp.description %}
-        <div class="item-desc">{{ exp.description_html }}</div>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {% if projects %}
-  <div class="section">
-    <h2>Projects</h2>
-    {% for proj in projects %}
-    <div class="item">
-      <div class="item-header">
-        {{ proj.name }}
-        {% if proj.url %}<span class="item-sub"><a href="{{ proj.url }}" style="color:#1a1a2e; text-decoration:underline;">🔗</a></span>{% endif %}
-        {% if proj.start_date or proj.end_date %}
-          <span class="item-dates">
-            {% if proj.start_date %}{{ proj.start_date|date:"M Y" }}{% endif %}
-            {% if proj.end_date %} – {{ proj.end_date|date:"M Y" }}{% endif %}
-          </span>
-        {% endif %}
-      </div>
-      {% if proj.description %}
-        <div class="item-desc">{{ proj.description_html }}</div>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {% if achievements %}
-  <div class="section">
-    <h2>Achievements</h2>
-    <ul>
-      {% for ach in achievements %}
-        <li class="achievement-item">{{ ach.description_html }}</li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
+  {% endwith %}
 
   <div class="timestamp">
     Generated: {{ now|date:"Y-m-d H:i" }}

@@ -72,8 +72,8 @@ class Project(models.Model):
 
 class Skill(models.Model):
     resume = models.ForeignKey(Resume, on_delete=models.CASCADE, related_name='skills')
-    name = models.CharField(max_length=100)
-    proficiency = models.CharField(max_length=50, blank=True)
+    name = models.CharField(max_length=1000)
+    proficiency = models.CharField(max_length=500, blank=True)
 
     def __str__(self):
         return self.name
