@@ -18,7 +18,7 @@ class ExperienceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Experience
         fields = [
-            'id', 'company', 'position', 'start_date', 'end_date',
+            'id', 'company', 'position', 'start_date', 'end_date', 'is_current',
             'description', 'location', 'order'
         ]
 

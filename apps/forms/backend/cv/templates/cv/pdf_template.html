@@ -109,7 +109,7 @@
     <div class="about">{{ resume.about_html }}</div>
   {% endif %}
 
-  <!-- ===== DYNAMIC SECTIONS (following resume.section_order) ===== -->
+  <!-- ===== DYNAMIC SECTIONS ===== -->
   {% with section_order=resume.section_order|default:"educations,experiences,projects,skills,languages,achievements" %}
     {% for section_name in section_order %}
       {% if section_name == 'skills' and skills %}
@@ -160,10 +160,15 @@
               <div class="item-header">
                 {{ exp.position }} at {{ exp.company }}
                 {% if exp.location %}<span class="item-sub">({{ exp.location }})</span>{% endif %}
-                {% if exp.start_date or exp.end_date %}
+                {% if exp.start_date or exp.end_date or exp.is_current %}
                   <span class="item-dates">
                     {% if exp.start_date %}{{ exp.start_date|date:"M Y" }}{% endif %}
-                    {% if exp.end_date %} – {{ exp.end_date|date:"M Y" }}{% endif %}
+                    – 
+                    {% if exp.is_current %}
+                      Present
+                    {% elif exp.end_date %}
+                      {{ exp.end_date|date:"M Y" }}
+                    {% endif %}
                   </span>
                 {% endif %}
               </div>
@@ -180,7 +185,9 @@
             <div class="item">
               <div class="item-header">
                 {{ proj.name }}
-                {% if proj.url %}<span class="item-sub"><a href="{{ proj.url }}" style="color:#1a1a2e; text-decoration:underline;">🔗</a></span>{% endif %}
+                {% if proj.url %}
+                  <span class="item-sub"><a href="{{ proj.url }}" style="color:#1a1a2e; text-decoration:underline;">🔗</a></span>
+                {% endif %}
                 {% if proj.start_date or proj.end_date %}
                   <span class="item-dates">
                     {% if proj.start_date %}{{ proj.start_date|date:"M Y" }}{% endif %}
