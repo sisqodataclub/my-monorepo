@@ -27,7 +27,6 @@ class Education(models.Model):
     field_of_study = models.CharField(max_length=100, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
-    is_current = models.BooleanField(default=False)
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
 
@@ -44,6 +43,7 @@ class Experience(models.Model):
     position = models.CharField(max_length=200, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
     description = models.TextField(blank=True)
     location = models.CharField(max_length=200, blank=True)
     order = models.PositiveIntegerField(default=0)
