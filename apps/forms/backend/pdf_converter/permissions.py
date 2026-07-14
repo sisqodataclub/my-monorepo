@@ -1,6 +1,6 @@
 # pdf_converter/permissions.py
 from rest_framework.permissions import BasePermission
-from django.conf import settings
+from .models import PDFUser
 import hmac
 
 class HasValidAPIKey(BasePermission):
@@ -11,15 +11,13 @@ class HasValidAPIKey(BasePermission):
         api_key = request.headers.get('X-API-Key')
         if not api_key:
             return False
-        
-        # Get valid keys from settings
-        valid_keys = getattr(settings, 'PDF_API_KEYS', [])
-        
-        # Constant-time comparison to prevent timing attacks
-        for valid_key in valid_keys:
-            if hmac.compare_digest(api_key, valid_key):
-                # Store the key name (or first 8 chars) for logging
-                request.api_key_name = valid_key[:8] + '...'
-                return True
-        
-        return False
+
+        try:
+            pdf_user = PDFUser.objects.get(api_key=api_key, is_active=True)
+        except PDFUser.DoesNotExist:
+            return False
+
+        # Store the user in the request for later use (e.g., logging)
+        request.pdf_user = pdf_user
+        request.api_key_name = api_key[:8] + '...'
+        return True
