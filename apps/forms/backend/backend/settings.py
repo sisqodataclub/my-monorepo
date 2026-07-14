@@ -80,6 +80,9 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
+if not DEFAULT_FROM_EMAIL:
+    DEFAULT_FROM_EMAIL = 'noreply@pdfconverter.com'
+
 # ============================================================================
 # Application Definition
 # ============================================================================
@@ -97,7 +100,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
-    "cv",  # CV app
+    "cv",
+    'pdf_converter',       # PDF Converter app
 ]
 
 MIDDLEWARE = [
@@ -130,7 +134,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
-ASGI_APPLICATION = 'backend.asgi.application'  # WebSockets
+ASGI_APPLICATION = 'backend.asgi.application'
 
 # ============================================================================
 # Database
@@ -200,3 +204,28 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# ============================================================================
+# PDF Converter Configuration
+# ============================================================================
+
+# --- Frontend Authentication (Magic Link) ---
+LOGIN_URL = '/pdf/login/'
+LOGIN_REDIRECT_URL = '/pdf/'
+
+# Session lifetime: 7 days (604800 seconds)
+SESSION_COOKIE_AGE = 604800
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
+
+# --- External API Authentication (API Keys) ---
+# List of valid API keys for external apps (machine-to-machine)
+# Get from environment variable: PDF_API_KEYS=key1,key2,key3
+PDF_API_KEYS = os.getenv('PDF_API_KEYS', '').split(',')
+
+# If no keys are set in .env, use these development defaults
+if not PDF_API_KEYS or PDF_API_KEYS == ['']:
+    PDF_API_KEYS = [
+        'dev-api-key-12345',
+        'test-api-key-67890'
+    ]

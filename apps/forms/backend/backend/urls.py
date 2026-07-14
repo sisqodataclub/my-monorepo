@@ -22,7 +22,12 @@ urlpatterns = [
     path("api/", include("api.urls")),
 
     # ==========================================
-    # NEW: CV app (resumes + job applications)
+    # CV app (resumes + job applications)
     # ==========================================
-    path("cv/", include("cv.urls")),   # <-- ADD THIS LINE
+    path("cv/", include("cv.urls")),
+
+    # ==========================================
+    # 🆕 PDF Converter app (magic link login + PDF generation)
+    # ==========================================
+    path("pdf/", include("pdf_converter.urls")),   # <-- ADD THIS LINE
 ]

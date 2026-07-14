@@ -13,6 +13,9 @@ stripe
 whitenoise
 pdfkit
 celery==5.3.6
+PyPDF2==3.0.1
+
+
 
 # 🌟 NEW: Streaming & Messaging Dependencies
 redis==5.0.3
