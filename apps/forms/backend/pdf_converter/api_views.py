@@ -3,6 +3,7 @@ import io
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import login
@@ -15,12 +16,16 @@ from .permissions import HasValidAPIKey
 
 
 # ============================================================
-# 🔐 Authentication API Views (for React)
+# 🔐 Authentication API Views – PUBLIC (no API key required)
 # ============================================================
 
 class RequestLoginView(APIView):
-    """React calls this to request a magic link email."""
-    
+    """
+    React calls this to request a magic link email.
+    No authentication required.
+    """
+    permission_classes = [AllowAny]
+
     def post(self, request):
         email = request.data.get('email')
         if not email:
@@ -28,7 +33,7 @@ class RequestLoginView(APIView):
                 {'error': 'Email is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             AuthService.send_login_email(request, email)
             return Response({
@@ -43,8 +48,12 @@ class RequestLoginView(APIView):
 
 
 class VerifyLoginView(APIView):
-    """React calls this to verify the magic link code."""
-    
+    """
+    React calls this to verify the magic link code.
+    No authentication required.
+    """
+    permission_classes = [AllowAny]
+
     def post(self, request):
         code = request.data.get('code')
         if not code:
@@ -52,7 +61,7 @@ class VerifyLoginView(APIView):
                 {'error': 'Code is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             login_code = EmailLoginCode.objects.get(code=code)
         except EmailLoginCode.DoesNotExist:
@@ -60,22 +69,22 @@ class VerifyLoginView(APIView):
                 {'error': 'Invalid or expired login link.'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         if not login_code.is_valid():
             return Response(
                 {'error': 'This link has expired or has already been used.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Mark as used
         login_code.is_used = True
         login_code.save()
-        
+
         # Log the user in (creates session)
         user = login_code.user
         login(request, user)
         request.session.set_expiry(604800)  # 7 days
-        
+
         return Response({
             'success': True,
             'message': 'Successfully logged in!',
@@ -88,21 +97,28 @@ class VerifyLoginView(APIView):
 
 
 class LogoutView(APIView):
-    """Log out the user (clear session)."""
-    
+    """
+    Log out the user (clear session).
+    No authentication required (but you could restrict to authenticated users if preferred).
+    """
+    permission_classes = [AllowAny]
+
     def post(self, request):
         request.session.flush()
         return Response({'success': True, 'message': 'Logged out successfully'})
 
 
 # ============================================================
-# 📄 PDF Generation API Views (for External Apps)
+# 📄 PDF Generation API Views – REQUIRE API KEY
 # ============================================================
 
 class PDFTemplateListView(APIView):
-    """List all available PDF templates (for external apps)."""
+    """
+    List all available PDF templates (for external apps).
+    Requires valid API key in X-API-Key header.
+    """
     permission_classes = [HasValidAPIKey]
-    
+
     def get(self, request):
         templates = PDFTemplate.objects.filter(is_active=True)
         serializer = PDFTemplateSerializer(templates, many=True)
@@ -112,10 +128,10 @@ class PDFTemplateListView(APIView):
 class PDFGenerateView(APIView):
     """
     Generate a PDF from a template or custom HTML.
-    
+
     POST /api/pdf/generate/
     Headers: X-API-Key: your-secret-key
-    
+
     Request Body:
     {
         "template_slug": "invoice",      # Optional: use stored template
@@ -127,11 +143,11 @@ class PDFGenerateView(APIView):
     }
     """
     permission_classes = [HasValidAPIKey]
-    
+
     def post(self, request):
         serializer = PDFGenerateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         data = serializer.validated_data
         template_slug = data.get('template_slug')
         html = data.get('html')
@@ -139,7 +155,7 @@ class PDFGenerateView(APIView):
         css = data.get('css', '')
         filename = data.get('filename', 'document.pdf')
         async_mode = data.get('async_mode', False)
-        
+
         # Get template if slug provided
         template = None
         if template_slug:
@@ -150,7 +166,7 @@ class PDFGenerateView(APIView):
                     {'error': f'Template with slug "{template_slug}" not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-        
+
         # Track the export
         export = PDFExport.objects.create(
             template=template,
@@ -158,7 +174,7 @@ class PDFGenerateView(APIView):
             status='pending',
             api_key_used=request.api_key_name if hasattr(request, 'api_key_name') else 'unknown'
         )
-        
+
         # TODO: Add Celery async support
         if async_mode:
             return Response({
@@ -166,7 +182,7 @@ class PDFGenerateView(APIView):
                 'export_id': export.id,
                 'message': 'PDF generation queued. Check /api/pdf/status/{id}/'
             }, status=status.HTTP_202_ACCEPTED)
-        
+
         try:
             # Generate the PDF
             if template:
@@ -178,18 +194,18 @@ class PDFGenerateView(APIView):
                     {'error': 'Either template_slug or html is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             # Update export record
             export.status = 'completed'
             export.completed_at = timezone.now()
             export.save()
-            
+
             # Return the PDF
             response = FileResponse(io.BytesIO(pdf_bytes), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             response['X-Export-ID'] = str(export.id)
             return response
-            
+
         except Exception as e:
             export.status = 'failed'
             export.error_message = str(e)
@@ -198,9 +214,12 @@ class PDFGenerateView(APIView):
 
 
 class PDFStatusView(APIView):
-    """Check the status of an async PDF generation job."""
+    """
+    Check the status of an async PDF generation job.
+    Requires valid API key.
+    """
     permission_classes = [HasValidAPIKey]
-    
+
     def get(self, request, export_id):
         export = get_object_or_404(PDFExport, id=export_id)
         serializer = PDFExportSerializer(export)
