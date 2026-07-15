@@ -1,4 +1,4 @@
-# pdf_converter/auth_service.py
+# /pdf_converter/auth_service.py
 import os
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
