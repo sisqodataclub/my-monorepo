@@ -174,6 +174,28 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_CREDENTIALS = True
+# Allow custom headers (including X-API-Key for PDF converter)
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-api-key',                # <-- ADD THIS LINE
+]
+
+
+
+
+
+
+
+
+
 
 # ============================================================================
 # Celery & RabbitMQ
