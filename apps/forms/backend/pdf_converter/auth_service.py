@@ -1,8 +1,8 @@
 # pdf_converter/auth_service.py
+import os
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.urls import reverse
 from .models import PDFUser, EmailLoginCode
 
 class AuthService:
@@ -21,22 +21,14 @@ class AuthService:
             code=code
         )
 
-        # 3. Build the magic link (points to your React frontend)
-        # Example: https://your-react-app.com/verify?code=abc123
-        # For testing, we can point to the backend verify endpoint.
-        # We'll keep it as the API endpoint so you can test with curl.
-        #magic_link = request.build_absolute_uri(
-        #    reverse('pdf_converter:api_verify_login')
-        #) + f"?code={code}"
-        # pdf_converter/auth_service.py
-        # Inside send_login_email method, replace the magic_link line:
-        magic_link = f"https://franciscodes.com/pdf/verify?code={code}"
-        # If you want to send the link to your React app, use:
-        # magic_link = f"https://your-react-app.com/verify?code={code}"
+        # 3. Build the magic link using environment variable
+        # Get the frontend URL from environment, with a fallback
+        frontend_url = os.getenv('FRONTEND_URL', 'https://www.franciscodes.com')
+        magic_link = f"{frontend_url}/pdf/verify?code={code}"
 
         # 4. Render the HTML email template
         html_message = render_to_string('emails/magic_link_email.html', {
-            'user': pdf_user,  # Use PDFUser in the template
+            'user': pdf_user,
             'magic_link': magic_link,
             'expiry_days': 7,
         })
