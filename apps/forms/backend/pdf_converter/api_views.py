@@ -1,12 +1,15 @@
 # pdf_converter/api_views.py
 import io
+import os
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import login
 from django.utils import timezone
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from .auth_service import AuthService
 from .models import PDFUser, EmailLoginCode, PDFTemplate, PDFExport
 from .serializers import PDFTemplateSerializer, PDFExportSerializer, PDFGenerateSerializer
@@ -15,7 +18,7 @@ from .permissions import HasValidAPIKey
 
 
 # ============================================================
-# 🔐 Authentication API Views – PUBLIC (no API key required)
+# 🔐 Authentication API Views – PUBLIC
 # ============================================================
 
 class RequestLoginView(APIView):
@@ -64,20 +67,17 @@ class VerifyLoginView(APIView):
                 {'error': 'This link has expired or has already been used.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        # Mark as used
         login_code.is_used = True
         login_code.save()
 
         pdf_user = login_code.pdf_user
-
-        # 🆕 Return the user info AND their API key!
         return Response({
             'success': True,
             'message': 'Successfully logged in!',
             'user': {
                 'id': pdf_user.id,
                 'email': pdf_user.email,
-                'api_key': pdf_user.api_key,  # React can store this
+                'api_key': pdf_user.api_key,
             }
         }, status=status.HTTP_200_OK)
 
@@ -86,7 +86,6 @@ class LogoutView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # Since we don't use sessions, just return success.
         return Response({'success': True, 'message': 'Logged out successfully'})
 
 
@@ -128,7 +127,6 @@ class PDFGenerateView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-        # Get the PDFUser from the API key (stored in request by HasValidAPIKey)
         pdf_user = getattr(request, 'pdf_user', None)
 
         export = PDFExport.objects.create(
@@ -180,3 +178,57 @@ class PDFStatusView(APIView):
         export = get_object_or_404(PDFExport, id=export_id)
         serializer = PDFExportSerializer(export)
         return Response(serializer.data)
+
+
+# ============================================================
+# 🆕 File Upload API View
+# ============================================================
+
+class PDFUploadView(APIView):
+    """
+    Upload a document (docx, md, txt, html) and convert it to PDF.
+
+    POST /api/pdf/upload/
+    Headers: X-API-Key: your-secret-key
+    Request: multipart/form-data with file field named 'document'
+    """
+    permission_classes = [HasValidAPIKey]
+
+    def post(self, request):
+        uploaded_file: InMemoryUploadedFile = request.FILES.get('document')
+        if not uploaded_file:
+            return Response(
+                {'error': 'No file uploaded. Please provide a document.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if uploaded_file.size > 10 * 1024 * 1024:
+            return Response(
+                {'error': 'File size exceeds 10MB limit.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        filename = uploaded_file.name
+        file_extension = os.path.splitext(filename)[1].lower()
+
+        allowed_extensions = ['.docx', '.doc', '.md', '.markdown', '.txt', '.text', '.html', '.htm']
+        if file_extension not in allowed_extensions:
+            return Response({
+                'error': f'Unsupported file type: {file_extension}. Supported: {", ".join(allowed_extensions)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            file_bytes = uploaded_file.read()
+            html_content = PDFService.convert_file_to_html(file_bytes, file_extension)
+
+            pdf_filename = os.path.splitext(filename)[0] + '.pdf'
+            pdf_bytes = PDFService.render_html_to_pdf(html_content, context={})
+
+            response = FileResponse(io.BytesIO(pdf_bytes), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
+            return response
+
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': f'Failed to convert document: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
