@@ -25,10 +25,12 @@ class AuthService:
         # Example: https://your-react-app.com/verify?code=abc123
         # For testing, we can point to the backend verify endpoint.
         # We'll keep it as the API endpoint so you can test with curl.
-        magic_link = request.build_absolute_uri(
-            reverse('pdf_converter:api_verify_login')
-        ) + f"?code={code}"
-
+        #magic_link = request.build_absolute_uri(
+        #    reverse('pdf_converter:api_verify_login')
+        #) + f"?code={code}"
+        # pdf_converter/auth_service.py
+        # Inside send_login_email method, replace the magic_link line:
+        magic_link = f"https://franciscodes.com/pdf/verify?code={code}"
         # If you want to send the link to your React app, use:
         # magic_link = f"https://your-react-app.com/verify?code={code}"
 
