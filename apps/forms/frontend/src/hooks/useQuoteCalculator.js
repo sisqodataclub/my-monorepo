@@ -25,7 +25,7 @@ export default function useQuoteCalculator({
     loading: false,
     error: null,
   });
-  
+
   // Timer reference for debouncing
   const timerRef = useRef(null);
 
@@ -35,7 +35,8 @@ export default function useQuoteCalculator({
       clearTimeout(timerRef.current);
     }
 
-    // Build the items array
+    // Build the items array from quantities, carpets, and appliances ONLY
+    // (selectedAreas are already included in quantities – we do not add them separately)
     const items = [];
     const processDict = (dict) => {
       Object.entries(dict).forEach(([id, qty]) => {
@@ -47,18 +48,12 @@ export default function useQuoteCalculator({
         }
       });
     };
-    
+
     processDict(quantities);
     processDict(carpets);
     processDict(appliances);
 
-    // Map selectedAreas (if they are numeric IDs)
-    selectedAreas.forEach((areaId) => {
-      const parsedId = parseInt(areaId, 10);
-      if (!isNaN(parsedId)) {
-        items.push({ service_id: parsedId, quantity: 1 });
-      }
-    });
+    // ❌ Removed selectedAreas loop – causes duplicates with variations
 
     const payload = {
       items,
@@ -67,7 +62,7 @@ export default function useQuoteCalculator({
       discount_code: discountCode || null,
     };
 
-    // If no items are selected, reset and skip the API call entirely
+    // If no items are selected, reset and skip the API call
     if (items.length === 0) {
       setQuote({
         subtotal: 0, fees: 0, discount: 0, finalTotal: 0,
@@ -76,19 +71,19 @@ export default function useQuoteCalculator({
       return;
     }
 
-    // Set loading state immediately so UI can show skeletons if needed
+    // Set loading state immediately
     setQuote((prev) => ({ ...prev, loading: true, error: null }));
 
     const cacheKey = getCacheKey(payload);
     const cached = quoteCache.get(cacheKey);
-    
-    // If we've seen this exact combination of selections before, use memory!
+
+    // Use cached result if available
     if (cached) {
       setQuote({ ...cached, loading: false });
       return;
     }
 
-    // Delay the API call by 500ms (Debounce)
+    // Debounce the API call by 500ms
     timerRef.current = setTimeout(async () => {
       try {
         const data = await calculateQuoteFromApi(payload);
@@ -101,24 +96,22 @@ export default function useQuoteCalculator({
           loading: false,
           error: null,
         };
-        
-        // Save the result to our memory cache
+
+        // Save to cache
         quoteCache.set(cacheKey, newQuote);
         setQuote(newQuote);
       } catch (error) {
         console.error("Failed to calculate quote securely:", error);
         setQuote((prev) => ({ ...prev, loading: false, error: error.message }));
       }
-    }, 500); // 500ms wait period
+    }, 500);
 
-    // Cleanup function
+    // Cleanup timer on unmount or dependency change
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-    
-  // Stringify dependencies to prevent infinite re-render loops on object identity checks
   }, [
-    JSON.stringify(selectedAreas),
+    // ✅ Removed selectedAreas from dependencies – no longer used
     JSON.stringify(quantities),
     JSON.stringify(carpets),
     JSON.stringify(appliances),

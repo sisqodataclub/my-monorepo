@@ -5,13 +5,7 @@ import GlassLayout from "./ui/GlassLayout";
 const SIZED_AREAS_NAMES = ["Kitchen", "Bedroom"];
 
 const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQuantities, allAreas }) => {
-  const getBaseAreaId = (variationName) => {
-    const baseName = variationName.split('_')[0];
-    const baseArea = allAreas.find(area => area.name === baseName);
-    return baseArea ? baseArea.id : null;
-  };
-
-  // ✅ Clean up stale quantities when selectedAreas changes
+  // Clean up quantities when selectedAreas changes
   useEffect(() => {
     if (allAreas.length === 0) return;
 
@@ -19,13 +13,13 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
       const updated = { ...prev };
       const validIds = new Set();
 
-      // 1. Add valid IDs from currently selected areas
+      // For each selected base area, determine which IDs are valid
       selectedAreas.forEach((baseId) => {
         const baseArea = allAreas.find((a) => a.id === baseId);
         if (!baseArea) return;
 
         if (SIZED_AREAS_NAMES.includes(baseArea.name)) {
-          // For sized areas, add variation IDs
+          // Sized area: valid IDs are its variations
           const variations = allAreas.filter(
             (a) =>
               a.name === `${baseArea.name}_Small` ||
@@ -39,23 +33,13 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
           // Base area itself is not charged, set to 0
           updated[baseId] = 0;
         } else {
-          // Normal area
+          // Normal area: valid ID is the base itself
           validIds.add(baseId);
           if (updated[baseId] === undefined) updated[baseId] = 1;
         }
       });
 
-      // 2. Also keep variation IDs that have a positive quantity (even if base is not selected)
-      Object.keys(updated).forEach((key) => {
-        const id = parseInt(key, 10);
-        if (isNaN(id)) return;
-        const item = allAreas.find((a) => a.id === id);
-        if (item && item.name.includes('_') && (updated[id] || 0) > 0) {
-          validIds.add(id);
-        }
-      });
-
-      // 3. Remove any numeric keys that are no longer valid
+      // Remove any numeric keys that are no longer valid
       Object.keys(updated).forEach((key) => {
         const id = parseInt(key, 10);
         if (isNaN(id)) return; // keep non‑numeric keys (e.g., "furnished_fee")
@@ -69,24 +53,14 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
   }, [selectedAreas, allAreas, setQuantities]);
 
   const increment = (id) => {
-    const newQty = (quantities[id] || 0) + 1;
-    setQuantities((prev) => ({ ...prev, [id]: newQty }));
-    const item = allAreas.find(a => a.id === id);
-    if (item && item.name.includes('_') && newQty === 1) {
-      const baseId = getBaseAreaId(item.name);
-      if (baseId && selectedAreas.includes(baseId)) {
-        setSelectedAreas(prev => prev.filter(areaId => areaId !== baseId));
-      }
-    }
+    setQuantities((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
   };
 
   const decrement = (id) => {
-    const newQty = Math.max(0, (quantities[id] || 0) - 1);
-    setQuantities((prev) => ({ ...prev, [id]: newQty }));
+    setQuantities((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) - 1) }));
   };
 
-  // ----- Build UI groups with ABSOLUTE static ordering -----
-  // (unchanged – uses allAreas for sorting)
+  // ----- Build UI groups (unchanged – static ordering) -----
   const baseIdsToRender = new Set(selectedAreas);
   Object.keys(quantities).forEach(id => {
     const item = allAreas.find(a => a.id === parseInt(id, 10));
