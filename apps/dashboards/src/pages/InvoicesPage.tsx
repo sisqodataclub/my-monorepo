@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
-import { Plus, Download, Edit, Mail, X, FileText } from 'lucide-react';
+import { Plus, Download, Edit, Mail, X, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Service, Invoice } from '../api/invoiceApi';
 import {
   fetchServices,
@@ -48,6 +48,7 @@ export default function InvoicesPage() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [bookingInvoiceMap, setBookingInvoiceMap] = useState<Record<number, number>>({});
   const [bookingActionLoading, setBookingActionLoading] = useState<Record<number, boolean>>({});
+  const [showBookings, setShowBookings] = useState(false); // 👈 toggle state
 
   // Form state
   const [formData, setFormData] = useState({
@@ -215,11 +216,68 @@ export default function InvoicesPage() {
   };
 
   // ---- Booking actions ----
-  const mapBookingToInvoicePayload = (booking: any) => {
+  // ✅ Build multiple invoice items from booking.quantities using services
+  const mapBookingToInvoicePayload = (booking: any, servicesList: Service[]) => {
     const now = new Date();
     const dueDate = new Date(now);
     dueDate.setDate(dueDate.getDate() + 30);
     const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+    const invoiceItems: any[] = [];
+    const quantities = booking.quantities || {};
+
+    // Check if there are any numeric keys (service IDs)
+    const hasServices = Object.keys(quantities).some(key => !isNaN(Number(key)));
+
+    if (hasServices) {
+      // Build line items from each service in quantities
+      Object.entries(quantities).forEach(([key, qty]) => {
+        const qtyNum = Number(qty);
+        if (qtyNum <= 0) return;
+
+        const serviceId = Number(key);
+        if (isNaN(serviceId)) {
+          // Non‑numeric key (e.g., "furnished_fee") – treat as a fee line
+          invoiceItems.push({
+            description: key.replace('_', ' ').toUpperCase(),
+            quantity: 1,
+            unit_price: qtyNum,
+            total_price: qtyNum,
+            tax_rate: 0,
+            discount: 0,
+            measurement: '',
+          });
+          return;
+        }
+
+        // Find the service in the fetched list
+        const service = servicesList.find(s => s.id === serviceId);
+        const description = service ? service.name : `Service ${serviceId}`;
+        const unitPrice = service ? Number(service.price) : 0;
+
+        invoiceItems.push({
+          description,
+          quantity: qtyNum,
+          unit_price: unitPrice,
+          total_price: unitPrice * qtyNum,
+          tax_rate: 0,
+          discount: 0,
+          measurement: '',
+        });
+      });
+    } else {
+      // Fallback: no service IDs found – use a single generic line
+      const total = Number(booking.total) || 0;
+      invoiceItems.push({
+        description: `Cleaning service – Booking #${booking.id}`,
+        quantity: 1,
+        unit_price: total,
+        total_price: total,
+        tax_rate: 0,
+        discount: 0,
+        measurement: '',
+      });
+    }
 
     return {
       title: `Invoice for ${booking.customer_name}`,
@@ -233,16 +291,7 @@ export default function InvoicesPage() {
       template_choice: 'quotation_1',
       notes: `Booking #${booking.id}\n${booking.notes || ''}`,
       receipt: false,
-      items: [
-        {
-          description: `Cleaning service – Booking #${booking.id}`,
-          quantity: 1,
-          unit_price: Number(booking.total),
-          tax_rate: 0,
-          discount: 0,
-          measurement: '',
-        },
-      ],
+      items: invoiceItems,
     };
   };
 
@@ -251,7 +300,8 @@ export default function InvoicesPage() {
     setBookingActionLoading((prev) => ({ ...prev, [bookingId]: true }));
     try {
       const token = await getToken();
-      const payload = mapBookingToInvoicePayload(booking);
+      // Use services state to resolve names/prices
+      const payload = mapBookingToInvoicePayload(booking, services);
       const newInvoice = await createInvoice(token, payload);
       setBookingInvoiceMap((prev) => ({ ...prev, [bookingId]: newInvoice.id }));
       await loadData();
@@ -264,12 +314,10 @@ export default function InvoicesPage() {
     }
   };
 
-  // ✅ Removed unused `bookingId` parameter
   const handleDownloadFromBooking = (invoiceId: number) => {
     getToken().then((token) => downloadInvoicePdf(invoiceId, token));
   };
 
-  // ✅ Removed unused `bookingId` parameter
   const handleEmailFromBooking = async (invoiceId: number) => {
     const token = await getToken();
     try {
@@ -555,89 +603,99 @@ export default function InvoicesPage() {
         </motion.div>
       )}
 
-      {/* ---- Bookings Section ---- */}
+      {/* ---- Bookings Section with Show/Hide toggle ---- */}
       <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-4">Bookings (Ready to Invoice)</h2>
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booking #</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {bookings.length === 0 ? (
+        <button
+          onClick={() => setShowBookings(!showBookings)}
+          className="flex items-center gap-2 text-xl font-semibold mb-4 hover:text-blue-600 transition-colors"
+        >
+          {showBookings ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+          <span>Bookings (Ready to Invoice)</span>
+          <span className="text-sm font-normal text-gray-500 ml-2">({bookings.length})</span>
+        </button>
+
+        {showBookings && (
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    No bookings found.
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booking #</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
-              ) : (
-                bookings.map((booking) => {
-                  const invoiceId = bookingInvoiceMap[booking.id];
-                  const isLoading = bookingActionLoading[booking.id] || false;
-                  return (
-                    <tr key={booking.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{booking.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{booking.customer_name}</div>
-                        <div className="text-sm text-gray-500">{booking.customer_email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        £{Number(booking.total).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            booking.status === 'confirmed'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {booking.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {invoiceId ? (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-gray-500 mr-1">Inv #{invoiceId}</span>
-                            <button
-                              onClick={() => handleDownloadFromBooking(invoiceId)}
-                              className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded"
-                            >
-                              <Download size={16} /> PDF
-                            </button>
-                            <button
-                              onClick={() => handleEmailFromBooking(invoiceId)}
-                              className="text-purple-600 hover:text-purple-900 flex items-center gap-1 bg-purple-50 px-3 py-1 rounded"
-                            >
-                              <Mail size={16} /> Email
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleCreateInvoiceFromBooking(booking)}
-                            disabled={isLoading}
-                            className="text-green-600 hover:text-green-900 flex items-center gap-1 bg-green-50 px-3 py-1 rounded disabled:opacity-50"
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {bookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      No bookings found.
+                    </td>
+                  </tr>
+                ) : (
+                  bookings.map((booking) => {
+                    const invoiceId = bookingInvoiceMap[booking.id];
+                    const isLoading = bookingActionLoading[booking.id] || false;
+                    return (
+                      <tr key={booking.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          #{booking.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{booking.customer_name}</div>
+                          <div className="text-sm text-gray-500">{booking.customer_email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                          £{Number(booking.total).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              booking.status === 'confirmed'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
                           >
-                            {isLoading ? 'Creating...' : <FileText size={16} />}
-                            {isLoading ? 'Creating...' : 'Create Invoice'}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                            {booking.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          {invoiceId ? (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs text-gray-500 mr-1">Inv #{invoiceId}</span>
+                              <button
+                                onClick={() => handleDownloadFromBooking(invoiceId)}
+                                className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded"
+                              >
+                                <Download size={16} /> PDF
+                              </button>
+                              <button
+                                onClick={() => handleEmailFromBooking(invoiceId)}
+                                className="text-purple-600 hover:text-purple-900 flex items-center gap-1 bg-purple-50 px-3 py-1 rounded"
+                              >
+                                <Mail size={16} /> Email
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleCreateInvoiceFromBooking(booking)}
+                              disabled={isLoading}
+                              className="text-green-600 hover:text-green-900 flex items-center gap-1 bg-green-50 px-3 py-1 rounded disabled:opacity-50"
+                            >
+                              {isLoading ? 'Creating...' : <FileText size={16} />}
+                              {isLoading ? 'Creating...' : 'Create Invoice'}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ---- Invoices Table ---- */}
