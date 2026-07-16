@@ -6,6 +6,7 @@ import hmac
 class HasValidAPIKey(BasePermission):
     """
     Custom permission to check for a valid API key in the X-API-Key header.
+    Also checks if the API key has expired.
     """
     def has_permission(self, request, view):
         api_key = request.headers.get('X-API-Key')
@@ -15,6 +16,10 @@ class HasValidAPIKey(BasePermission):
         try:
             pdf_user = PDFUser.objects.get(api_key=api_key, is_active=True)
         except PDFUser.DoesNotExist:
+            return False
+
+        # 🆕 Check if API key is expired
+        if not pdf_user.is_api_key_valid():
             return False
 
         # Store the user in the request for later use (e.g., logging)

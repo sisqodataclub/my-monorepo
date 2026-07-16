@@ -1,6 +1,7 @@
 # pdf_converter/api_views.py
 import io
 import os
+import time
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -71,6 +72,11 @@ class VerifyLoginView(APIView):
         login_code.save()
 
         pdf_user = login_code.pdf_user
+        
+        # Update last activity
+        pdf_user.last_activity = timezone.now()
+        pdf_user.save()
+
         return Response({
             'success': True,
             'message': 'Successfully logged in!',
@@ -78,6 +84,8 @@ class VerifyLoginView(APIView):
                 'id': pdf_user.id,
                 'email': pdf_user.email,
                 'api_key': pdf_user.api_key,
+                'total_conversions': pdf_user.total_conversions,
+                'total_uploads': pdf_user.total_uploads,
             }
         }, status=status.HTTP_200_OK)
 
@@ -87,6 +95,33 @@ class LogoutView(APIView):
 
     def post(self, request):
         return Response({'success': True, 'message': 'Logged out successfully'})
+
+
+# ============================================================
+# 👤 User Info View
+# ============================================================
+
+class UserInfoView(APIView):
+    permission_classes = [HasValidAPIKey]
+
+    def get(self, request):
+        pdf_user = getattr(request, 'pdf_user', None)
+        if not pdf_user:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response({
+            'id': pdf_user.id,
+            'email': pdf_user.email,
+            'api_key': pdf_user.api_key,
+            'api_key_expires_at': pdf_user.api_key_expires_at,
+            'total_conversions': pdf_user.total_conversions,
+            'total_uploads': pdf_user.total_uploads,
+            'last_activity': pdf_user.last_activity,
+            'preferences': pdf_user.preferences,
+        })
 
 
 # ============================================================
@@ -129,12 +164,15 @@ class PDFGenerateView(APIView):
 
         pdf_user = getattr(request, 'pdf_user', None)
 
+        # Track the export
         export = PDFExport.objects.create(
             template=template,
             pdf_user=pdf_user,
             context_data=context,
             status='pending',
-            api_key_used=request.api_key_name if hasattr(request, 'api_key_name') else 'unknown'
+            source_type='template' if template_slug else 'html',
+            api_key_used=request.api_key_name if hasattr(request, 'api_key_name') else 'unknown',
+            ip_address=request.META.get('REMOTE_ADDR', ''),
         )
 
         if async_mode:
@@ -143,6 +181,8 @@ class PDFGenerateView(APIView):
                 'export_id': export.id,
                 'message': 'PDF generation queued. Check /api/pdf/status/{id}/'
             }, status=status.HTTP_202_ACCEPTED)
+
+        start_time = time.time()
 
         try:
             if template:
@@ -155,18 +195,29 @@ class PDFGenerateView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Update export record
+            conversion_time = time.time() - start_time
             export.status = 'completed'
             export.completed_at = timezone.now()
+            export.file_size = len(pdf_bytes)
+            export.conversion_time = conversion_time
             export.save()
 
+            # Update user stats
+            if pdf_user:
+                pdf_user.increment_conversion()
+
+            # Return the PDF
             response = FileResponse(io.BytesIO(pdf_bytes), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             response['X-Export-ID'] = str(export.id)
+            response['X-Conversion-Time'] = f'{conversion_time:.2f}s'
             return response
 
         except Exception as e:
             export.status = 'failed'
             export.error_message = str(e)
+            export.completed_at = timezone.now()
             export.save()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -181,7 +232,7 @@ class PDFStatusView(APIView):
 
 
 # ============================================================
-# 🆕 File Upload API View
+# 📄 File Upload API View
 # ============================================================
 
 class PDFUploadView(APIView):
@@ -202,6 +253,7 @@ class PDFUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # File size limit: 10MB
         if uploaded_file.size > 10 * 1024 * 1024:
             return Response(
                 {'error': 'File size exceeds 10MB limit.'},
@@ -210,12 +262,26 @@ class PDFUploadView(APIView):
 
         filename = uploaded_file.name
         file_extension = os.path.splitext(filename)[1].lower()
+        file_size = uploaded_file.size
 
         allowed_extensions = ['.docx', '.doc', '.md', '.markdown', '.txt', '.text', '.html', '.htm']
         if file_extension not in allowed_extensions:
             return Response({
                 'error': f'Unsupported file type: {file_extension}. Supported: {", ".join(allowed_extensions)}'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+        pdf_user = getattr(request, 'pdf_user', None)
+        start_time = time.time()
+
+        # Track the export
+        export = PDFExport.objects.create(
+            pdf_user=pdf_user,
+            context_data={'original_filename': filename, 'file_size': file_size},
+            status='pending',
+            source_type='upload',
+            api_key_used=request.api_key_name if hasattr(request, 'api_key_name') else 'unknown',
+            ip_address=request.META.get('REMOTE_ADDR', ''),
+        )
 
         try:
             file_bytes = uploaded_file.read()
@@ -224,11 +290,33 @@ class PDFUploadView(APIView):
             pdf_filename = os.path.splitext(filename)[0] + '.pdf'
             pdf_bytes = PDFService.render_html_to_pdf(html_content, context={})
 
+            # Update export record
+            conversion_time = time.time() - start_time
+            export.status = 'completed'
+            export.completed_at = timezone.now()
+            export.file_size = len(pdf_bytes)
+            export.conversion_time = conversion_time
+            export.save()
+
+            # Update user stats
+            if pdf_user:
+                pdf_user.increment_upload()
+
             response = FileResponse(io.BytesIO(pdf_bytes), content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
+            response['X-Export-ID'] = str(export.id)
+            response['X-Conversion-Time'] = f'{conversion_time:.2f}s'
             return response
 
         except ValueError as e:
+            export.status = 'failed'
+            export.error_message = str(e)
+            export.completed_at = timezone.now()
+            export.save()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            export.status = 'failed'
+            export.error_message = str(e)
+            export.completed_at = timezone.now()
+            export.save()
             return Response({'error': f'Failed to convert document: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
