@@ -11,14 +11,21 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     return baseArea ? baseArea.id : null;
   };
 
+  // ✅ Clean up stale quantities when selectedAreas changes
   useEffect(() => {
-    if (allAreas.length === 0 || selectedAreas.length === 0) return;
+    if (allAreas.length === 0) return;
+
     setQuantities((prev) => {
       const updated = { ...prev };
+      const validIds = new Set();
+
+      // 1. Add quantities for currently selected areas
       selectedAreas.forEach((baseId) => {
         const baseArea = allAreas.find((a) => a.id === baseId);
         if (!baseArea) return;
+
         if (SIZED_AREAS_NAMES.includes(baseArea.name)) {
+          // For sized areas (Kitchen, Bedroom), add variation IDs
           const variations = allAreas.filter(
             (a) =>
               a.name === `${baseArea.name}_Small` ||
@@ -26,13 +33,27 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
               a.name === `${baseArea.name}_Large`
           );
           variations.forEach((v) => {
+            validIds.add(v.id);
             if (updated[v.id] === undefined) updated[v.id] = 0;
           });
-          updated[baseId] = 0;
+          updated[baseId] = 0; // base area itself is not charged
         } else {
+          // For normal areas, add the base ID
+          validIds.add(baseId);
           if (updated[baseId] === undefined) updated[baseId] = 1;
         }
       });
+
+      // 2. Remove any quantity keys that are no longer valid
+      Object.keys(updated).forEach((key) => {
+        const id = parseInt(key, 10);
+        // Keep non‑numeric keys (e.g., "furnished_fee", "discount")
+        if (isNaN(id)) return;
+        if (!validIds.has(id)) {
+          delete updated[key];
+        }
+      });
+
       return updated;
     });
   }, [selectedAreas, allAreas, setQuantities]);
