@@ -54,11 +54,14 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     setQuantities((prev) => ({ ...prev, [id]: newQty }));
   };
 
-  // Build UI groups with stable ordering
-  const renderGroups = [];
+  // ----- Build UI groups with ABSOLUTE static ordering -----
+  // Anchored to the immutable master catalog: allAreas
+
+  // 1. Gather every base ID that needs to be rendered
   const baseIdsToRender = new Set(selectedAreas);
+
   Object.keys(quantities).forEach(id => {
-    const item = allAreas.find(a => a.id === parseInt(id));
+    const item = allAreas.find(a => a.id === parseInt(id, 10));
     if (item && item.name.includes('_')) {
       const baseName = item.name.split('_')[0];
       const baseArea = allAreas.find(a => a.name === baseName);
@@ -66,22 +69,19 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     }
   });
 
-  // Sort base IDs to maintain a consistent order: first by order in selectedAreas, then by ID
+  // 2. Sort them strictly by their original position in the master catalog
   const sortedBaseIds = Array.from(baseIdsToRender).sort((a, b) => {
-    const indexA = selectedAreas.indexOf(a);
-    const indexB = selectedAreas.indexOf(b);
-    // Both in selectedAreas → sort by selection order
-    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-    // One is in selectedAreas → put the selected one first
-    if (indexA !== -1) return -1;
-    if (indexB !== -1) return 1;
-    // Neither in selectedAreas → sort by ID (ascending)
-    return a - b;
+    const indexA = allAreas.findIndex((area) => area.id === a);
+    const indexB = allAreas.findIndex((area) => area.id === b);
+    return indexA - indexB; // Guarantees static order
   });
 
-  sortedBaseIds.forEach(baseId => {
+  // 3. Build the render groups
+  const renderGroups = [];
+  sortedBaseIds.forEach((baseId) => {
     const baseArea = allAreas.find((a) => a.id === baseId);
     if (!baseArea) return;
+
     if (SIZED_AREAS_NAMES.includes(baseArea.name)) {
       const variations = allAreas.filter(
         (a) =>
@@ -99,7 +99,7 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     }
   });
 
-  if (selectedAreas.length === 0 && Object.values(quantities).every(q => q === 0)) {
+  if (selectedAreas.length === 0 && Object.values(quantities).every((q) => q === 0)) {
     return (
       <GlassLayout title="Room Quantities" subtitle="No areas selected">
         <div className="text-yellow-400 text-center py-8">
@@ -113,22 +113,50 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     <GlassLayout title="Room Quantities" subtitle="Adjust quantities for your selected areas.">
       <div className="flex flex-col gap-6">
         {renderGroups.map((group) => (
-          <div key={group.title} className={group.isGroup ? "bg-gray-800/40 p-4 rounded-2xl border border-gray-700/50" : ""}>
+          <div
+            key={group.title}
+            className={
+              group.isGroup
+                ? "bg-gray-800/40 p-4 rounded-2xl border border-gray-700/50"
+                : ""
+            }
+          >
             {group.isGroup && (
-              <h3 className="text-white font-bold text-lg mb-3 px-1">{group.title} Variations</h3>
+              <h3 className="text-white font-bold text-lg mb-3 px-1">
+                {group.title} Variations
+              </h3>
             )}
             <div className="flex flex-col gap-3">
               {group.items.map((item) => {
                 const count = quantities[item.id] || 0;
                 const isVariation = item.name.includes("_");
-                const displayName = isVariation ? item.name.split("_")[1] : item.name;
+                const displayName = isVariation
+                  ? item.name.split("_")[1]
+                  : item.name;
                 return (
-                  <div key={item.id} className="flex justify-between items-center bg-gray-800/80 border border-gray-600 p-4 rounded-xl">
-                    <span className="text-white font-medium text-md sm:text-lg">{displayName}</span>
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-center bg-gray-800/80 border border-gray-600 p-4 rounded-xl"
+                  >
+                    <span className="text-white font-medium text-md sm:text-lg">
+                      {displayName}
+                    </span>
                     <div className="flex items-center gap-3">
-                      <button onClick={() => decrement(item.id)} className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-bold text-xl">–</button>
-                      <span className="text-white font-bold text-xl min-w-[24px] text-center">{count}</span>
-                      <button onClick={() => increment(item.id)} className="w-9 h-9 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-bold text-xl shadow-lg shadow-blue-500/30">+</button>
+                      <button
+                        onClick={() => decrement(item.id)}
+                        className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-bold text-xl"
+                      >
+                        –
+                      </button>
+                      <span className="text-white font-bold text-xl min-w-[24px] text-center">
+                        {count}
+                      </span>
+                      <button
+                        onClick={() => increment(item.id)}
+                        className="w-9 h-9 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-bold text-xl shadow-lg shadow-blue-500/30"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                 );
