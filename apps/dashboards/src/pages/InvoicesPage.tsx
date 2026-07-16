@@ -1,4 +1,3 @@
-// apps/dashboards/src/pages/InvoicesPage.tsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
@@ -49,7 +48,7 @@ export default function InvoicesPage() {
     invoiceDate: '',
     dueDate: '',
     status: 'draft',
-    adjustToBookingTotal: true, // default: match booking total
+    adjustToBookingTotal: true,
   });
 
   // Form state for manual invoice creation
@@ -417,7 +416,6 @@ export default function InvoicesPage() {
     }
   };
 
-  // ---- Download/Email from booking ----
   const handleDownloadFromBooking = (invoiceId: number) => {
     getToken().then((token) => downloadInvoicePdf(invoiceId, token));
   };
@@ -439,14 +437,9 @@ export default function InvoicesPage() {
     show: { opacity: 1, transition: { staggerChildren: 0.05 } },
   };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>;
-  }
-
-  // compute variance for the modal
+  // Compute variance for the modal
   const computeVariance = () => {
     if (!selectedBooking) return { sum: 0, bookingTotal: 0, diff: 0, variance: 0 };
-    // We need to rebuild items without adjustment to compute sum
     const tempItems: any[] = [];
     const quantities = selectedBooking.quantities || {};
     const allItems: { id: number; name: string; qty: number; price: number }[] = [];
@@ -491,6 +484,10 @@ export default function InvoicesPage() {
     return { sum, bookingTotal, diff, variance: Math.abs(diff) };
   };
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -506,10 +503,126 @@ export default function InvoicesPage() {
         </button>
       </div>
 
-      {/* ---- Manual Invoice Form (unchanged) ---- */}
+      {/* ---- Manual Invoice Form ---- */}
       {showForm && (
-        // ... (keep the existing manual form code exactly as before)
-        <div></div> // Placeholder – you can copy the full form from the previous version
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">{editingInvoice ? 'Edit Invoice' : 'Invoice Configuration'}</h2>
+            <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700">
+              <X size={24} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Basic Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input name="title" placeholder="Invoice Title" value={formData.title} onChange={handleInputChange} className="border rounded-lg px-4 py-2 w-full" />
+                <input name="customerName" placeholder="Customer Name *" value={formData.customerName} onChange={handleInputChange} required className="border rounded-lg px-4 py-2 w-full" />
+                <input type="email" name="customerEmail" placeholder="Customer Email *" value={formData.customerEmail} onChange={handleInputChange} required className="border rounded-lg px-4 py-2 w-full" />
+                <input name="customerPhone" placeholder="Customer Phone" value={formData.customerPhone} onChange={handleInputChange} className="border rounded-lg px-4 py-2 w-full" />
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Invoice Date</label>
+                  <input type="date" name="invoiceDate" value={formData.invoiceDate} onChange={handleInputChange} className="border rounded-lg px-4 py-2 w-full" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Due Date</label>
+                  <input type="date" name="dueDate" value={formData.dueDate} onChange={handleInputChange} className="border rounded-lg px-4 py-2 w-full" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Status</label>
+                  <select name="status" value={formData.status} onChange={handleInputChange} className="border rounded-lg px-4 py-2 w-full bg-white">
+                    <option value="draft">Draft (Unpaid)</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+                <div className="flex items-center">
+                  <input type="checkbox" name="receipt" checked={formData.receipt} onChange={handleInputChange} className="mr-2" />
+                  <label className="text-sm">This is a receipt (not an invoice)</label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Design & Formatting</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Currency</label>
+                  <select name="currency" value={formData.currency} onChange={handleInputChange} className="border rounded-lg px-4 py-2 w-full bg-white">
+                    <option value="USD">US Dollar (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="GBP">British Pound (GBP)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Template Choice</label>
+                  <select name="templateChoice" value={formData.templateChoice} onChange={handleInputChange} className="border rounded-lg px-4 py-2 w-full bg-white">
+                    <option value="quotation_1">Standard Invoice 1</option>
+                    <option value="quotation_2">Modern Invoice 2</option>
+                    <option value="receipt1">Basic Receipt</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Line Items</h3>
+              <div className="space-y-3 bg-gray-50 p-4 rounded-lg border">
+                {items.map((item, idx) => (
+                  <div key={idx} className="flex flex-wrap gap-3 items-end pb-3 border-b last:border-0">
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-xs text-gray-500 mb-1">Service / Description</label>
+                      <select value={item.service_id} onChange={(e) => handleItemChange(idx, 'service_id', e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-white mb-2">
+                        <option value="">Custom Manual Item...</option>
+                        {services.map((s) => (<option key={s.id} value={s.id}>{s.name} (${s.price})</option>))}
+                      </select>
+                      {!item.service_id && (
+                        <input type="text" placeholder="Custom description" value={item.description} onChange={(e) => handleItemChange(idx, 'description', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                      )}
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-gray-500 mb-1">Unit Price</label>
+                      <input type="number" step="0.01" value={item.unit_price} onChange={(e) => handleItemChange(idx, 'unit_price', parseFloat(e.target.value))} className="w-full border rounded-lg px-3 py-2" disabled={!!item.service_id} />
+                    </div>
+                    <div className="w-20">
+                      <label className="block text-xs text-gray-500 mb-1">Qty</label>
+                      <input type="number" value={item.quantity} onChange={(e) => handleItemChange(idx, 'quantity', parseInt(e.target.value))} min="1" className="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    <div className="w-20">
+                      <label className="block text-xs text-gray-500 mb-1">Unit</label>
+                      <input type="text" placeholder="measure" value={item.measurement} onChange={(e) => handleItemChange(idx, 'measurement', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-gray-500 mb-1">Tax %</label>
+                      <input type="number" step="0.1" value={item.tax_rate} onChange={(e) => handleItemChange(idx, 'tax_rate', parseFloat(e.target.value))} className="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-gray-500 mb-1">Disc %</label>
+                      <input type="number" step="0.1" value={item.discount} onChange={(e) => handleItemChange(idx, 'discount', parseFloat(e.target.value))} className="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    <button type="button" onClick={() => handleRemoveItem(idx)} className="text-red-500 font-bold mb-2 hover:text-red-700">X</button>
+                  </div>
+                ))}
+                <button type="button" onClick={handleAddItem} className="text-blue-600 font-medium text-sm mt-2 hover:underline">+ Add Row</button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Additional Notes</h3>
+              <textarea name="notes" placeholder="Terms & Conditions, Payment details, etc." value={formData.notes} onChange={handleInputChange} rows={3} className="border rounded-lg px-4 py-2 w-full" />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md">
+                {editingInvoice ? 'Update Invoice' : 'Generate Invoice'}
+              </button>
+            </div>
+          </form>
+        </motion.div>
       )}
 
       {/* ---- Bookings Section ---- */}
@@ -537,9 +650,7 @@ export default function InvoicesPage() {
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {bookings.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No bookings found.</td>
-                  </tr>
+                  <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">No bookings found.</td></tr>
                 ) : (
                   bookings.map((booking) => {
                     const invoiceId = bookingInvoiceMap[booking.id];
@@ -585,7 +696,7 @@ export default function InvoicesPage() {
         )}
       </div>
 
-      {/* ---- Booking Invoice Modal with variance check ---- */}
+      {/* ---- Booking Invoice Modal with variance detection ---- */}
       {showBookingInvoiceModal && selectedBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -681,7 +792,7 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* ---- Invoices Table (unchanged) ---- */}
+      {/* ---- Invoices Table ---- */}
       <div className="mt-10">
         <h2 className="text-xl font-semibold mb-4">All Invoices</h2>
         <motion.div variants={containerVariants} initial="hidden" animate="show" className="bg-white rounded-xl shadow-sm border overflow-hidden">
