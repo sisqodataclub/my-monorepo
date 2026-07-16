@@ -19,13 +19,13 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
       const updated = { ...prev };
       const validIds = new Set();
 
-      // 1. Add quantities for currently selected areas
+      // 1. Add valid IDs from currently selected areas
       selectedAreas.forEach((baseId) => {
         const baseArea = allAreas.find((a) => a.id === baseId);
         if (!baseArea) return;
 
         if (SIZED_AREAS_NAMES.includes(baseArea.name)) {
-          // For sized areas (Kitchen, Bedroom), add variation IDs
+          // For sized areas, add variation IDs
           const variations = allAreas.filter(
             (a) =>
               a.name === `${baseArea.name}_Small` ||
@@ -36,19 +36,29 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
             validIds.add(v.id);
             if (updated[v.id] === undefined) updated[v.id] = 0;
           });
-          updated[baseId] = 0; // base area itself is not charged
+          // Base area itself is not charged, set to 0
+          updated[baseId] = 0;
         } else {
-          // For normal areas, add the base ID
+          // Normal area
           validIds.add(baseId);
           if (updated[baseId] === undefined) updated[baseId] = 1;
         }
       });
 
-      // 2. Remove any quantity keys that are no longer valid
+      // 2. Also keep variation IDs that have a positive quantity (even if base is not selected)
       Object.keys(updated).forEach((key) => {
         const id = parseInt(key, 10);
-        // Keep non‑numeric keys (e.g., "furnished_fee", "discount")
         if (isNaN(id)) return;
+        const item = allAreas.find((a) => a.id === id);
+        if (item && item.name.includes('_') && (updated[id] || 0) > 0) {
+          validIds.add(id);
+        }
+      });
+
+      // 3. Remove any numeric keys that are no longer valid
+      Object.keys(updated).forEach((key) => {
+        const id = parseInt(key, 10);
+        if (isNaN(id)) return; // keep non‑numeric keys (e.g., "furnished_fee")
         if (!validIds.has(id)) {
           delete updated[key];
         }
@@ -76,11 +86,8 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
   };
 
   // ----- Build UI groups with ABSOLUTE static ordering -----
-  // Anchored to the immutable master catalog: allAreas
-
-  // 1. Gather every base ID that needs to be rendered
+  // (unchanged – uses allAreas for sorting)
   const baseIdsToRender = new Set(selectedAreas);
-
   Object.keys(quantities).forEach(id => {
     const item = allAreas.find(a => a.id === parseInt(id, 10));
     if (item && item.name.includes('_')) {
@@ -90,14 +97,12 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
     }
   });
 
-  // 2. Sort them strictly by their original position in the master catalog
   const sortedBaseIds = Array.from(baseIdsToRender).sort((a, b) => {
     const indexA = allAreas.findIndex((area) => area.id === a);
     const indexB = allAreas.findIndex((area) => area.id === b);
-    return indexA - indexB; // Guarantees static order
+    return indexA - indexB;
   });
 
-  // 3. Build the render groups
   const renderGroups = [];
   sortedBaseIds.forEach((baseId) => {
     const baseArea = allAreas.find((a) => a.id === baseId);
@@ -136,32 +141,22 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
         {renderGroups.map((group) => (
           <div
             key={group.title}
-            className={
-              group.isGroup
-                ? "bg-gray-800/40 p-4 rounded-2xl border border-gray-700/50"
-                : ""
-            }
+            className={group.isGroup ? "bg-gray-800/40 p-4 rounded-2xl border border-gray-700/50" : ""}
           >
             {group.isGroup && (
-              <h3 className="text-white font-bold text-lg mb-3 px-1">
-                {group.title} Variations
-              </h3>
+              <h3 className="text-white font-bold text-lg mb-3 px-1">{group.title} Variations</h3>
             )}
             <div className="flex flex-col gap-3">
               {group.items.map((item) => {
                 const count = quantities[item.id] || 0;
                 const isVariation = item.name.includes("_");
-                const displayName = isVariation
-                  ? item.name.split("_")[1]
-                  : item.name;
+                const displayName = isVariation ? item.name.split("_")[1] : item.name;
                 return (
                   <div
                     key={item.id}
                     className="flex justify-between items-center bg-gray-800/80 border border-gray-600 p-4 rounded-xl"
                   >
-                    <span className="text-white font-medium text-md sm:text-lg">
-                      {displayName}
-                    </span>
+                    <span className="text-white font-medium text-md sm:text-lg">{displayName}</span>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => decrement(item.id)}
@@ -169,9 +164,7 @@ const QuantitySelection = ({ selectedAreas, setSelectedAreas, quantities, setQua
                       >
                         –
                       </button>
-                      <span className="text-white font-bold text-xl min-w-[24px] text-center">
-                        {count}
-                      </span>
+                      <span className="text-white font-bold text-xl min-w-[24px] text-center">{count}</span>
                       <button
                         onClick={() => increment(item.id)}
                         className="w-9 h-9 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-bold text-xl shadow-lg shadow-blue-500/30"
