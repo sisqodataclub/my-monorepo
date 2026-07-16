@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
-import { 
-  LayoutDashboard, MessageSquare, Settings, Bell, Search, 
-  Calendar, FileText, Menu, X 
+import {
+  LayoutDashboard, MessageSquare, Settings, Bell, Search,
+  Calendar, FileText, Menu, X
 } from 'lucide-react';
 
 import OverviewPage from './pages/OverviewPage';
@@ -12,7 +12,22 @@ import LoginPage from './pages/LoginPage';
 import BookingsPage from './pages/BookingsPage';
 import InvoicesPage from './pages/InvoicesPage';
 
-function Sidebar({ isOpen, setIsOpen }) {
+// -------------------------------------------------------------------
+// Type definitions for component props
+// -------------------------------------------------------------------
+interface SidebarProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+interface TopbarProps {
+  toggleSidebar: () => void;
+}
+
+// -------------------------------------------------------------------
+// Sidebar Component
+// -------------------------------------------------------------------
+function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation();
 
   const navItems = [
@@ -27,15 +42,15 @@ function Sidebar({ isOpen, setIsOpen }) {
     <>
       {/* Mobile Drawer Overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-opacity" 
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col 
+        fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col
         transform transition-transform duration-300 ease-in-out shadow-2xl
         md:relative md:translate-x-0 md:shadow-none
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -45,14 +60,14 @@ function Sidebar({ isOpen, setIsOpen }) {
           <h1 className="text-xl font-bold tracking-wider">
             DDEEP<span className="text-blue-500">HQ</span>
           </h1>
-          <button 
-            className="md:hidden p-1 -mr-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors" 
+          <button
+            className="md:hidden p-1 -mr-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         {/* Navigation */}
         <nav className="flex-1 px-4 space-y-1 mt-6 overflow-y-auto">
           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-2">
@@ -61,7 +76,7 @@ function Sidebar({ isOpen, setIsOpen }) {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
-            
+
             return (
               <Link
                 key={item.name}
@@ -69,8 +84,8 @@ function Sidebar({ isOpen, setIsOpen }) {
                 onClick={() => setIsOpen(false)}
                 className={`
                   flex items-center px-4 py-3 rounded-xl transition-all duration-200 group
-                  ${isActive 
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' 
+                  ${isActive
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }
                 `}
@@ -81,32 +96,35 @@ function Sidebar({ isOpen, setIsOpen }) {
             );
           })}
         </nav>
-        
-        {/* System Status Indicator (Optional Polish) */}
+
+        {/* System Status Indicator */}
         <div className="p-4 border-t border-slate-800 shrink-0">
-           <div className="flex items-center px-4 py-3 rounded-xl bg-slate-800/30 border border-slate-800/50">
-             <div className="w-2 h-2 bg-emerald-500 rounded-full mr-3 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-             <span className="text-sm font-medium text-slate-400">System Online</span>
-           </div>
+          <div className="flex items-center px-4 py-3 rounded-xl bg-slate-800/30 border border-slate-800/50">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full mr-3 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+            <span className="text-sm font-medium text-slate-400">System Online</span>
+          </div>
         </div>
       </div>
     </>
   );
 }
 
-function Topbar({ toggleSidebar }) {
+// -------------------------------------------------------------------
+// Topbar Component
+// -------------------------------------------------------------------
+function Topbar({ toggleSidebar }: TopbarProps) {
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
       <div className="flex items-center gap-4 flex-1">
         {/* Mobile Hamburger Menu */}
-        <button 
+        <button
           className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg md:hidden transition-colors"
           onClick={toggleSidebar}
         >
           <Menu className="w-6 h-6" />
         </button>
-        
-        {/* Search Bar - Hidden on mobile, flexible on desktop */}
+
+        {/* Search Bar */}
         <div className="hidden sm:flex flex-1 max-w-md items-center text-slate-400 focus-within:text-slate-600 relative group">
           <Search className="w-5 h-5 absolute left-3 pointer-events-none transition-colors group-focus-within:text-blue-500" />
           <input
@@ -116,9 +134,9 @@ function Topbar({ toggleSidebar }) {
           />
         </div>
       </div>
-      
+
       <div className="flex items-center space-x-2 sm:space-x-4">
-        {/* Mobile-only Search Icon Button */}
+        {/* Mobile Search */}
         <button className="sm:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
           <Search className="w-5 h-5" />
         </button>
@@ -128,7 +146,7 @@ function Topbar({ toggleSidebar }) {
           <Bell className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
         </button>
-        
+
         {/* User Profile */}
         <div className="h-9 w-9 flex items-center justify-center ring-2 ring-slate-100 rounded-full hover:ring-blue-100 transition-all cursor-pointer ml-2">
           <UserButton afterSignOutUrl="/login" />
@@ -138,14 +156,16 @@ function Topbar({ toggleSidebar }) {
   );
 }
 
+// -------------------------------------------------------------------
+// Main App Component
+// -------------------------------------------------------------------
 export default function App() {
-  // Global state to manage the mobile drawer
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <Router>
       <Routes>
-        {/* PUBLIC ROUTE */}
+        {/* Public Route */}
         <Route
           path="/login"
           element={
@@ -155,7 +175,7 @@ export default function App() {
           }
         />
 
-        {/* SECURE ROUTES */}
+        {/* Secure Routes */}
         <Route
           path="/*"
           element={
@@ -167,11 +187,11 @@ export default function App() {
               <SignedIn>
                 <div className="flex h-screen bg-slate-50 overflow-hidden font-sans selection:bg-blue-100 selection:text-blue-900">
                   <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-                  
+
                   <div className="flex-1 flex flex-col overflow-hidden relative">
                     <Topbar toggleSidebar={() => setIsSidebarOpen(true)} />
-                    
-                    {/* Main Content Area */}
+
+                    {/* Main Content */}
                     <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
                       <div className="max-w-7xl mx-auto pb-12">
                         <Routes>

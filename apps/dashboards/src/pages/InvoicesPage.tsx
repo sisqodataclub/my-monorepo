@@ -294,7 +294,6 @@ export default function InvoicesPage() {
       if (isNaN(serviceId)) return;
       const service = servicesList.find(s => s.id === serviceId);
       if (!service) return;
-      // ✅ Skip services with price <= 0.01 (technical items)
       if (Number(service.price) <= 0.01) return;
       allItems.push({
         id: serviceId,
@@ -517,7 +516,7 @@ export default function InvoicesPage() {
     setInvoicePage(1);
   };
 
-  // Compute variance for the modal (also excludes zero‑priced services)
+  // Compute variance for the modal
   const computeVariance = () => {
     if (!selectedBooking) return { sum: 0, bookingTotal: 0, diff: 0, variance: 0 };
     const tempItems: any[] = [];
@@ -588,10 +587,253 @@ export default function InvoicesPage() {
         </button>
       </div>
 
-      {/* ---- Manual Invoice Form (unchanged) ---- */}
+      {/* ---- Manual Invoice Form ---- */}
       {showForm && (
-        // ... full form code is already in the file, we keep it as is
-        <div></div> // placeholder – the actual form is above
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">{editingInvoice ? 'Edit Invoice' : 'Invoice Configuration'}</h2>
+            <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700">
+              <X size={24} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Basic Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  name="title"
+                  placeholder="Invoice Title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className="border rounded-lg px-4 py-2 w-full"
+                />
+                <input
+                  name="customerName"
+                  placeholder="Customer Name *"
+                  value={formData.customerName}
+                  onChange={handleInputChange}
+                  required
+                  className="border rounded-lg px-4 py-2 w-full"
+                />
+                <input
+                  type="email"
+                  name="customerEmail"
+                  placeholder="Customer Email *"
+                  value={formData.customerEmail}
+                  onChange={handleInputChange}
+                  required
+                  className="border rounded-lg px-4 py-2 w-full"
+                />
+                <input
+                  name="customerPhone"
+                  placeholder="Customer Phone"
+                  value={formData.customerPhone}
+                  onChange={handleInputChange}
+                  className="border rounded-lg px-4 py-2 w-full"
+                />
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Invoice Date</label>
+                  <input
+                    type="date"
+                    name="invoiceDate"
+                    value={formData.invoiceDate}
+                    onChange={handleInputChange}
+                    className="border rounded-lg px-4 py-2 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleInputChange}
+                    className="border rounded-lg px-4 py-2 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="border rounded-lg px-4 py-2 w-full bg-white"
+                  >
+                    <option value="draft">Draft (Unpaid)</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="receipt"
+                    checked={formData.receipt}
+                    onChange={handleInputChange}
+                    className="mr-2"
+                  />
+                  <label className="text-sm">This is a receipt (not an invoice)</label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Design & Formatting</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Currency</label>
+                  <select
+                    name="currency"
+                    value={formData.currency}
+                    onChange={handleInputChange}
+                    className="border rounded-lg px-4 py-2 w-full bg-white"
+                  >
+                    <option value="USD">US Dollar (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="GBP">British Pound (GBP)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Template Choice</label>
+                  <select
+                    name="templateChoice"
+                    value={formData.templateChoice}
+                    onChange={handleInputChange}
+                    className="border rounded-lg px-4 py-2 w-full bg-white"
+                  >
+                    <option value="quotation_1">Standard Invoice 1</option>
+                    <option value="quotation_2">Modern Invoice 2</option>
+                    <option value="receipt1">Basic Receipt</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Line Items</h3>
+              <div className="space-y-3 bg-gray-50 p-4 rounded-lg border">
+                {items.map((item, idx) => (
+                  <div key={idx} className="flex flex-wrap gap-3 items-end pb-3 border-b last:border-0">
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-xs text-gray-500 mb-1">Service / Description</label>
+                      <select
+                        value={item.service_id}
+                        onChange={(e) => handleItemChange(idx, 'service_id', e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2 bg-white mb-2"
+                      >
+                        <option value="">Custom Manual Item...</option>
+                        {services.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} (${s.price})
+                          </option>
+                        ))}
+                      </select>
+                      {!item.service_id && (
+                        <input
+                          type="text"
+                          placeholder="Custom description"
+                          value={item.description}
+                          onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                          className="w-full border rounded-lg px-3 py-2"
+                        />
+                      )}
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-gray-500 mb-1">Unit Price</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={item.unit_price}
+                        onChange={(e) => handleItemChange(idx, 'unit_price', parseFloat(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2"
+                        disabled={!!item.service_id}
+                      />
+                    </div>
+                    <div className="w-20">
+                      <label className="block text-xs text-gray-500 mb-1">Qty</label>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(idx, 'quantity', parseInt(e.target.value))}
+                        min="1"
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div className="w-20">
+                      <label className="block text-xs text-gray-500 mb-1">Unit</label>
+                      <input
+                        type="text"
+                        placeholder="measure"
+                        value={item.measurement}
+                        onChange={(e) => handleItemChange(idx, 'measurement', e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-gray-500 mb-1">Tax %</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={item.tax_rate}
+                        onChange={(e) => handleItemChange(idx, 'tax_rate', parseFloat(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-gray-500 mb-1">Disc %</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={item.discount}
+                        onChange={(e) => handleItemChange(idx, 'discount', parseFloat(e.target.value))}
+                        className="w-full border rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveItem(idx)}
+                      className="text-red-500 font-bold mb-2 hover:text-red-700"
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  className="text-blue-600 font-medium text-sm mt-2 hover:underline"
+                >
+                  + Add Row
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Additional Notes</h3>
+              <textarea
+                name="notes"
+                placeholder="Terms & Conditions, Payment details, etc."
+                value={formData.notes}
+                onChange={handleInputChange}
+                rows={3}
+                className="border rounded-lg px-4 py-2 w-full"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md"
+              >
+                {editingInvoice ? 'Update Invoice' : 'Generate Invoice'}
+              </button>
+            </div>
+          </form>
+        </motion.div>
       )}
 
       {/* ---- Bookings Section ---- */}
@@ -747,16 +989,115 @@ export default function InvoicesPage() {
         )}
       </div>
 
-      {/* ---- Booking Invoice Modal (unchanged) ---- */}
+      {/* ---- Booking Invoice Modal with variance detection ---- */}
       {showBookingInvoiceModal && selectedBooking && (
-        // ... full modal code is already in the file
-        <div></div> // placeholder
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Create Invoice from Booking #{selectedBooking.id}</h2>
+              <button onClick={closeBookingInvoiceModal} className="text-gray-500 hover:text-gray-700">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Issue Date</label>
+                <input
+                  type="date"
+                  value={bookingInvoiceForm.invoiceDate}
+                  onChange={(e) => setBookingInvoiceForm({ ...bookingInvoiceForm, invoiceDate: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={bookingInvoiceForm.dueDate}
+                  onChange={(e) => setBookingInvoiceForm({ ...bookingInvoiceForm, dueDate: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={bookingInvoiceForm.status}
+                  onChange={(e) => setBookingInvoiceForm({ ...bookingInvoiceForm, status: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 bg-white"
+                >
+                  <option value="draft">Draft (Unpaid)</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+
+              {/* Variance warning */}
+              {(() => {
+                const { sum, bookingTotal, diff, variance } = computeVariance();
+                if (variance > 0.01) {
+                  return (
+                    <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+                      <p className="text-sm text-yellow-800 font-medium">Variance Detected</p>
+                      <p className="text-sm text-yellow-700">
+                        Calculated sum: £{sum.toFixed(2)}<br />
+                        Booking total: £{bookingTotal.toFixed(2)}<br />
+                        Difference: £{diff.toFixed(2)}
+                      </p>
+                      <div className="mt-2">
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={bookingInvoiceForm.adjustToBookingTotal}
+                            onChange={(e) => setBookingInvoiceForm({ ...bookingInvoiceForm, adjustToBookingTotal: e.target.checked })}
+                            className="accent-blue-600"
+                          />
+                          Add adjustment line to match booking total
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {bookingInvoiceForm.adjustToBookingTotal
+                            ? 'An adjustment line will be added to force the invoice total to match the booking total.'
+                            : 'The invoice total will be the sum of calculated line items (may not match booking total).'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div className="border-t pt-4 mt-4">
+                <p className="text-sm text-gray-600 font-medium">Booking Summary</p>
+                <p className="text-sm text-gray-500">Customer: {selectedBooking.customer_name}</p>
+                <p className="text-sm text-gray-500">Total: £{Number(selectedBooking.total).toFixed(2)}</p>
+                <p className="text-sm text-gray-500">Services: {Object.keys(selectedBooking.quantities || {}).length} items</p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button onClick={closeBookingInvoiceModal} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateInvoiceFromBooking}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={bookingActionLoading[selectedBooking.id]}
+                >
+                  {bookingActionLoading[selectedBooking.id] ? 'Creating...' : 'Generate Invoice'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ---- Invoices Table ---- */}
       <div className="mt-10">
         <h2 className="text-xl font-semibold mb-4">All Invoices</h2>
-        <motion.div variants={containerVariants} initial="hidden" animate="show" className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="bg-white rounded-xl shadow-sm border overflow-hidden"
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
