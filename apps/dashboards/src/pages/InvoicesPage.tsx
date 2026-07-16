@@ -1,3 +1,4 @@
+// apps/dashboards/src/pages/InvoicesPage.tsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
@@ -242,7 +243,7 @@ export default function InvoicesPage() {
     const invoiceItems: any[] = [];
     const quantities = booking.quantities || {};
 
-    // 1. Build list of service items from quantities
+    // 1. Build list of service items from quantities (exclude zero‑priced services)
     const allItems: { id: number; name: string; qty: number; price: number }[] = [];
     Object.entries(quantities).forEach(([key, qty]) => {
       const qtyNum = Number(qty);
@@ -251,6 +252,8 @@ export default function InvoicesPage() {
       if (isNaN(serviceId)) return;
       const service = servicesList.find(s => s.id === serviceId);
       if (!service) return;
+      // ✅ Skip services with price <= 0.01 (technical items)
+      if (Number(service.price) <= 0.01) return;
       allItems.push({
         id: serviceId,
         name: service.name,
@@ -286,12 +289,13 @@ export default function InvoicesPage() {
     });
 
     // 4. Add main service from selected_areas (if it's a string and not already included)
+    //    Also skip if price <= 0.01
     const mainServiceName = booking.selected_areas?.find((item: any) => typeof item === 'string');
     if (mainServiceName) {
       const alreadyExists = filteredItems.some(item => item.name === mainServiceName);
       if (!alreadyExists) {
         const mainService = servicesList.find(s => s.name === mainServiceName);
-        if (mainService && Number(mainService.price) > 0) {
+        if (mainService && Number(mainService.price) > 0.01) {
           invoiceItems.push({
             description: mainServiceName,
             quantity: 1,
@@ -437,7 +441,7 @@ export default function InvoicesPage() {
     show: { opacity: 1, transition: { staggerChildren: 0.05 } },
   };
 
-  // Compute variance for the modal
+  // Compute variance for the modal (also excludes zero‑priced services)
   const computeVariance = () => {
     if (!selectedBooking) return { sum: 0, bookingTotal: 0, diff: 0, variance: 0 };
     const tempItems: any[] = [];
@@ -450,6 +454,8 @@ export default function InvoicesPage() {
       if (isNaN(serviceId)) return;
       const service = services.find(s => s.id === serviceId);
       if (!service) return;
+      // ✅ Skip zero‑priced services
+      if (Number(service.price) <= 0.01) return;
       allItems.push({
         id: serviceId,
         name: service.name,
