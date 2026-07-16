@@ -28,7 +28,6 @@ const fetchBookings = async (token: string | null): Promise<any[]> => {
   // if (tenant) headers['X-Tenant'] = tenant;
   try {
     const res = await axios.get(`${API_BASE}/api/cleaning-bookings/`, { headers });
-    // handle paginated response
     if (res.data && res.data.results && Array.isArray(res.data.results)) {
       return res.data.results;
     }
@@ -47,7 +46,6 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  // Map booking ID → created invoice ID (so we can show download/email actions)
   const [bookingInvoiceMap, setBookingInvoiceMap] = useState<Record<number, number>>({});
   const [bookingActionLoading, setBookingActionLoading] = useState<Record<number, boolean>>({});
 
@@ -231,7 +229,7 @@ export default function InvoicesPage() {
       issue_date: formatDate(now),
       due_date: formatDate(dueDate),
       status: 'draft',
-      currency: 'GBP', // or use a default from tenant
+      currency: 'GBP',
       template_choice: 'quotation_1',
       notes: `Booking #${booking.id}\n${booking.notes || ''}`,
       receipt: false,
@@ -256,7 +254,7 @@ export default function InvoicesPage() {
       const payload = mapBookingToInvoicePayload(booking);
       const newInvoice = await createInvoice(token, payload);
       setBookingInvoiceMap((prev) => ({ ...prev, [bookingId]: newInvoice.id }));
-      await loadData(); // refresh the list
+      await loadData();
       alert(`Invoice #${newInvoice.id} created successfully!`);
     } catch (err) {
       console.error('Failed to create invoice from booking', err);
@@ -266,11 +264,13 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDownloadFromBooking = (bookingId: number, invoiceId: number) => {
+  // ✅ Removed unused `bookingId` parameter
+  const handleDownloadFromBooking = (invoiceId: number) => {
     getToken().then((token) => downloadInvoicePdf(invoiceId, token));
   };
 
-  const handleEmailFromBooking = async (bookingId: number, invoiceId: number) => {
+  // ✅ Removed unused `bookingId` parameter
+  const handleEmailFromBooking = async (invoiceId: number) => {
     const token = await getToken();
     try {
       await emailInvoice(invoiceId, token);
@@ -306,7 +306,7 @@ export default function InvoicesPage() {
         </button>
       </div>
 
-      {/* ---- Invoice Form (full, same as original) ---- */}
+      {/* ---- Invoice Form ---- */}
       {showForm && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -608,13 +608,13 @@ export default function InvoicesPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-gray-500 mr-1">Inv #{invoiceId}</span>
                             <button
-                              onClick={() => handleDownloadFromBooking(booking.id, invoiceId)}
+                              onClick={() => handleDownloadFromBooking(invoiceId)}
                               className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded"
                             >
                               <Download size={16} /> PDF
                             </button>
                             <button
-                              onClick={() => handleEmailFromBooking(booking.id, invoiceId)}
+                              onClick={() => handleEmailFromBooking(invoiceId)}
                               className="text-purple-600 hover:text-purple-900 flex items-center gap-1 bg-purple-50 px-3 py-1 rounded"
                             >
                               <Mail size={16} /> Email
@@ -640,7 +640,7 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      {/* ---- Invoices Table (unchanged) ---- */}
+      {/* ---- Invoices Table ---- */}
       <div className="mt-10">
         <h2 className="text-xl font-semibold mb-4">All Invoices</h2>
         <motion.div
