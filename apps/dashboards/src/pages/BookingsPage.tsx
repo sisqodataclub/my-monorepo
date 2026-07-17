@@ -8,6 +8,7 @@ import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
+const TENANT = 'DDEEP'; // fixed tenant for this dashboard
 
 // --- Type definitions ---
 interface AnalyticsBooking {
@@ -126,6 +127,15 @@ export default function BookingsPage() {
   const [supersetError, setSupersetError] = useState<string | null>(null);
   const [supersetSearch, setSupersetSearch] = useState('');
 
+  // ---- Helper to build headers with tenant ----
+  const getHeaders = async () => {
+    const token = await getToken();
+    return {
+      Authorization: `Bearer ${token}`,
+      'X-Tenant': TENANT,
+    };
+  };
+
   // ---- Fetch all data ----
   useEffect(() => {
     loadAllData();
@@ -143,7 +153,7 @@ export default function BookingsPage() {
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
-      const token = await getToken();
+      const headers = await getHeaders();
       const params = new URLSearchParams();
       if (analyticsSearch) params.append('search', analyticsSearch);
       if (analyticsFilters.payment_status) params.append('payment_status', analyticsFilters.payment_status);
@@ -153,7 +163,7 @@ export default function BookingsPage() {
 
       const response = await axios.get(
         `${API_BASE}/api/service-bookings/analytics/?${params.toString()}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers }
       );
       setAnalyticsData(response.data.results || []);
     } catch (err) {
@@ -167,10 +177,10 @@ export default function BookingsPage() {
   const fetchCleaningBookings = async () => {
     setCleaningLoading(true);
     try {
-      const token = await getToken();
+      const headers = await getHeaders();
       const response = await axios.get(
         `${API_BASE}/api/cleaning-bookings/unpromoted/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers }
       );
       setCleaningBookings(response.data.results || response.data || []);
     } catch (err) {
@@ -184,11 +194,11 @@ export default function BookingsPage() {
   const fetchSuperset = async () => {
     setSupersetLoading(true);
     try {
-      const token = await getToken();
+      const headers = await getHeaders();
       const queryParams = new URLSearchParams({ chart_ids: '3' });
       const response = await axios.get(
         `${API_BASE}/api/v1/dashboard/overview/?${queryParams}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers }
       );
       const chartData = response.data.superset_charts?.['3'];
       setSupersetData(Array.isArray(chartData) ? chartData : []);
@@ -204,16 +214,7 @@ export default function BookingsPage() {
   const fetchServicesAndProviders = async () => {
     setServicesError(null);
     try {
-      const token = await getToken();
-      if (!token) {
-        setServicesError('Authentication required');
-        return;
-      }
-
-      const headers: any = {
-        Authorization: `Bearer ${token}`,
-        'X-Tenant': 'DDEEP', // required for payments/services
-      };
+      const headers = await getHeaders();
 
       // 1. Fetch services – required
       let servicesData: Service[] = [];
@@ -248,20 +249,14 @@ export default function BookingsPage() {
     if (!selectedCleaningId || !promoteServiceId) return;
     setPromoting(true);
     try {
-      const token = await getToken();
+      const headers = await getHeaders();
       const payload: any = { service_id: parseInt(promoteServiceId) };
       if (promoteProviderId) payload.provider_id = parseInt(promoteProviderId);
 
-      // ✅ Add X-Tenant header – required by the backend
       await axios.post(
         `${API_BASE}/api/cleaning-bookings/${selectedCleaningId}/promote/`,
         payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'X-Tenant': 'DDEEP',
-          }
-        }
+        { headers }
       );
       setShowPromoteModal(false);
       setSelectedCleaningId(null);
@@ -271,7 +266,6 @@ export default function BookingsPage() {
       alert('✅ Promoted successfully!');
     } catch (err: any) {
       console.error('Promotion failed:', err);
-      // Show a more specific error from the backend
       const errorMsg = err.response?.data?.error || err.response?.data?.detail || 'Failed to promote. Please try again.';
       alert(`❌ ${errorMsg}`);
     } finally {
@@ -297,7 +291,7 @@ export default function BookingsPage() {
     if (!editingBooking) return;
     setUpdating(true);
     try {
-      const token = await getToken();
+      const headers = await getHeaders();
       const payload: any = {};
       if (editForm.status) payload.status = editForm.status;
       if (editForm.payment_status) payload.payment_status = editForm.payment_status;
@@ -309,7 +303,7 @@ export default function BookingsPage() {
       await axios.patch(
         `${API_BASE}/api/service-bookings/${editingBooking.id}/`,
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers }
       );
       setShowEditModal(false);
       await fetchAnalytics();
@@ -322,7 +316,7 @@ export default function BookingsPage() {
     }
   };
 
-  // --- Render helpers ---
+  // --- Render helpers (unchanged) ---
   const renderStars = (rating: number | null) => {
     if (!rating) return <span className="text-slate-400">-</span>;
     return (
