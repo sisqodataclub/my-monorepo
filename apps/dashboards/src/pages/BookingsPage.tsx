@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import {
   CalendarDays, AlertCircle, FileText, Search, Star, Flag, CreditCard, X,
-  Plus, Edit
+  Plus, Edit, ChevronUp, ChevronDown
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
@@ -93,6 +93,7 @@ export default function BookingsPage() {
   const [cleaningBookings, setCleaningBookings] = useState<CleaningBooking[]>([]);
   const [cleaningLoading, setCleaningLoading] = useState(true);
   const [cleaningError, setCleaningError] = useState<string | null>(null);
+  const [showPendingPromotions, setShowPendingPromotions] = useState(true); // NEW
 
   // --- Promotion modal state ---
   const [showPromoteModal, setShowPromoteModal] = useState(false);
@@ -151,7 +152,7 @@ export default function BookingsPage() {
 
       const response = await axios.get(
         `${API_BASE}/api/service-bookings/analytics/?${params.toString()}`,
-        { headers: { Authorization: `Bearer ${token}` } }  // ✅ Using the token variable
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setAnalyticsData(response.data.results || []);
     } catch (err) {
@@ -198,12 +199,17 @@ export default function BookingsPage() {
     }
   };
 
+  // ✅ FIXED: Use the correct /api/payments/services/ endpoint
   const fetchServicesAndProviders = async () => {
     try {
       const token = await getToken();
       const [servicesRes, providersRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/services/`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_BASE}/api/service-providers/`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_BASE}/api/payments/services/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API_BASE}/api/service-providers/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
       ]);
       setServices(servicesRes.data.results || servicesRes.data || []);
       setProviders(providersRes.data.results || providersRes.data || []);
@@ -373,60 +379,72 @@ export default function BookingsPage() {
         {/* SECTION 0: PENDING PROMOTIONS (CleaningBookings) */}
         {/* ============================================================ */}
         <motion.div variants={itemVariants} className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-slate-900">Pending Promotions</h2>
-            <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-              {cleaningBookings.length} booking(s)
-            </span>
+          {/* Toggle header */}
+          <div
+            className="flex items-center justify-between mb-4 cursor-pointer select-none"
+            onClick={() => setShowPendingPromotions(!showPendingPromotions)}
+          >
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900">Pending Promotions</h2>
+              <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                {cleaningBookings.length} booking(s)
+              </span>
+            </div>
+            <button className="text-slate-400 hover:text-slate-600 transition-colors">
+              {showPendingPromotions ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
           </div>
-          <div className="bg-white rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
-            {cleaningLoading ? (
-              <div className="p-6 animate-pulse">Loading pending bookings...</div>
-            ) : cleaningError ? (
-              <div className="p-6 text-rose-600">{cleaningError}</div>
-            ) : cleaningBookings.length === 0 ? (
-              <div className="p-6 text-slate-500 text-center">No pending bookings to promote.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100">
-                      <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Customer</th>
-                      <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Total</th>
-                      <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Created</th>
-                      <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cleaningBookings.map((cb) => (
-                      <tr key={cb.id} className="hover:bg-slate-50/50 border-b border-slate-100">
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-900">{cb.customer_name}</div>
-                          <div className="text-sm text-slate-500">{cb.customer_email}</div>
-                          {cb.phone && <div className="text-sm text-slate-400">{cb.phone}</div>}
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-slate-900">£{parseFloat(cb.total).toFixed(2)}</td>
-                        <td className="px-6 py-4 text-sm text-slate-500">
-                          {new Date(cb.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => {
-                              setSelectedCleaningId(cb.id);
-                              setShowPromoteModal(true);
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
-                          >
-                            <Plus className="w-4 h-4" /> Promote
-                          </button>
-                        </td>
+
+          {showPendingPromotions && (
+            <div className="bg-white rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
+              {cleaningLoading ? (
+                <div className="p-6 animate-pulse">Loading pending bookings...</div>
+              ) : cleaningError ? (
+                <div className="p-6 text-rose-600">{cleaningError}</div>
+              ) : cleaningBookings.length === 0 ? (
+                <div className="p-6 text-slate-500 text-center">No pending bookings to promote.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-100">
+                        <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Customer</th>
+                        <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Total</th>
+                        <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Created</th>
+                        <th className="px-6 py-4 text-xs font-extrabold text-slate-500 uppercase">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                    </thead>
+                    <tbody>
+                      {cleaningBookings.map((cb) => (
+                        <tr key={cb.id} className="hover:bg-slate-50/50 border-b border-slate-100">
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-slate-900">{cb.customer_name}</div>
+                            <div className="text-sm text-slate-500">{cb.customer_email}</div>
+                            {cb.phone && <div className="text-sm text-slate-400">{cb.phone}</div>}
+                          </td>
+                          <td className="px-6 py-4 font-semibold text-slate-900">£{parseFloat(cb.total).toFixed(2)}</td>
+                          <td className="px-6 py-4 text-sm text-slate-500">
+                            {new Date(cb.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => {
+                                setSelectedCleaningId(cb.id);
+                                setShowPromoteModal(true);
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
+                            >
+                              <Plus className="w-4 h-4" /> Promote
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </motion.div>
 
         {/* ============================================================ */}
@@ -742,9 +760,13 @@ export default function BookingsPage() {
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Choose a service...</option>
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} (${s.price})</option>
-                  ))}
+                  {services.length === 0 ? (
+                    <option value="" disabled>Loading services...</option>
+                  ) : (
+                    services.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name} (${s.price})</option>
+                    ))
+                  )}
                 </select>
               </div>
               <div>
