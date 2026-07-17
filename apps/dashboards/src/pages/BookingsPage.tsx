@@ -252,20 +252,28 @@ export default function BookingsPage() {
       const payload: any = { service_id: parseInt(promoteServiceId) };
       if (promoteProviderId) payload.provider_id = parseInt(promoteProviderId);
 
+      // ✅ Add X-Tenant header – required by the backend
       await axios.post(
         `${API_BASE}/api/cleaning-bookings/${selectedCleaningId}/promote/`,
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'X-Tenant': 'DDEEP',
+          }
+        }
       );
       setShowPromoteModal(false);
       setSelectedCleaningId(null);
       setPromoteServiceId('');
       setPromoteProviderId('');
       await loadAllData();
-      alert('Promoted successfully!');
-    } catch (err) {
+      alert('✅ Promoted successfully!');
+    } catch (err: any) {
       console.error('Promotion failed:', err);
-      alert('Failed to promote. Please try again.');
+      // Show a more specific error from the backend
+      const errorMsg = err.response?.data?.error || err.response?.data?.detail || 'Failed to promote. Please try again.';
+      alert(`❌ ${errorMsg}`);
     } finally {
       setPromoting(false);
     }
