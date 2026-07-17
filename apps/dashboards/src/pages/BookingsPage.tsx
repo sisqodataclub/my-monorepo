@@ -118,7 +118,7 @@ export default function BookingsPage() {
   // --- Services and Providers for dropdowns ---
   const [services, setServices] = useState<Service[]>([]);
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
-  const [servicesError, setServicesError] = useState<string | null>(null); // new state
+  const [servicesError, setServicesError] = useState<string | null>(null);
 
   // --- Superset data (existing) ---
   const [supersetData, setSupersetData] = useState<any[]>([]);
@@ -200,7 +200,7 @@ export default function BookingsPage() {
     }
   };
 
-  // ✅ Correct endpoint with required tenant header
+  // ---- Fetch services (required) and providers (optional) ----
   const fetchServicesAndProviders = async () => {
     setServicesError(null);
     try {
@@ -212,20 +212,34 @@ export default function BookingsPage() {
 
       const headers: any = {
         Authorization: `Bearer ${token}`,
-        'X-Tenant': 'DDEEP', // essential for the payments/services endpoint
+        'X-Tenant': 'DDEEP', // required for payments/services
       };
 
-      const [servicesRes, providersRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/payments/services/`, { headers }),
-        axios.get(`${API_BASE}/api/service-providers/`, { headers }),
-      ]);
+      // 1. Fetch services – required
+      let servicesData: Service[] = [];
+      try {
+        const servicesRes = await axios.get(`${API_BASE}/api/payments/services/`, { headers });
+        servicesData = Array.isArray(servicesRes.data) ? servicesRes.data : [];
+      } catch (err: any) {
+        console.error('Failed to fetch services:', err);
+        setServicesError(err.message || 'Could not load services');
+      }
 
-      // servicesRes.data is the array directly (not { results: ... })
-      setServices(Array.isArray(servicesRes.data) ? servicesRes.data : []);
-      setProviders(providersRes.data.results || providersRes.data || []);
+      // 2. Fetch providers – optional, ignore failures
+      let providersData: ServiceProvider[] = [];
+      try {
+        const providersRes = await axios.get(`${API_BASE}/api/service-providers/`, { headers });
+        providersData = providersRes.data.results || providersRes.data || [];
+      } catch (err) {
+        console.warn('Could not fetch providers (optional):', err);
+        // Providers are optional, so we just log and continue
+      }
+
+      setServices(servicesData);
+      setProviders(providersData);
     } catch (err: any) {
-      console.error('Failed to fetch services/providers:', err);
-      setServicesError(err.message || 'Could not load services');
+      console.error('Unexpected error in fetchServicesAndProviders:', err);
+      setServicesError('Unexpected error loading services');
     }
   };
 
