@@ -93,7 +93,7 @@ export default function BookingsPage() {
   const [cleaningBookings, setCleaningBookings] = useState<CleaningBooking[]>([]);
   const [cleaningLoading, setCleaningLoading] = useState(true);
   const [cleaningError, setCleaningError] = useState<string | null>(null);
-  const [showPendingPromotions, setShowPendingPromotions] = useState(true); // NEW
+  const [showPendingPromotions, setShowPendingPromotions] = useState(true);
 
   // --- Promotion modal state ---
   const [showPromoteModal, setShowPromoteModal] = useState(false);
@@ -118,6 +118,7 @@ export default function BookingsPage() {
   // --- Services and Providers for dropdowns ---
   const [services, setServices] = useState<Service[]>([]);
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
+  const [servicesError, setServicesError] = useState<string | null>(null); // new state
 
   // --- Superset data (existing) ---
   const [supersetData, setSupersetData] = useState<any[]>([]);
@@ -199,22 +200,32 @@ export default function BookingsPage() {
     }
   };
 
-  // ✅ FIXED: Use the correct /api/payments/services/ endpoint
+  // ✅ Correct endpoint with required tenant header
   const fetchServicesAndProviders = async () => {
+    setServicesError(null);
     try {
       const token = await getToken();
+      if (!token) {
+        setServicesError('Authentication required');
+        return;
+      }
+
+      const headers: any = {
+        Authorization: `Bearer ${token}`,
+        'X-Tenant': 'DDEEP', // essential for the payments/services endpoint
+      };
+
       const [servicesRes, providersRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/payments/services/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_BASE}/api/service-providers/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
+        axios.get(`${API_BASE}/api/payments/services/`, { headers }),
+        axios.get(`${API_BASE}/api/service-providers/`, { headers }),
       ]);
-      setServices(servicesRes.data.results || servicesRes.data || []);
+
+      // servicesRes.data is the array directly (not { results: ... })
+      setServices(Array.isArray(servicesRes.data) ? servicesRes.data : []);
       setProviders(providersRes.data.results || providersRes.data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch services/providers:', err);
+      setServicesError(err.message || 'Could not load services');
     }
   };
 
@@ -379,7 +390,6 @@ export default function BookingsPage() {
         {/* SECTION 0: PENDING PROMOTIONS (CleaningBookings) */}
         {/* ============================================================ */}
         <motion.div variants={itemVariants} className="mb-12">
-          {/* Toggle header */}
           <div
             className="flex items-center justify-between mb-4 cursor-pointer select-none"
             onClick={() => setShowPendingPromotions(!showPendingPromotions)}
@@ -760,7 +770,11 @@ export default function BookingsPage() {
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Choose a service...</option>
-                  {services.length === 0 ? (
+                  {servicesError ? (
+                    <option value="" disabled className="text-red-500">
+                      ⚠️ {servicesError} – refresh page
+                    </option>
+                  ) : services.length === 0 ? (
                     <option value="" disabled>Loading services...</option>
                   ) : (
                     services.map((s) => (
