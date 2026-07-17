@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { CalendarDays, AlertCircle, FileText, Search, Star, Flag, CreditCard } from 'lucide-react';
+import { CalendarDays, AlertCircle, FileText, Search, Star, Flag, CreditCard, X } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
 
@@ -51,7 +51,7 @@ export default function BookingsPage() {
   const { getToken } = useAuth();
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
-  // --- State for Analytics Table (NEW) ---
+  // --- State for Analytics Table ---
   const [analyticsData, setAnalyticsData] = useState<AnalyticsBooking[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
@@ -76,15 +76,16 @@ export default function BookingsPage() {
       setAnalyticsError(null);
       try {
         const token = await getToken();
-        const params = new URLSearchParams({
-          ...(analyticsSearch && { search: analyticsSearch }),
-          ...(analyticsFilters.payment_status && { payment_status: analyticsFilters.payment_status }),
-          ...(analyticsFilters.job_status && { status: analyticsFilters.job_status }),
-          ...(analyticsFilters.has_complaint && { has_complaint: analyticsFilters.has_complaint === 'true' }),
-          ...(analyticsFilters.rating && { rating: analyticsFilters.rating }),
-        });
+        // Build URLSearchParams from filters and search
+        const params = new URLSearchParams();
+        if (analyticsSearch) params.append('search', analyticsSearch);
+        if (analyticsFilters.payment_status) params.append('payment_status', analyticsFilters.payment_status);
+        if (analyticsFilters.job_status) params.append('status', analyticsFilters.job_status);
+        if (analyticsFilters.has_complaint) params.append('has_complaint', analyticsFilters.has_complaint === 'true' ? 'true' : 'false');
+        if (analyticsFilters.rating) params.append('rating', analyticsFilters.rating);
+
         const response = await axios.get(
-          `${API_BASE}/api/service-bookings/analytics/?${params}`,
+          `${API_BASE}/api/service-bookings/analytics/?${params.toString()}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setAnalyticsData(response.data.results || []);
@@ -134,7 +135,8 @@ export default function BookingsPage() {
     );
   };
 
-  const renderStatusBadge = (status: string, type: 'payment' | 'job') => {
+  // Removed unused 'type' parameter
+  const renderStatusBadge = (status: string) => {
     const map: Record<string, { color: string; label: string }> = {
       unpaid: { color: 'bg-amber-50 text-amber-700 border-amber-200/50', label: 'Unpaid' },
       paid_cash: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200/50', label: 'Cash' },
@@ -167,7 +169,6 @@ export default function BookingsPage() {
   // --- Superset table helpers (unchanged) ---
   const supersetHeaders = supersetData.length > 0 ? Object.keys(supersetData[0]) : [];
   const renderSupersetCell = (key: string, value: any) => {
-    // (same as original renderCell function – you can reuse it)
     if (value === null || value === undefined) return <span className="text-slate-400">-</span>;
     const lowerKey = key.toLowerCase();
     if (lowerKey.includes('status') || lowerKey.includes('state')) {
@@ -287,8 +288,10 @@ export default function BookingsPage() {
               <div className="p-6">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-center space-x-4 mb-6 last:mb-0 animate-pulse">
-                    <div className="h-4 bg-slate-100 rounded w-1/6"></div><div className="h-4 bg-slate-100 rounded w-1/6"></div>
-                    <div className="h-4 bg-slate-100 rounded w-1/6"></div><div className="h-4 bg-slate-100 rounded w-1/6"></div>
+                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
+                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
+                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
+                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
                   </div>
                 ))}
               </div>
@@ -352,7 +355,7 @@ export default function BookingsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {renderStatusBadge(booking.payment_status, 'payment')}
+                          {renderStatusBadge(booking.payment_status)}
                           {booking.payment_reference && (
                             <div className="text-[10px] text-slate-400 truncate max-w-[80px] mt-1" title={booking.payment_reference}>
                               {booking.payment_reference.slice(0, 8)}…
@@ -360,7 +363,7 @@ export default function BookingsPage() {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {renderStatusBadge(booking.status, 'job')}
+                          {renderStatusBadge(booking.status)}
                           {booking.rescheduled_count > 0 && (
                             <span className="text-[10px] text-slate-400 block mt-1">Rescheduled {booking.rescheduled_count}x</span>
                           )}
