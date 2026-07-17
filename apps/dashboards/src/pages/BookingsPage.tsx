@@ -151,7 +151,7 @@ export default function BookingsPage() {
 
       const response = await axios.get(
         `${API_BASE}/api/service-bookings/analytics/?${params.toString()}`,
-        { headers: { Authorization: `Bearer ${await getToken()}` } }
+        { headers: { Authorization: `Bearer ${token}` } }  // ✅ Using the token variable
       );
       setAnalyticsData(response.data.results || []);
     } catch (err) {
