@@ -1,7 +1,7 @@
 // src/pages/BookingWizard.jsx
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Helmet } from "react-helmet-async"; // <-- ADDED HELMET IMPORT
+import { Helmet } from "react-helmet-async";
 import WizardSteps from "../components/booking/WizardSteps";
 import WizardNavigation from "../components/booking/WizardNavigation";
 import useQuoteCalculator from "../hooks/useQuoteCalculator";
@@ -9,6 +9,9 @@ import useAutoSnapshot, { getSessionId, regenerateSessionId } from "../hooks/use
 import api from "../api";
 import BookingSuccessModal from "../components/BookingSuccessModal";
 import { getServices } from "../lib/api";
+
+// 👇 Tenant constant (read from env, fallback to DDEEP)
+const TENANT = import.meta.env.VITE_TENANT || "DDEEP";
 
 const SIZED_AREAS = ["Kitchen", "Bedroom"];
 const SPECIAL_SERVICE = "Carpet, Upholstery & Appliances Cleaning ONLY";
@@ -261,7 +264,12 @@ export default function BookingWizard() {
         items_breakdown: breakdown,
       };
 
-      const res = await api.post("/api/bookings/", payload);
+      // 👇 CRITICAL FIX: Send the X-Tenant header so the booking is saved to DDEEP
+      const res = await api.post("/api/bookings/", payload, {
+        headers: {
+          "X-Tenant": TENANT,
+        },
+      });
 
       if (res.status === 200 || res.status === 201) {
         const paymentlink = res.data.paymentlink;
