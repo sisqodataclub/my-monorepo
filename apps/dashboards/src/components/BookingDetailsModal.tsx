@@ -1,5 +1,5 @@
 // src/components/BookingDetailsModal.tsx
-import { X, User, Mail, Phone, CalendarDays, MapPin, CreditCard, Tag, ClipboardList } from 'lucide-react';
+import { X, User, Mail, Phone, CalendarDays, ClipboardList } from 'lucide-react';
 import type { AnalyticsBooking } from '../pages/BookingsPage';
 
 interface BookingDetailsModalProps {
@@ -92,9 +92,9 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
                 <div>
                   <span className="text-xs text-slate-500">Selected Areas:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {cleaning.selected_areas.map((area: string, i: number) => (
+                    {cleaning.selected_areas.map((area: any, i: number) => (
                       <span key={i} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                        {area}
+                        {String(area)}
                       </span>
                     ))}
                   </div>
