@@ -15,11 +15,21 @@ import {
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://core.franciscodes.com';
+const TENANT = 'DDEEP';
+
+// Helper to get headers with tenant
+const getHeaders = async (token: string | null) => {
+  return {
+    Authorization: `Bearer ${token}`,
+    'X-Tenant': TENANT,
+  };
+};
 
 const fetchBookings = async (token: string | null): Promise<any[]> => {
-  const headers: any = { Authorization: `Bearer ${token}` };
+  const headers = await getHeaders(token);
   try {
     const res = await axios.get(`${API_BASE}/api/cleaning-bookings/`, { headers });
+    // Handle paginated or plain array
     if (res.data && res.data.results && Array.isArray(res.data.results)) {
       return res.data.results;
     }
@@ -31,7 +41,7 @@ const fetchBookings = async (token: string | null): Promise<any[]> => {
 };
 
 // -------------------------------------------------------------------
-// Pagination and sorting helpers
+// Pagination and sorting helpers (unchanged)
 // -------------------------------------------------------------------
 type SortDirection = 'asc' | 'desc';
 
@@ -125,8 +135,15 @@ export default function InvoicesPage() {
         fetchServices(token),
         fetchBookings(token),
       ]);
-      setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
-      setServices(Array.isArray(servicesData) ? servicesData : []);
+      // Handle paginated responses (they might have 'results' key)
+      const invoicesArray = Array.isArray(invoicesData)
+        ? invoicesData
+        : invoicesData?.results || [];
+      const servicesArray = Array.isArray(servicesData)
+        ? servicesData
+        : servicesData?.results || [];
+      setInvoices(invoicesArray);
+      setServices(servicesArray);
       setBookings(Array.isArray(bookingsData) ? bookingsData : []);
     } catch (err) {
       console.error('Failed to load data', err);
@@ -252,6 +269,8 @@ export default function InvoicesPage() {
       }
       setShowForm(false);
       resetForm();
+      // Reset pagination to page 1 after data refresh
+      setInvoicePage(1);
       await loadData();
     } catch (err) {
       console.error('Failed to save invoice', err);
