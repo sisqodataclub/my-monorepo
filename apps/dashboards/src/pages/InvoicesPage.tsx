@@ -17,7 +17,7 @@ import axios from 'axios';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://core.franciscodes.com';
 const TENANT = 'DDEEP';
 
-// Helper to get headers with tenant
+// Helper to build headers with tenant
 const getHeaders = async (token: string | null) => {
   return {
     Authorization: `Bearer ${token}`,
@@ -25,11 +25,12 @@ const getHeaders = async (token: string | null) => {
   };
 };
 
+// Fetch bookings with tenant header
 const fetchBookings = async (token: string | null): Promise<any[]> => {
   const headers = await getHeaders(token);
   try {
     const res = await axios.get(`${API_BASE}/api/cleaning-bookings/`, { headers });
-    // Handle paginated or plain array
+    // The API may return paginated results or a plain array
     if (res.data && res.data.results && Array.isArray(res.data.results)) {
       return res.data.results;
     }
@@ -41,7 +42,7 @@ const fetchBookings = async (token: string | null): Promise<any[]> => {
 };
 
 // -------------------------------------------------------------------
-// Pagination and sorting helpers (unchanged)
+// Pagination and sorting helpers
 // -------------------------------------------------------------------
 type SortDirection = 'asc' | 'desc';
 
@@ -68,7 +69,7 @@ function paginateData<T>(data: T[], page: number, pageSize: number): T[] {
 }
 
 // -------------------------------------------------------------------
-// Main component
+// Main Component
 // -------------------------------------------------------------------
 export default function InvoicesPage() {
   const { getToken } = useAuth();
@@ -135,13 +136,10 @@ export default function InvoicesPage() {
         fetchServices(token),
         fetchBookings(token),
       ]);
-      // Handle paginated responses (they might have 'results' key)
-      const invoicesArray = Array.isArray(invoicesData)
-        ? invoicesData
-        : invoicesData?.results || [];
-      const servicesArray = Array.isArray(servicesData)
-        ? servicesData
-        : servicesData?.results || [];
+      // The imported functions should return arrays; if they return a paginated object with 'results', adjust accordingly.
+      // We assume they return arrays (as the original code did), so we handle both cases safely:
+      const invoicesArray = Array.isArray(invoicesData) ? invoicesData : [];
+      const servicesArray = Array.isArray(servicesData) ? servicesData : [];
       setInvoices(invoicesArray);
       setServices(servicesArray);
       setBookings(Array.isArray(bookingsData) ? bookingsData : []);
@@ -269,7 +267,7 @@ export default function InvoicesPage() {
       }
       setShowForm(false);
       resetForm();
-      // Reset pagination to page 1 after data refresh
+      // Reset invoice pagination to page 1 to show the new invoice
       setInvoicePage(1);
       await loadData();
     } catch (err) {
@@ -621,6 +619,7 @@ export default function InvoicesPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+            {/* --- Form fields (unchanged) --- */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Basic Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
