@@ -1,5 +1,5 @@
 // src/components/BookingDetailsModal.tsx
-import { X, CalendarDays, User, Mail, Phone, MapPin, CreditCard, Tag, ClipboardList } from 'lucide-react';
+import { X, User, Mail, Phone, CalendarDays } from 'lucide-react';
 import type { AnalyticsBooking } from '../pages/BookingsPage';
 
 interface BookingDetailsModalProps {
