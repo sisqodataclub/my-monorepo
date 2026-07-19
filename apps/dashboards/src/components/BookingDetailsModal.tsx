@@ -18,16 +18,13 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-900">Booking Details</h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition"
-          >
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* === Customer Info (from ServiceBooking) === */}
+          {/* Customer Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <User className="w-5 h-5 text-slate-400" />
@@ -49,7 +46,7 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
             </div>
           </div>
 
-          {/* === Service & Status (from ServiceBooking) === */}
+          {/* Service & Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
             <div>
               <span className="text-xs text-slate-500 uppercase tracking-wider">Service</span>
@@ -79,7 +76,7 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
             </div>
           </div>
 
-          {/* === Cleaning Booking Details (if available) === */}
+          {/* Cleaning Details */}
           {cleaning && (
             <div className="space-y-4 border-t border-slate-200 pt-4">
               <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
@@ -87,7 +84,6 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
                 Cleaning Details
               </h3>
 
-              {/* Selected areas */}
               {cleaning.selected_areas && cleaning.selected_areas.length > 0 && (
                 <div>
                   <span className="text-xs text-slate-500">Selected Areas:</span>
@@ -101,7 +97,6 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
                 </div>
               )}
 
-              {/* Services with quantities (resolved from item_names) */}
               {cleaning.item_names && Object.keys(cleaning.item_names).length > 0 && (
                 <div>
                   <span className="text-xs text-slate-500">Services:</span>
@@ -109,14 +104,13 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
                     {Object.entries(cleaning.item_names).map(([name, qty]) => (
                       <div key={name} className="text-sm flex justify-between border-b border-slate-100 py-0.5">
                         <span>{name}</span>
-                        <span className="text-slate-500">×{qty}</span>
+                        <span className="text-slate-500">×{String(qty)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Carpets & Appliances */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-xs text-slate-500">Carpets:</span>
@@ -136,7 +130,6 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
                 </div>
               </div>
 
-              {/* Furnished status, Parking, Biohazard, Payment method */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {cleaning.furnished_status && (
                   <div>
@@ -164,7 +157,6 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
                 )}
               </div>
 
-              {/* Payment link */}
               {cleaning.paymentlink && (
                 <div>
                   <span className="text-xs text-slate-500">Payment Link:</span>
@@ -179,7 +171,6 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
                 </div>
               )}
 
-              {/* Property details */}
               {cleaning.property_details && (
                 <div>
                   <span className="text-xs text-slate-500">Property Details:</span>
@@ -199,7 +190,7 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
             </div>
           )}
 
-          {/* === Additional Info from ServiceBooking === */}
+          {/* Additional Service Info */}
           <div className="space-y-4 border-t border-slate-200 pt-4">
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Additional Service Info</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -245,7 +236,7 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
             </div>
           </div>
 
-          {/* === Raw Data (full JSON) === */}
+          {/* Raw Data */}
           <details className="text-xs text-slate-500 mt-4 border-t pt-4">
             <summary className="cursor-pointer font-medium">View raw data</summary>
             <pre className="mt-2 bg-slate-50 p-3 rounded overflow-x-auto max-h-60">
