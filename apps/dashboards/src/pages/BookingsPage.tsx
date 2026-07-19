@@ -8,16 +8,13 @@ import {
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
 
-// 👇 Import the NextBookingCard component
 import NextBookingCard from '../components/NextBookingCard';
-// 👇 Import the BookingDetailsModal component
 import BookingDetailsModal from '../components/BookingDetailsModal';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 const TENANT = 'DDEEP';
 const DEFAULT_ARRIVAL_ETA = 'within 30 minutes';
 
-// 👇 Export the type so the card can reuse it – includes cleaning_booking_id
 export interface AnalyticsBooking {
   id: number;
   customer_name: string;
@@ -53,9 +50,7 @@ export interface AnalyticsBooking {
   internal_notes: string;
   created_at: string;
   updated_at: string;
-  // 👇 New field: ID of the related cleaning booking (if any)
   cleaning_booking_id?: number;
-  // 👇 Will hold the fetched cleaning details
   cleaning_details?: any;
 }
 
@@ -336,7 +331,33 @@ export default function BookingsPage() {
     }
   };
 
-  // --- Notification handlers ---
+  // ---- Check if notification already sent ----
+  const checkNotificationSent = async (bookingId: number, type: 'arrival' | 'review'): Promise<boolean> => {
+    try {
+      const headers = await getHeaders();
+      const response = await axios.get(
+        `${API_BASE}/api/notifications/check/?booking_id=${bookingId}&type=${type}`,
+        { headers }
+      );
+      return response.data.sent === true;
+    } catch (err) {
+      console.warn('Failed to check notification status:', err);
+      return false; // Assume not sent if check fails
+    }
+  };
+
+  // ---- ETA Modal handlers (with check) ----
+  const handleArrivalClick = async (bookingId: number) => {
+    const alreadySent = await checkNotificationSent(bookingId, 'arrival');
+    if (alreadySent) {
+      const shouldResend = window.confirm(
+        'An arrival notification has already been sent for this booking.\nDo you want to send another?'
+      );
+      if (!shouldResend) return;
+    }
+    openEtaModal(bookingId);
+  };
+
   const openEtaModal = (bookingId: number) => {
     setEtaBookingId(bookingId);
     setEtaValue(DEFAULT_ARRIVAL_ETA);
@@ -367,7 +388,16 @@ export default function BookingsPage() {
     }
   };
 
+  // ---- Review handler (with check) ----
   const handleSendReview = async (bookingId: number) => {
+    const alreadySent = await checkNotificationSent(bookingId, 'review');
+    if (alreadySent) {
+      const shouldResend = window.confirm(
+        'A review request has already been sent for this booking.\nDo you want to send another?'
+      );
+      if (!shouldResend) return;
+    }
+
     setActionLoading(prev => ({ ...prev, [bookingId]: 'review' }));
     try {
       const headers = await getHeaders();
@@ -391,7 +421,6 @@ export default function BookingsPage() {
     const serviceBooking = analyticsData.find(b => b.id === bookingId);
     if (!serviceBooking) return;
 
-    // Check if there's a related cleaning booking
     if (serviceBooking.cleaning_booking_id) {
       try {
         const headers = await getHeaders();
@@ -399,7 +428,6 @@ export default function BookingsPage() {
           `${API_BASE}/api/cleaning-bookings/${serviceBooking.cleaning_booking_id}/details/`,
           { headers }
         );
-        // Merge cleaning details into the booking object
         const fullBooking = {
           ...serviceBooking,
           cleaning_details: response.data,
@@ -408,12 +436,10 @@ export default function BookingsPage() {
         setShowDetailsModal(true);
       } catch (err) {
         console.error('Failed to fetch cleaning details:', err);
-        // Fallback: show service booking only
         setDetailsBooking(serviceBooking);
         setShowDetailsModal(true);
       }
     } else {
-      // No cleaning booking, just show service booking
       setDetailsBooking(serviceBooking);
       setShowDetailsModal(true);
     }
@@ -505,22 +531,18 @@ export default function BookingsPage() {
         initial="hidden"
         animate="show"
       >
-        {/* ============================================================ */}
-        {/* NEXT BOOKING CARD – placed at the top */}
-        {/* ============================================================ */}
+        {/* Next Booking Card */}
         <NextBookingCard
           bookings={analyticsData}
           loading={analyticsLoading}
-          onArrivalClick={openEtaModal}
-          onReviewClick={handleSendReview}
+          onArrivalClick={handleArrivalClick} // now checks before opening
+          onReviewClick={handleSendReview}    // now checks before sending
           onViewDetails={handleViewDetails}
           actionLoading={actionLoading}
           statusFilter="confirmed"
         />
 
-        {/* ============================================================ */}
-        {/* SECTION 0: PENDING PROMOTIONS (CleaningBookings) */}
-        {/* ============================================================ */}
+        {/* Pending Promotions */}
         <motion.div variants={itemVariants} className="mb-12">
           <div
             className="flex items-center justify-between mb-4 cursor-pointer select-none"
@@ -589,9 +611,7 @@ export default function BookingsPage() {
           )}
         </motion.div>
 
-        {/* ============================================================ */}
-        {/* SECTION 1: BOOKING ANALYTICS (ServiceBookings) */}
-        {/* ============================================================ */}
+        {/* Booking Analytics */}
         <motion.div variants={itemVariants} className="mb-16">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
@@ -600,6 +620,7 @@ export default function BookingsPage() {
                 {analyticsLoading ? 'Loading...' : `${analyticsData.length} bookings found`}
               </p>
             </div>
+            {/* ... filters ... */}
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex-1 sm:flex-none">
                 <Search className="w-4 h-4 text-slate-400 mr-2" />
@@ -663,16 +684,7 @@ export default function BookingsPage() {
 
           <div className="bg-white rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             {analyticsLoading ? (
-              <div className="p-6">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center space-x-4 mb-6 last:mb-0 animate-pulse">
-                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
-                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
-                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
-                    <div className="h-4 bg-slate-100 rounded w-1/6"></div>
-                  </div>
-                ))}
-              </div>
+              <div className="p-6">Loading...</div>
             ) : analyticsError ? (
               <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                 <div className="bg-rose-50 p-4 rounded-full mb-4"><AlertCircle className="w-8 h-8 text-rose-500" /></div>
@@ -788,7 +800,7 @@ export default function BookingsPage() {
                                 <Edit className="w-4 h-4" /> Edit
                               </button>
                               <button
-                                onClick={() => openEtaModal(booking.id)}
+                                onClick={() => handleArrivalClick(booking.id)} // uses the check
                                 disabled={isLoadingArrival}
                                 className="text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition disabled:opacity-50"
                               >
@@ -796,7 +808,7 @@ export default function BookingsPage() {
                                 {isLoadingArrival ? 'Sending…' : 'Arrival'}
                               </button>
                               <button
-                                onClick={() => handleSendReview(booking.id)}
+                                onClick={() => handleSendReview(booking.id)} // uses the check
                                 disabled={isLoadingReview}
                                 className="text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition disabled:opacity-50"
                               >
@@ -820,15 +832,11 @@ export default function BookingsPage() {
           </div>
         </motion.div>
 
-        {/* ============================================================ */}
-        {/* SECTION 2: SUPERSET RECORDS (existing) */}
-        {/* ============================================================ */}
+        {/* Superset Records */}
         <motion.div variants={itemVariants}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Records Registry</h1>
-              </div>
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Records Registry</h1>
               <p className="text-sm font-medium text-slate-500">Live data synchronized from Superset</p>
             </div>
             <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm w-full sm:w-64">
@@ -845,16 +853,7 @@ export default function BookingsPage() {
 
           <div className="bg-white rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             {supersetLoading ? (
-              <div className="p-6">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="flex items-center space-x-4 mb-6 last:mb-0 animate-pulse">
-                    <div className="h-4 bg-slate-100 rounded w-1/4"></div>
-                    <div className="h-4 bg-slate-100 rounded w-1/4"></div>
-                    <div className="h-4 bg-slate-100 rounded w-1/4"></div>
-                    <div className="h-4 bg-slate-100 rounded w-1/4"></div>
-                  </div>
-                ))}
-              </div>
+              <div className="p-6">Loading...</div>
             ) : supersetError ? (
               <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                 <div className="bg-rose-50 p-4 rounded-full mb-4"><AlertCircle className="w-8 h-8 text-rose-500" /></div>
@@ -902,16 +901,13 @@ export default function BookingsPage() {
         </motion.div>
       </motion.div>
 
-      {/* ---- Promotion Modal ---- */}
+      {/* Modals (Promotion, ETA, Edit, Details) */}
       {showPromoteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-slate-900">Promote to Service Booking</h2>
-              <button
-                onClick={() => setShowPromoteModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
+              <button onClick={() => setShowPromoteModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -925,9 +921,7 @@ export default function BookingsPage() {
                 >
                   <option value="">Choose a service...</option>
                   {servicesError ? (
-                    <option value="" disabled className="text-red-500">
-                      ⚠️ {servicesError} – refresh page
-                    </option>
+                    <option value="" disabled className="text-red-500">⚠️ {servicesError} – refresh page</option>
                   ) : services.length === 0 ? (
                     <option value="" disabled>Loading services...</option>
                   ) : (
@@ -962,23 +956,17 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* ---- ETA Modal ---- */}
       {showEtaModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-slate-900">Estimated Arrival Time</h2>
-              <button
-                onClick={() => setShowEtaModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
+              <button onClick={() => setShowEtaModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
             <div className="space-y-4">
-              <p className="text-sm text-slate-600">
-                Enter the estimated arrival time for the customer:
-              </p>
+              <p className="text-sm text-slate-600">Enter the estimated arrival time for the customer:</p>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   ETA (e.g., "within 30 minutes" or "2:30 PM")
@@ -1002,16 +990,12 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* ---- Edit Modal ---- */}
       {showEditModal && editingBooking && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-slate-900">Edit Booking #{editingBooking.id}</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -1096,7 +1080,6 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* ---- Details Modal ---- */}
       <BookingDetailsModal
         booking={detailsBooking}
         isOpen={showDetailsModal}
