@@ -1,14 +1,18 @@
+// src/pages/BookingsPage.tsx
 import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import {
   CalendarDays, AlertCircle, FileText, Search, Star, Flag, CreditCard, X,
   Plus, Edit, ChevronUp, ChevronDown, Mail, Send
-} from 'lucide-react'; // added Mail, Send
+} from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 const TENANT = 'DDEEP';
+
+// 👇 Default ETA (used as placeholder in the modal)
+const DEFAULT_ARRIVAL_ETA = 'within 30 minutes';
 
 // --- Type definitions (unchanged) ---
 interface AnalyticsBooking {
@@ -127,8 +131,13 @@ export default function BookingsPage() {
   const [supersetError, setSupersetError] = useState<string | null>(null);
   const [supersetSearch, setSupersetSearch] = useState('');
 
-  // --- NEW: Track which action is loading per booking ---
+  // --- Track which action is loading per booking ---
   const [actionLoading, setActionLoading] = useState<{ [key: number]: 'arrival' | 'review' | null }>({});
+
+  // --- ETA Modal state ---
+  const [showEtaModal, setShowEtaModal] = useState(false);
+  const [etaBookingId, setEtaBookingId] = useState<number | null>(null);
+  const [etaValue, setEtaValue] = useState(DEFAULT_ARRIVAL_ETA);
 
   // ---- Helper to build headers with tenant ----
   const getHeaders = async () => {
@@ -316,23 +325,34 @@ export default function BookingsPage() {
     }
   };
 
-  // --- NEW: Notification handlers ---
-  const handleSendArrival = async (bookingId: number) => {
-    setActionLoading(prev => ({ ...prev, [bookingId]: 'arrival' }));
+  // --- Notification handlers ---
+  const openEtaModal = (bookingId: number) => {
+    setEtaBookingId(bookingId);
+    setEtaValue(DEFAULT_ARRIVAL_ETA); // Pre-fill with default
+    setShowEtaModal(true);
+  };
+
+  const handleSendArrivalWithEta = async () => {
+    if (!etaBookingId) return;
+    setActionLoading(prev => ({ ...prev, [etaBookingId]: 'arrival' }));
     try {
       const headers = await getHeaders();
+      const payload = { eta: etaValue.trim() || DEFAULT_ARRIVAL_ETA };
       const response = await axios.post(
-        `${API_BASE}/api/service-bookings/${bookingId}/notify_arrival/`,
-        {},
+        `${API_BASE}/api/service-bookings/${etaBookingId}/notify_arrival/`,
+        payload,
         { headers }
       );
       alert(`✅ ${response.data.message || 'Arrival email sent!'}`);
+      setShowEtaModal(false);
+      setEtaBookingId(null);
     } catch (err: any) {
       console.error('Arrival email failed:', err);
       const errorMsg = err.response?.data?.error || err.response?.data?.detail || 'Failed to send arrival email.';
       alert(`❌ ${errorMsg}`);
     } finally {
-      setActionLoading(prev => ({ ...prev, [bookingId]: null }));
+      setActionLoading(prev => ({ ...prev, [etaBookingId]: null }));
+      setEtaBookingId(null);
     }
   };
 
@@ -524,7 +544,6 @@ export default function BookingsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-              {/* Search and filters (unchanged) */}
               <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex-1 sm:flex-none">
                 <Search className="w-4 h-4 text-slate-400 mr-2" />
                 <input
@@ -712,9 +731,9 @@ export default function BookingsPage() {
                               >
                                 <Edit className="w-4 h-4" /> Edit
                               </button>
-                              {/* Arrival button */}
+                              {/* Arrival button – opens ETA modal */}
                               <button
-                                onClick={() => handleSendArrival(booking.id)}
+                                onClick={() => openEtaModal(booking.id)}
                                 disabled={isLoadingArrival}
                                 className="text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition disabled:opacity-50"
                               >
@@ -883,6 +902,46 @@ export default function BookingsPage() {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
               >
                 {promoting ? 'Promoting...' : 'Promote'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- ETA Modal ---- */}
+      {showEtaModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Estimated Arrival Time</h2>
+              <button
+                onClick={() => setShowEtaModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                Enter the estimated arrival time for the customer:
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  ETA (e.g., "within 30 minutes" or "2:30 PM")
+                </label>
+                <input
+                  type="text"
+                  value={etaValue}
+                  onChange={(e) => setEtaValue(e.target.value)}
+                  placeholder="e.g., within 30 minutes"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <button
+                onClick={handleSendArrivalWithEta}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition"
+              >
+                Send Arrival Email
               </button>
             </div>
           </div>
