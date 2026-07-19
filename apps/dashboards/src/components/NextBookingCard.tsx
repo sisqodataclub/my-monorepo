@@ -1,6 +1,6 @@
 // src/components/NextBookingCard.tsx
 import { useMemo } from 'react';
-import { CalendarDays, User, Mail, Send, Phone } from 'lucide-react';
+import { CalendarDays, User, Mail, Send, Phone, ClipboardList } from 'lucide-react'; // 👈 added ClipboardList
 
 // Minimal booking interface – extend as needed
 export interface Booking {
@@ -18,6 +18,7 @@ interface NextBookingCardProps<T extends Booking = Booking> {
   loading?: boolean;
   onArrivalClick: (bookingId: number) => void;
   onReviewClick: (bookingId: number) => void;
+  onViewDetails?: (bookingId: number) => void; // 👈 new optional prop
   actionLoading?: Record<number, 'arrival' | 'review' | null>;
   statusFilter?: string | string[];      // default: 'confirmed'
   getStartTime?: (booking: T) => string; // custom time field mapping
@@ -28,6 +29,7 @@ export default function NextBookingCard<T extends Booking>({
   loading = false,
   onArrivalClick,
   onReviewClick,
+  onViewDetails, // 👈 new prop
   actionLoading = {},
   statusFilter = 'confirmed',
   getStartTime = (b) => b.start_time,
@@ -68,6 +70,7 @@ export default function NextBookingCard<T extends Booking>({
           ))}
         </div>
         <div className="flex gap-3 mt-4">
+          <div className="h-10 bg-slate-100 rounded w-24"></div>
           <div className="h-10 bg-slate-100 rounded w-24"></div>
           <div className="h-10 bg-slate-100 rounded w-24"></div>
         </div>
@@ -147,6 +150,16 @@ export default function NextBookingCard<T extends Booking>({
             <Mail className="w-4 h-4" />
             {isReviewLoading ? 'Sending…' : 'Request Review'}
           </button>
+          {/* 👇 New View Details button */}
+          {onViewDetails && (
+            <button
+              onClick={() => onViewDetails(nextBooking.id)}
+              className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
+            >
+              <ClipboardList className="w-4 h-4" />
+              View Details
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -10,6 +10,8 @@ import { useAuth } from '@clerk/clerk-react';
 
 // 👇 Import the NextBookingCard component
 import NextBookingCard from '../components/NextBookingCard';
+// 👇 Import the BookingDetailsModal component
+import BookingDetailsModal from '../components/BookingDetailsModal';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 const TENANT = 'DDEEP';
@@ -139,6 +141,10 @@ export default function BookingsPage() {
   const [showEtaModal, setShowEtaModal] = useState(false);
   const [etaBookingId, setEtaBookingId] = useState<number | null>(null);
   const [etaValue, setEtaValue] = useState(DEFAULT_ARRIVAL_ETA);
+
+  // --- Details Modal state ---
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsBooking, setDetailsBooking] = useState<AnalyticsBooking | null>(null);
 
   // ---- Helper to build headers with tenant ----
   const getHeaders = async () => {
@@ -376,6 +382,15 @@ export default function BookingsPage() {
     }
   };
 
+  // --- View Details handler ---
+  const handleViewDetails = (bookingId: number) => {
+    const booking = analyticsData.find(b => b.id === bookingId);
+    if (booking) {
+      setDetailsBooking(booking);
+      setShowDetailsModal(true);
+    }
+  };
+
   // --- Render helpers ---
   const renderStars = (rating: number | null) => {
     if (!rating) return <span className="text-slate-400">-</span>;
@@ -470,6 +485,7 @@ export default function BookingsPage() {
           loading={analyticsLoading}
           onArrivalClick={openEtaModal}
           onReviewClick={handleSendReview}
+          onViewDetails={handleViewDetails}
           actionLoading={actionLoading}
           statusFilter="confirmed"
         />
@@ -478,7 +494,6 @@ export default function BookingsPage() {
         {/* SECTION 0: PENDING PROMOTIONS (CleaningBookings) */}
         {/* ============================================================ */}
         <motion.div variants={itemVariants} className="mb-12">
-          {/* ... existing content ... */}
           <div
             className="flex items-center justify-between mb-4 cursor-pointer select-none"
             onClick={() => setShowPendingPromotions(!showPendingPromotions)}
@@ -496,7 +511,6 @@ export default function BookingsPage() {
 
           {showPendingPromotions && (
             <div className="bg-white rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
-              {/* ... table ... */}
               {cleaningLoading ? (
                 <div className="p-6 animate-pulse">Loading pending bookings...</div>
               ) : cleaningError ? (
@@ -551,7 +565,6 @@ export default function BookingsPage() {
         {/* SECTION 1: BOOKING ANALYTICS (ServiceBookings) */}
         {/* ============================================================ */}
         <motion.div variants={itemVariants} className="mb-16">
-          {/* ... existing analytics table ... */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">Booking Analytics</h2>
@@ -975,6 +988,7 @@ export default function BookingsPage() {
               </button>
             </div>
             <div className="space-y-4">
+              {/* ... existing edit fields ... */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Job Status</label>
                 <select
@@ -1054,6 +1068,13 @@ export default function BookingsPage() {
           </div>
         </div>
       )}
+
+      {/* ---- Details Modal ---- */}
+      <BookingDetailsModal
+        booking={detailsBooking}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+      />
     </div>
   );
 }
