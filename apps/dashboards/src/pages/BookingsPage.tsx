@@ -8,14 +8,15 @@ import {
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
 
+// 👇 Import the NextBookingCard component
+import NextBookingCard from '../components/NextBookingCard';
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 const TENANT = 'DDEEP';
-
-// 👇 Default ETA (used as placeholder in the modal)
 const DEFAULT_ARRIVAL_ETA = 'within 30 minutes';
 
-// --- Type definitions (unchanged) ---
-interface AnalyticsBooking {
+// 👇 Export the type so the card can reuse it
+export interface AnalyticsBooking {
   id: number;
   customer_name: string;
   customer_email: string;
@@ -328,7 +329,7 @@ export default function BookingsPage() {
   // --- Notification handlers ---
   const openEtaModal = (bookingId: number) => {
     setEtaBookingId(bookingId);
-    setEtaValue(DEFAULT_ARRIVAL_ETA); // Pre-fill with default
+    setEtaValue(DEFAULT_ARRIVAL_ETA);
     setShowEtaModal(true);
   };
 
@@ -375,7 +376,7 @@ export default function BookingsPage() {
     }
   };
 
-  // --- Render helpers (unchanged) ---
+  // --- Render helpers ---
   const renderStars = (rating: number | null) => {
     if (!rating) return <span className="text-slate-400">-</span>;
     return (
@@ -462,9 +463,22 @@ export default function BookingsPage() {
         animate="show"
       >
         {/* ============================================================ */}
+        {/* NEXT BOOKING CARD – placed at the top */}
+        {/* ============================================================ */}
+        <NextBookingCard
+          bookings={analyticsData}
+          loading={analyticsLoading}
+          onArrivalClick={openEtaModal}
+          onReviewClick={handleSendReview}
+          actionLoading={actionLoading}
+          statusFilter="confirmed"
+        />
+
+        {/* ============================================================ */}
         {/* SECTION 0: PENDING PROMOTIONS (CleaningBookings) */}
         {/* ============================================================ */}
         <motion.div variants={itemVariants} className="mb-12">
+          {/* ... existing content ... */}
           <div
             className="flex items-center justify-between mb-4 cursor-pointer select-none"
             onClick={() => setShowPendingPromotions(!showPendingPromotions)}
@@ -482,6 +496,7 @@ export default function BookingsPage() {
 
           {showPendingPromotions && (
             <div className="bg-white rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
+              {/* ... table ... */}
               {cleaningLoading ? (
                 <div className="p-6 animate-pulse">Loading pending bookings...</div>
               ) : cleaningError ? (
@@ -536,6 +551,7 @@ export default function BookingsPage() {
         {/* SECTION 1: BOOKING ANALYTICS (ServiceBookings) */}
         {/* ============================================================ */}
         <motion.div variants={itemVariants} className="mb-16">
+          {/* ... existing analytics table ... */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">Booking Analytics</h2>
@@ -724,14 +740,12 @@ export default function BookingsPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex flex-col gap-1.5">
-                              {/* Edit button */}
                               <button
                                 onClick={() => openEditModal(booking)}
                                 className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition"
                               >
                                 <Edit className="w-4 h-4" /> Edit
                               </button>
-                              {/* Arrival button – opens ETA modal */}
                               <button
                                 onClick={() => openEtaModal(booking.id)}
                                 disabled={isLoadingArrival}
@@ -740,7 +754,6 @@ export default function BookingsPage() {
                                 <Send className="w-4 h-4" />
                                 {isLoadingArrival ? 'Sending…' : 'Arrival'}
                               </button>
-                              {/* Review button */}
                               <button
                                 onClick={() => handleSendReview(booking.id)}
                                 disabled={isLoadingReview}
