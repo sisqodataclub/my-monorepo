@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import {
   CalendarDays, AlertCircle, FileText, Search, Star, Flag, CreditCard, X,
-  Plus, Edit, ChevronUp, ChevronDown
-} from 'lucide-react';
+  Plus, Edit, ChevronUp, ChevronDown, Mail, Send
+} from 'lucide-react'; // added Mail, Send
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
-const TENANT = 'DDEEP'; // fixed tenant for this dashboard
+const TENANT = 'DDEEP';
 
-// --- Type definitions ---
+// --- Type definitions (unchanged) ---
 interface AnalyticsBooking {
   id: number;
   customer_name: string;
@@ -127,6 +127,9 @@ export default function BookingsPage() {
   const [supersetError, setSupersetError] = useState<string | null>(null);
   const [supersetSearch, setSupersetSearch] = useState('');
 
+  // --- NEW: Track which action is loading per booking ---
+  const [actionLoading, setActionLoading] = useState<{ [key: number]: 'arrival' | 'review' | null }>({});
+
   // ---- Helper to build headers with tenant ----
   const getHeaders = async () => {
     const token = await getToken();
@@ -216,7 +219,6 @@ export default function BookingsPage() {
     try {
       const headers = await getHeaders();
 
-      // 1. Fetch services – required
       let servicesData: Service[] = [];
       try {
         const servicesRes = await axios.get(`${API_BASE}/api/payments/services/`, { headers });
@@ -226,14 +228,12 @@ export default function BookingsPage() {
         setServicesError(err.message || 'Could not load services');
       }
 
-      // 2. Fetch providers – optional, ignore failures
       let providersData: ServiceProvider[] = [];
       try {
         const providersRes = await axios.get(`${API_BASE}/api/service-providers/`, { headers });
         providersData = providersRes.data.results || providersRes.data || [];
       } catch (err) {
         console.warn('Could not fetch providers (optional):', err);
-        // Providers are optional, so we just log and continue
       }
 
       setServices(servicesData);
@@ -313,6 +313,45 @@ export default function BookingsPage() {
       alert('Failed to update booking.');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // --- NEW: Notification handlers ---
+  const handleSendArrival = async (bookingId: number) => {
+    setActionLoading(prev => ({ ...prev, [bookingId]: 'arrival' }));
+    try {
+      const headers = await getHeaders();
+      const response = await axios.post(
+        `${API_BASE}/api/service-bookings/${bookingId}/notify_arrival/`,
+        {},
+        { headers }
+      );
+      alert(`✅ ${response.data.message || 'Arrival email sent!'}`);
+    } catch (err: any) {
+      console.error('Arrival email failed:', err);
+      const errorMsg = err.response?.data?.error || err.response?.data?.detail || 'Failed to send arrival email.';
+      alert(`❌ ${errorMsg}`);
+    } finally {
+      setActionLoading(prev => ({ ...prev, [bookingId]: null }));
+    }
+  };
+
+  const handleSendReview = async (bookingId: number) => {
+    setActionLoading(prev => ({ ...prev, [bookingId]: 'review' }));
+    try {
+      const headers = await getHeaders();
+      const response = await axios.post(
+        `${API_BASE}/api/service-bookings/${bookingId}/request_review/`,
+        {},
+        { headers }
+      );
+      alert(`✅ ${response.data.message || 'Review request sent!'}`);
+    } catch (err: any) {
+      console.error('Review request failed:', err);
+      const errorMsg = err.response?.data?.error || err.response?.data?.detail || 'Failed to send review request.';
+      alert(`❌ ${errorMsg}`);
+    } finally {
+      setActionLoading(prev => ({ ...prev, [bookingId]: null }));
     }
   };
 
@@ -485,6 +524,7 @@ export default function BookingsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              {/* Search and filters (unchanged) */}
               <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex-1 sm:flex-none">
                 <Search className="w-4 h-4 text-slate-400 mr-2" />
                 <input
@@ -586,90 +626,115 @@ export default function BookingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {analyticsData.map((booking) => (
-                      <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors duration-150 group">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-slate-900">{booking.customer_name}</div>
-                          <div className="text-xs text-slate-500">{booking.customer_email}</div>
-                          {booking.phone && <div className="text-xs text-slate-400">{booking.phone}</div>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-slate-700">{booking.service_name}</div>
-                          {booking.provider_name && <div className="text-xs text-slate-400">by {booking.provider_name}</div>}
-                          {booking.completed_at && (
-                            <div className="text-xs text-emerald-600 flex items-center mt-0.5">
-                              <CalendarDays className="w-3 h-3 mr-1" />
-                              {new Date(booking.completed_at).toLocaleDateString()}
+                    {analyticsData.map((booking) => {
+                      const isLoadingArrival = actionLoading[booking.id] === 'arrival';
+                      const isLoadingReview = actionLoading[booking.id] === 'review';
+                      return (
+                        <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors duration-150 group">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-slate-900">{booking.customer_name}</div>
+                            <div className="text-xs text-slate-500">{booking.customer_email}</div>
+                            {booking.phone && <div className="text-xs text-slate-400">{booking.phone}</div>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-slate-700">{booking.service_name}</div>
+                            {booking.provider_name && <div className="text-xs text-slate-400">by {booking.provider_name}</div>}
+                            {booking.completed_at && (
+                              <div className="text-xs text-emerald-600 flex items-center mt-0.5">
+                                <CalendarDays className="w-3 h-3 mr-1" />
+                                {new Date(booking.completed_at).toLocaleDateString()}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-slate-600">
+                              <CalendarDays className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                              {new Date(booking.start_time).toLocaleString(undefined, {
+                                month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                              })}
                             </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center text-slate-600">
-                            <CalendarDays className="w-3.5 h-3.5 mr-2 text-slate-400" />
-                            {new Date(booking.start_time).toLocaleString(undefined, {
-                              month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
-                            })}
-                          </div>
-                          {booking.payment_date && (
-                            <div className="text-xs text-slate-400 flex items-center mt-1">
-                              <CreditCard className="w-3 h-3 mr-1" />
-                              Paid: {new Date(booking.payment_date).toLocaleDateString()}
+                            {booking.payment_date && (
+                              <div className="text-xs text-slate-400 flex items-center mt-1">
+                                <CreditCard className="w-3 h-3 mr-1" />
+                                Paid: {new Date(booking.payment_date).toLocaleDateString()}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderStatusBadge(booking.payment_status)}
+                            {booking.payment_reference && (
+                              <div className="text-[10px] text-slate-400 truncate max-w-[80px] mt-1" title={booking.payment_reference}>
+                                {booking.payment_reference.slice(0, 8)}…
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderStatusBadge(booking.status)}
+                            {booking.rescheduled_count > 0 && (
+                              <span className="text-[10px] text-slate-400 block mt-1">Rescheduled {booking.rescheduled_count}x</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderStars(booking.rating)}
+                            {booking.feedback_text && (
+                              <div className="text-xs text-slate-400 truncate max-w-[120px]" title={booking.feedback_text}>
+                                “{booking.feedback_text}”
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.has_complaint ? (
+                              <span className="flex items-center text-rose-600">
+                                <Flag className="w-4 h-4 mr-1" />
+                                {booking.complaint_resolved ? 'Resolved' : 'Open'}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                            {booking.complaint_notes && (
+                              <div className="text-xs text-slate-400 truncate max-w-[120px]" title={booking.complaint_notes}>
+                                {booking.complaint_notes}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="font-semibold text-slate-900">£{parseFloat(booking.total_price).toFixed(2)}</span>
+                            {parseFloat(booking.discount_applied) > 0 && (
+                              <span className="text-xs text-emerald-600 block">-£{parseFloat(booking.discount_applied).toFixed(2)}</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col gap-1.5">
+                              {/* Edit button */}
+                              <button
+                                onClick={() => openEditModal(booking)}
+                                className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition"
+                              >
+                                <Edit className="w-4 h-4" /> Edit
+                              </button>
+                              {/* Arrival button */}
+                              <button
+                                onClick={() => handleSendArrival(booking.id)}
+                                disabled={isLoadingArrival}
+                                className="text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition disabled:opacity-50"
+                              >
+                                <Send className="w-4 h-4" />
+                                {isLoadingArrival ? 'Sending…' : 'Arrival'}
+                              </button>
+                              {/* Review button */}
+                              <button
+                                onClick={() => handleSendReview(booking.id)}
+                                disabled={isLoadingReview}
+                                className="text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition disabled:opacity-50"
+                              >
+                                <Mail className="w-4 h-4" />
+                                {isLoadingReview ? 'Sending…' : 'Review'}
+                              </button>
                             </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {renderStatusBadge(booking.payment_status)}
-                          {booking.payment_reference && (
-                            <div className="text-[10px] text-slate-400 truncate max-w-[80px] mt-1" title={booking.payment_reference}>
-                              {booking.payment_reference.slice(0, 8)}…
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {renderStatusBadge(booking.status)}
-                          {booking.rescheduled_count > 0 && (
-                            <span className="text-[10px] text-slate-400 block mt-1">Rescheduled {booking.rescheduled_count}x</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {renderStars(booking.rating)}
-                          {booking.feedback_text && (
-                            <div className="text-xs text-slate-400 truncate max-w-[120px]" title={booking.feedback_text}>
-                              “{booking.feedback_text}”
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {booking.has_complaint ? (
-                            <span className="flex items-center text-rose-600">
-                              <Flag className="w-4 h-4 mr-1" />
-                              {booking.complaint_resolved ? 'Resolved' : 'Open'}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">-</span>
-                          )}
-                          {booking.complaint_notes && (
-                            <div className="text-xs text-slate-400 truncate max-w-[120px]" title={booking.complaint_notes}>
-                              {booking.complaint_notes}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-semibold text-slate-900">£{parseFloat(booking.total_price).toFixed(2)}</span>
-                          {parseFloat(booking.discount_applied) > 0 && (
-                            <span className="text-xs text-emerald-600 block">-£{parseFloat(booking.discount_applied).toFixed(2)}</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => openEditModal(booking)}
-                            className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition"
-                          >
-                            <Edit className="w-4 h-4" /> Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
