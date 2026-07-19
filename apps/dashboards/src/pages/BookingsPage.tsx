@@ -17,7 +17,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes
 const TENANT = 'DDEEP';
 const DEFAULT_ARRIVAL_ETA = 'within 30 minutes';
 
-// 👇 Export the type so the card can reuse it
+// 👇 Export the type so the card can reuse it – includes cleaning_booking_id
 export interface AnalyticsBooking {
   id: number;
   customer_name: string;
@@ -53,6 +53,10 @@ export interface AnalyticsBooking {
   internal_notes: string;
   created_at: string;
   updated_at: string;
+  // 👇 New field: ID of the related cleaning booking (if any)
+  cleaning_booking_id?: number;
+  // 👇 Will hold the fetched cleaning details
+  cleaning_details?: any;
 }
 
 interface CleaningBooking {
@@ -382,11 +386,35 @@ export default function BookingsPage() {
     }
   };
 
-  // --- View Details handler ---
-  const handleViewDetails = (bookingId: number) => {
-    const booking = analyticsData.find(b => b.id === bookingId);
-    if (booking) {
-      setDetailsBooking(booking);
+  // --- View Details handler (fetches cleaning details if available) ---
+  const handleViewDetails = async (bookingId: number) => {
+    const serviceBooking = analyticsData.find(b => b.id === bookingId);
+    if (!serviceBooking) return;
+
+    // Check if there's a related cleaning booking
+    if (serviceBooking.cleaning_booking_id) {
+      try {
+        const headers = await getHeaders();
+        const response = await axios.get(
+          `${API_BASE}/api/cleaning-bookings/${serviceBooking.cleaning_booking_id}/details/`,
+          { headers }
+        );
+        // Merge cleaning details into the booking object
+        const fullBooking = {
+          ...serviceBooking,
+          cleaning_details: response.data,
+        };
+        setDetailsBooking(fullBooking);
+        setShowDetailsModal(true);
+      } catch (err) {
+        console.error('Failed to fetch cleaning details:', err);
+        // Fallback: show service booking only
+        setDetailsBooking(serviceBooking);
+        setShowDetailsModal(true);
+      }
+    } else {
+      // No cleaning booking, just show service booking
+      setDetailsBooking(serviceBooking);
       setShowDetailsModal(true);
     }
   };
@@ -988,7 +1016,6 @@ export default function BookingsPage() {
               </button>
             </div>
             <div className="space-y-4">
-              {/* ... existing edit fields ... */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Job Status</label>
                 <select

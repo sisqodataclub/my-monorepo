@@ -1,5 +1,5 @@
 // src/components/BookingDetailsModal.tsx
-import { X, User, Mail, Phone, CalendarDays } from 'lucide-react';
+import { X, User, Mail, Phone, CalendarDays, MapPin, CreditCard, Tag, ClipboardList } from 'lucide-react';
 import type { AnalyticsBooking } from '../pages/BookingsPage';
 
 interface BookingDetailsModalProps {
@@ -10,6 +10,8 @@ interface BookingDetailsModalProps {
 
 export default function BookingDetailsModal({ booking, isOpen, onClose }: BookingDetailsModalProps) {
   if (!isOpen || !booking) return null;
+
+  const cleaning = (booking as any).cleaning_details;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -25,7 +27,7 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Customer Info */}
+          {/* === Customer Info (from ServiceBooking) === */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <User className="w-5 h-5 text-slate-400" />
@@ -47,7 +49,7 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
             </div>
           </div>
 
-          {/* Service & Status */}
+          {/* === Service & Status (from ServiceBooking) === */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
             <div>
               <span className="text-xs text-slate-500 uppercase tracking-wider">Service</span>
@@ -77,9 +79,129 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
             </div>
           </div>
 
-          {/* Extended Details (if available) */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Additional Info</h3>
+          {/* === Cleaning Booking Details (if available) === */}
+          {cleaning && (
+            <div className="space-y-4 border-t border-slate-200 pt-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <ClipboardList className="w-4 h-4" />
+                Cleaning Details
+              </h3>
+
+              {/* Selected areas */}
+              {cleaning.selected_areas && cleaning.selected_areas.length > 0 && (
+                <div>
+                  <span className="text-xs text-slate-500">Selected Areas:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {cleaning.selected_areas.map((area: string, i: number) => (
+                      <span key={i} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Services with quantities (resolved from item_names) */}
+              {cleaning.item_names && Object.keys(cleaning.item_names).length > 0 && (
+                <div>
+                  <span className="text-xs text-slate-500">Services:</span>
+                  <div className="grid grid-cols-2 gap-1 mt-1">
+                    {Object.entries(cleaning.item_names).map(([name, qty]) => (
+                      <div key={name} className="text-sm flex justify-between border-b border-slate-100 py-0.5">
+                        <span>{name}</span>
+                        <span className="text-slate-500">×{qty}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Carpets & Appliances */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs text-slate-500">Carpets:</span>
+                  <pre className="text-xs bg-slate-50 p-1 rounded mt-1 overflow-x-auto">
+                    {cleaning.carpets && Object.keys(cleaning.carpets).length > 0
+                      ? JSON.stringify(cleaning.carpets, null, 2)
+                      : 'None'}
+                  </pre>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500">Appliances:</span>
+                  <pre className="text-xs bg-slate-50 p-1 rounded mt-1 overflow-x-auto">
+                    {cleaning.appliances && Object.keys(cleaning.appliances).length > 0
+                      ? JSON.stringify(cleaning.appliances, null, 2)
+                      : 'None'}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Furnished status, Parking, Biohazard, Payment method */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {cleaning.furnished_status && (
+                  <div>
+                    <span className="text-slate-500">Furnished:</span>
+                    <span className="ml-1 font-medium">{cleaning.furnished_status}</span>
+                  </div>
+                )}
+                {cleaning.parking && (
+                  <div>
+                    <span className="text-slate-500">Parking:</span>
+                    <span className="ml-1 font-medium">{cleaning.parking}</span>
+                  </div>
+                )}
+                {cleaning.biohazard && (
+                  <div>
+                    <span className="text-slate-500">Biohazard:</span>
+                    <span className="ml-1 font-medium">{cleaning.biohazard}</span>
+                  </div>
+                )}
+                {cleaning.payment_method && (
+                  <div>
+                    <span className="text-slate-500">Payment Method:</span>
+                    <span className="ml-1 font-medium">{cleaning.payment_method}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment link */}
+              {cleaning.paymentlink && (
+                <div>
+                  <span className="text-xs text-slate-500">Payment Link:</span>
+                  <a
+                    href={cleaning.paymentlink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 text-blue-600 hover:underline text-sm truncate block"
+                  >
+                    {cleaning.paymentlink}
+                  </a>
+                </div>
+              )}
+
+              {/* Property details */}
+              {cleaning.property_details && (
+                <div>
+                  <span className="text-xs text-slate-500">Property Details:</span>
+                  <div className="mt-1 text-sm bg-slate-50 p-2 rounded space-y-1">
+                    {cleaning.property_details.address && (
+                      <div><span className="text-slate-500">Address:</span> {cleaning.property_details.address}</div>
+                    )}
+                    {cleaning.property_details.postcode && (
+                      <div><span className="text-slate-500">Postcode:</span> {cleaning.property_details.postcode}</div>
+                    )}
+                    {cleaning.property_details.additional_info && (
+                      <div><span className="text-slate-500">Info:</span> {cleaning.property_details.additional_info}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* === Additional Info from ServiceBooking === */}
+          <div className="space-y-4 border-t border-slate-200 pt-4">
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Additional Service Info</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               {booking.payment_reference && (
                 <div>
@@ -123,7 +245,7 @@ export default function BookingDetailsModal({ booking, isOpen, onClose }: Bookin
             </div>
           </div>
 
-          {/* Raw Data (for debugging, optional) */}
+          {/* === Raw Data (full JSON) === */}
           <details className="text-xs text-slate-500 mt-4 border-t pt-4">
             <summary className="cursor-pointer font-medium">View raw data</summary>
             <pre className="mt-2 bg-slate-50 p-3 rounded overflow-x-auto max-h-60">
