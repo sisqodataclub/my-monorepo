@@ -186,9 +186,9 @@ export default function BookingFormModal({
       quantities[s.service_id] = s.quantity;
     });
 
-    const selectedAreas = selectedServices.map(s => s.name);
+    const selectedAreas: (string | number)[] = selectedServices.map(s => s.name);
     selectedServices.forEach(s => {
-      selectedAreas.push(s.service_id);
+      selectedAreas.push(s.service_id); // now allowed
     });
 
     const payload = {
