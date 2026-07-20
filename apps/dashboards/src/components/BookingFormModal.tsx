@@ -177,7 +177,7 @@ export default function BookingFormModal({
   }, [selectedServices, furnishedStatus, biohazard, discountCode]);
 
   const handleSubmit = async () => {
-    // ✅ VALIDATION: name and email are required
+    // ✅ Validation: name and email are required
     if (!customerName.trim() || !customerEmail.trim()) {
       alert('Customer Name and Email are required.');
       return;
@@ -196,13 +196,13 @@ export default function BookingFormModal({
     });
 
     // ✅ Generate a unique session_id for new bookings
-    // If editing, reuse the existing session_id
     const sessionId = initialData?.session_id || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + '-' + Math.random().toString(36).substring(2));
 
+    // ✅ Use the exact field names expected by the backend
     const payload = {
       session_id: sessionId,
-      customer_name: customerName.trim(),
-      customer_email: customerEmail.trim(),
+      name: customerName.trim(),          // 👈 backend expects 'name'
+      email: customerEmail.trim(),        // 👈 backend expects 'email'
       phone: phone || '',
       payment_method: paymentMethod,
       status,
