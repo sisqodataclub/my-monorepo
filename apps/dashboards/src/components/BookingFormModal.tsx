@@ -181,17 +181,25 @@ export default function BookingFormModal({
       alert('Name and email are required.');
       return;
     }
+
+    // Build quantities
     const quantities: Record<string, number> = {};
     selectedServices.forEach(s => {
       quantities[s.service_id] = s.quantity;
     });
 
+    // Build selected_areas (strings and IDs)
     const selectedAreas: (string | number)[] = selectedServices.map(s => s.name);
     selectedServices.forEach(s => {
-      selectedAreas.push(s.service_id); // now allowed
+      selectedAreas.push(s.service_id);
     });
 
+    // ✅ Generate a unique session_id for new bookings
+    // If editing, reuse the existing session_id
+    const sessionId = initialData?.session_id || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + '-' + Math.random().toString(36).substring(2));
+
     const payload = {
+      session_id: sessionId,   // 👈 now included
       customer_name: customerName,
       customer_email: customerEmail,
       phone: phone || '',
@@ -206,6 +214,7 @@ export default function BookingFormModal({
       property_details: {},
       selected_datetime: {},
     };
+
     await onSave(payload);
   };
 
