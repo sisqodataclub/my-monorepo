@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import {
-  CalendarDays, AlertCircle, FileText, Search, Star, Flag, CreditCard, X,
+  CalendarDays, AlertCircle, FileText, Search, Star, Flag, X,
   Plus, Edit, ChevronUp, ChevronDown, Mail, Send, Eye
 } from 'lucide-react';
 import axios from 'axios';
@@ -800,7 +800,6 @@ export default function BookingsPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-100">
-                      {/* Core columns */}
                       <th
                         className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-slate-700"
                         onClick={() => handleSort('customer_name')}
@@ -1188,7 +1187,7 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* Edit Modal – unchanged */}
+      {/* Edit Modal */}
       {showEditModal && editingBooking && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
