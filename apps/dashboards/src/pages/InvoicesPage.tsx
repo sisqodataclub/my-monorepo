@@ -656,7 +656,7 @@ export default function InvoicesPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* ... same as before, unchanged ... */}
+            {/* ... (the form code is unchanged) ... */}
             {/* Basic Details */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Basic Details</h3>
@@ -926,7 +926,7 @@ export default function InvoicesPage() {
           pageSize={bookingPageSize}
           totalPages={totalBookingPages}
           onPageChange={setBookingPage}
-          onPageSizeChange={(size) => { setBookingPageSize(size); setBookingPage(1); }}
+          onPageSizeChange={(size: number) => { setBookingPageSize(size); setBookingPage(1); }}
           sortField={bookingSortField}
           sortOrder={bookingSortOrder}
           onSort={handleBookingSort}
@@ -940,7 +940,7 @@ export default function InvoicesPage() {
         />
       </div>
 
-      {/* ---- Booking Form Modal (NEW) ---- */}
+      {/* ---- Booking Form Modal ---- */}
       <BookingFormModal
         isOpen={showBookingModal}
         onClose={handleBookingModalClose}

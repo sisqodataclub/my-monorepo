@@ -40,7 +40,6 @@ export default function BookingFormModal({
 }: BookingFormModalProps) {
   const { getToken } = useAuth();
 
-  // Basic fields
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -55,7 +54,6 @@ export default function BookingFormModal({
   const [total, setTotal] = useState(0);
   const [quoteLoading, setQuoteLoading] = useState(false);
 
-  // Populate on edit
   useEffect(() => {
     if (initialData) {
       setCustomerName(initialData.customer_name || '');
@@ -68,7 +66,6 @@ export default function BookingFormModal({
       setBiohazard(initialData.biohazard || '');
       setDiscountCode('');
 
-      // Parse services from quantities
       const quantities = initialData.quantities || {};
       const serviceIds = Object.keys(quantities)
         .filter(k => !isNaN(Number(k)))
@@ -175,7 +172,6 @@ export default function BookingFormModal({
     }
   };
 
-  // Recalculate when dependencies change
   useEffect(() => {
     calculateQuote();
   }, [selectedServices, furnishedStatus, biohazard, discountCode]);
