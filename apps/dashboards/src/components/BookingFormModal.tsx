@@ -177,8 +177,9 @@ export default function BookingFormModal({
   }, [selectedServices, furnishedStatus, biohazard, discountCode]);
 
   const handleSubmit = async () => {
-    if (!customerName || !customerEmail) {
-      alert('Name and email are required.');
+    // ✅ VALIDATION: name and email are required
+    if (!customerName.trim() || !customerEmail.trim()) {
+      alert('Customer Name and Email are required.');
       return;
     }
 
@@ -199,9 +200,9 @@ export default function BookingFormModal({
     const sessionId = initialData?.session_id || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + '-' + Math.random().toString(36).substring(2));
 
     const payload = {
-      session_id: sessionId,   // 👈 now included
-      customer_name: customerName,
-      customer_email: customerEmail,
+      session_id: sessionId,
+      customer_name: customerName.trim(),
+      customer_email: customerEmail.trim(),
       phone: phone || '',
       payment_method: paymentMethod,
       status,
@@ -240,6 +241,7 @@ export default function BookingFormModal({
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2"
+                required
               />
             </div>
             <div>
@@ -249,6 +251,7 @@ export default function BookingFormModal({
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2"
+                required
               />
             </div>
             <div>
