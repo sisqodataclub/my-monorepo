@@ -15,6 +15,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes
 const TENANT = 'DDEEP';
 const DEFAULT_ARRIVAL_ETA = 'within 30 minutes';
 
+// Full AnalyticsBooking interface – mirrors all ServiceBooking fields
 export interface AnalyticsBooking {
   id: number;
   customer_name: string;
@@ -35,8 +36,6 @@ export interface AnalyticsBooking {
   complaint_resolved_at: string | null;
   rating: number | null;
   feedback_text: string;
-  review_request_sent: boolean;
-  review_requested_at: string | null;
   reschedule_history: any[];
   rescheduled_count: number;
   discount_applied: string;
@@ -711,7 +710,7 @@ export default function BookingsPage() {
           )}
         </motion.div>
 
-        {/* Booking Analytics */}
+        {/* Booking Analytics – full columns */}
         <motion.div variants={itemVariants} className="mb-16">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
@@ -801,6 +800,7 @@ export default function BookingsPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-100">
+                      {/* Core columns */}
                       <th
                         className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-slate-700"
                         onClick={() => handleSort('customer_name')}
@@ -823,13 +823,13 @@ export default function BookingsPage() {
                         className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-slate-700"
                         onClick={() => handleSort('payment_status')}
                       >
-                        Payment {sortField === 'payment_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                        Payment Status {sortField === 'payment_status' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
                         className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-slate-700"
                         onClick={() => handleSort('status')}
                       >
-                        Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                        Job Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
                         className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-slate-700"
@@ -849,6 +849,18 @@ export default function BookingsPage() {
                       >
                         Total {sortField === 'total_price' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
+                      {/* Additional fields */}
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Payment Info</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Completed</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Discount</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Tax</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Cancellation</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">UTM</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Duration</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Internal Notes</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Created</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Last Arrival</th>
+                      <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Last Review</th>
                       <th className="px-6 py-4 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
@@ -866,12 +878,6 @@ export default function BookingsPage() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-slate-700">{booking.service_name}</div>
                             {booking.provider_name && <div className="text-xs text-slate-400">by {booking.provider_name}</div>}
-                            {booking.completed_at && (
-                              <div className="text-xs text-emerald-600 flex items-center mt-0.5">
-                                <CalendarDays className="w-3 h-3 mr-1" />
-                                {new Date(booking.completed_at).toLocaleDateString()}
-                              </div>
-                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center text-slate-600">
@@ -880,10 +886,9 @@ export default function BookingsPage() {
                                 month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
                               })}
                             </div>
-                            {booking.payment_date && (
-                              <div className="text-xs text-slate-400 flex items-center mt-1">
-                                <CreditCard className="w-3 h-3 mr-1" />
-                                Paid: {new Date(booking.payment_date).toLocaleDateString()}
+                            {booking.end_time && (
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                End: {new Date(booking.end_time).toLocaleTimeString()}
                               </div>
                             )}
                           </td>
@@ -891,7 +896,12 @@ export default function BookingsPage() {
                             {renderStatusBadge(booking.payment_status)}
                             {booking.payment_reference && (
                               <div className="text-[10px] text-slate-400 truncate max-w-[80px] mt-1" title={booking.payment_reference}>
-                                {booking.payment_reference.slice(0, 8)}…
+                                Ref: {booking.payment_reference.slice(0, 8)}…
+                              </div>
+                            )}
+                            {booking.payment_date && (
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                {new Date(booking.payment_date).toLocaleDateString()}
                               </div>
                             )}
                           </td>
@@ -929,6 +939,48 @@ export default function BookingsPage() {
                             {parseFloat(booking.discount_applied) > 0 && (
                               <span className="text-xs text-emerald-600 block">-£{parseFloat(booking.discount_applied).toFixed(2)}</span>
                             )}
+                            {parseFloat(booking.tax_applied) > 0 && (
+                              <span className="text-xs text-slate-500 block">Tax: £{parseFloat(booking.tax_applied).toFixed(2)}</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.payment_date ? new Date(booking.payment_date).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.completed_at ? new Date(booking.completed_at).toLocaleString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            £{parseFloat(booking.discount_applied).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            £{parseFloat(booking.tax_applied).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.cancellation_reason || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.utm_source || '-'}
+                            {booking.utm_medium && <span className="text-xs text-slate-400 block">{booking.utm_medium}</span>}
+                            {booking.utm_campaign && <span className="text-xs text-slate-400 block">{booking.utm_campaign}</span>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.actual_duration_minutes ? `${booking.actual_duration_minutes}m` : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.internal_notes ? (
+                              <div className="text-xs text-slate-400 truncate max-w-[100px]" title={booking.internal_notes}>
+                                {booking.internal_notes}
+                              </div>
+                            ) : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {new Date(booking.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.last_arrival_sent_at ? new Date(booking.last_arrival_sent_at).toLocaleString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {booking.last_review_sent_at ? new Date(booking.last_review_sent_at).toLocaleString() : '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex flex-col gap-1.5">
@@ -1046,7 +1098,7 @@ export default function BookingsPage() {
         </motion.div>
       </motion.div>
 
-      {/* Modals */}
+      {/* Promotion Modal */}
       {showPromoteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -1101,6 +1153,7 @@ export default function BookingsPage() {
         </div>
       )}
 
+      {/* ETA Modal */}
       {showEtaModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -1135,6 +1188,7 @@ export default function BookingsPage() {
         </div>
       )}
 
+      {/* Edit Modal – unchanged */}
       {showEditModal && editingBooking && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -1427,6 +1481,7 @@ export default function BookingsPage() {
         </div>
       )}
 
+      {/* Details Modal */}
       <BookingDetailsModal
         booking={detailsBooking}
         isOpen={showDetailsModal}
