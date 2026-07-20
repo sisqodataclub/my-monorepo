@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
-import { Plus, Download, Edit, Mail, X, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Download, Edit, Mail, X, ChevronDown, ChevronRight } from 'lucide-react'; // ✅ removed FileText
 import type { Service, Invoice } from '../api/invoiceApi';
 import {
   fetchServices,
@@ -14,6 +14,11 @@ import {
 } from '../api/invoiceApi';
 import axios from 'axios';
 import BookingsTable from '../components/BookingsTable';
+
+// ... rest of the file is identical to the previous fully corrected version ...
+
+
+
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://core.franciscodes.com';
 const TENANT = 'DDEEP';

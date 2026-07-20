@@ -1,5 +1,5 @@
 // src/components/BookingsTable.tsx
-import { Download, Mail, FileText, Edit, Trash2, Plus } from 'lucide-react';
+import { Download, Mail, FileText, Edit, Trash2 } from 'lucide-react';
 
 type SortDirection = 'asc' | 'desc';
 
