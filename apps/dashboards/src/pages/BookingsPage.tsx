@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import {
   CalendarDays, AlertCircle, FileText, Search, Star, Flag, CreditCard, X,
-  Plus, Edit, ChevronUp, ChevronDown, Mail, Send, Eye, ChevronRight
+  Plus, Edit, ChevronUp, ChevronDown, Mail, Send, Eye
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
@@ -120,7 +120,6 @@ export default function BookingsPage() {
   // --- Edit modal state ---
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState<AnalyticsBooking | null>(null);
-  // Extended edit form with all fields
   const [editForm, setEditForm] = useState({
     customer_name: '',
     customer_email: '',
@@ -363,7 +362,6 @@ export default function BookingsPage() {
       const headers = await getHeaders();
       const payload: any = {};
 
-      // Only include fields that are editable (all of them)
       const fieldsToUpdate = {
         customer_name: editForm.customer_name,
         customer_email: editForm.customer_email,
@@ -387,7 +385,6 @@ export default function BookingsPage() {
         actual_duration_minutes: editForm.actual_duration_minutes ? parseInt(editForm.actual_duration_minutes) : null,
       };
 
-      // Only add fields that are not empty strings (to avoid overwriting with empty)
       for (const [key, value] of Object.entries(fieldsToUpdate)) {
         if (value !== undefined && value !== '') {
           payload[key] = value;
@@ -1050,8 +1047,6 @@ export default function BookingsPage() {
       </motion.div>
 
       {/* Modals */}
-
-      {/* Promotion Modal */}
       {showPromoteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -1106,7 +1101,6 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* ETA Modal */}
       {showEtaModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -1141,7 +1135,6 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* Edit Modal – now with all fields */}
       {showEditModal && editingBooking && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -1434,7 +1427,6 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* Details Modal */}
       <BookingDetailsModal
         booking={detailsBooking}
         isOpen={showDetailsModal}
