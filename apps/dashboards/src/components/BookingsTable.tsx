@@ -1,6 +1,5 @@
 // src/components/BookingsTable.tsx
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Download, Mail, FileText, Edit, Trash2 } from 'lucide-react';
+import { Download, Mail, FileText, Edit, Trash2, Plus } from 'lucide-react';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -10,7 +9,6 @@ interface Booking {
   customer_email: string;
   total: string;
   status: string;
-  // other fields as needed
 }
 
 interface BookingsTableProps {
@@ -18,25 +16,20 @@ interface BookingsTableProps {
   loading: boolean;
   show: boolean;
   onToggle: () => void;
-  // Pagination
   page: number;
   pageSize: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  // Sorting
   sortField: string;
   sortOrder: SortDirection;
   onSort: (field: string) => void;
-  // Actions
   onEdit: (booking: Booking) => void;
   onDelete: (bookingId: number) => void;
   onCreateInvoice: (booking: Booking) => void;
   onDownloadPdf: (invoiceId: number) => void;
   onEmailInvoice: (invoiceId: number) => void;
-  // Map of booking -> invoice ID
   bookingInvoiceMap: Record<number, number>;
-  // Loading state for actions
   bookingActionLoading: Record<number, boolean>;
 }
 
@@ -44,7 +37,6 @@ export default function BookingsTable({
   bookings,
   loading,
   show,
-  onToggle,
   page,
   pageSize,
   totalPages,
@@ -63,12 +55,8 @@ export default function BookingsTable({
 }: BookingsTableProps) {
   if (!show) return null;
 
-  const renderSortIndicator = (field: string) => {
-    if (sortField === field) {
-      return sortOrder === 'asc' ? '↑' : '↓';
-    }
-    return null;
-  };
+  const renderSortIndicator = (field: string) =>
+    sortField === field ? (sortOrder === 'asc' ? '↑' : '↓') : null;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
