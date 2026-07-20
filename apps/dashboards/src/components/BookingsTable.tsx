@@ -1,218 +1,414 @@
-// src/components/BookingsTable.tsx
-import { Download, Mail, FileText, Edit, Trash2 } from 'lucide-react';
+// src/components/BookingFormModal.tsx
+import { useState, useEffect } from 'react';
+import { X, Plus, Minus } from 'lucide-react';
+import axios from 'axios';
+import { useAuth } from '@clerk/clerk-react';
 
-type SortDirection = 'asc' | 'desc';
-
-interface Booking {
+interface Service {
   id: number;
-  customer_name: string;
-  customer_email: string;
-  total: string;
-  status: string;
+  name: string;
+  price: string | number;
 }
 
-interface BookingsTableProps {
-  bookings: Booking[];
-  loading: boolean;
-  show: boolean;
-  onToggle: () => void;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  sortField: string;
-  sortOrder: SortDirection;
-  onSort: (field: string) => void;
-  onEdit: (booking: Booking) => void;
-  onDelete: (bookingId: number) => void;
-  onCreateInvoice: (booking: Booking) => void;
-  onDownloadPdf: (invoiceId: number) => void;
-  onEmailInvoice: (invoiceId: number) => void;
-  bookingInvoiceMap: Record<number, number>;
-  bookingActionLoading: Record<number, boolean>;
+interface BookingFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: any) => Promise<void>;
+  initialData?: any;
+  services: Service[];
+  loading?: boolean;
+  apiBase: string;
+  tenant: string;
 }
 
-export default function BookingsTable({
-  bookings,
-  loading,
-  show,
-  page,
-  pageSize,
-  totalPages,
-  onPageChange,
-  onPageSizeChange,
-  sortField,
-  sortOrder,
-  onSort,
-  onEdit,
-  onDelete,
-  onCreateInvoice,
-  onDownloadPdf,
-  onEmailInvoice,
-  bookingInvoiceMap,
-  bookingActionLoading,
-}: BookingsTableProps) {
-  if (!show) return null;
+interface ServiceSelection {
+  service_id: number;
+  name: string;
+  quantity: number;
+  price: number;
+}
 
-  const renderSortIndicator = (field: string) =>
-    sortField === field ? (sortOrder === 'asc' ? '↑' : '↓') : null;
+export default function BookingFormModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialData,
+  services,
+  loading: externalLoading = false,
+  apiBase,
+  tenant,
+}: BookingFormModalProps) {
+  const { getToken } = useAuth();
+
+  // Basic fields
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [status, setStatus] = useState('pending');
+  const [furnishedStatus, setFurnishedStatus] = useState('');
+  const [parking, setParking] = useState('');
+  const [biohazard, setBiohazard] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
+
+  const [selectedServices, setSelectedServices] = useState<ServiceSelection[]>([]);
+  const [total, setTotal] = useState(0);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
+  // Populate on edit
+  useEffect(() => {
+    if (initialData) {
+      setCustomerName(initialData.customer_name || '');
+      setCustomerEmail(initialData.customer_email || '');
+      setPhone(initialData.phone || '');
+      setPaymentMethod(initialData.payment_method || 'cash');
+      setStatus(initialData.status || 'pending');
+      setFurnishedStatus(initialData.furnished_status || '');
+      setParking(initialData.parking || '');
+      setBiohazard(initialData.biohazard || '');
+      setDiscountCode('');
+
+      // Parse services from quantities
+      const quantities = initialData.quantities || {};
+      const serviceIds = Object.keys(quantities)
+        .filter(k => !isNaN(Number(k)))
+        .map(Number);
+      const initialSelections: ServiceSelection[] = serviceIds
+        .map(id => {
+          const svc = services.find(s => s.id === id);
+          if (!svc) return null;
+          return {
+            service_id: id,
+            name: svc.name,
+            quantity: Number(quantities[id]) || 1,
+            price: Number(svc.price) || 0,
+          };
+        })
+        .filter(Boolean) as ServiceSelection[];
+      setSelectedServices(initialSelections);
+      setTotal(Number(initialData.total) || 0);
+    } else {
+      resetForm();
+    }
+  }, [initialData, services]);
+
+  const resetForm = () => {
+    setCustomerName('');
+    setCustomerEmail('');
+    setPhone('');
+    setPaymentMethod('cash');
+    setStatus('pending');
+    setFurnishedStatus('');
+    setParking('');
+    setBiohazard('');
+    setDiscountCode('');
+    setSelectedServices([]);
+    setTotal(0);
+  };
+
+  const addService = (service: Service) => {
+    const existing = selectedServices.find(s => s.service_id === service.id);
+    if (existing) {
+      setSelectedServices(prev =>
+        prev.map(s =>
+          s.service_id === service.id ? { ...s, quantity: s.quantity + 1 } : s
+        )
+      );
+    } else {
+      setSelectedServices(prev => [
+        ...prev,
+        {
+          service_id: service.id,
+          name: service.name,
+          quantity: 1,
+          price: Number(service.price) || 0,
+        },
+      ]);
+    }
+  };
+
+  const removeService = (serviceId: number) => {
+    setSelectedServices(prev => prev.filter(s => s.service_id !== serviceId));
+  };
+
+  const updateQuantity = (serviceId: number, newQty: number) => {
+    if (newQty <= 0) {
+      removeService(serviceId);
+      return;
+    }
+    setSelectedServices(prev =>
+      prev.map(s =>
+        s.service_id === serviceId ? { ...s, quantity: newQty } : s
+      )
+    );
+  };
+
+  const calculateQuote = async () => {
+    if (selectedServices.length === 0) {
+      setTotal(0);
+      return;
+    }
+    const token = await getToken();
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'X-Tenant': tenant,
+    };
+    const items = selectedServices.map(s => ({
+      service_id: s.service_id,
+      quantity: s.quantity,
+    }));
+    const payload = {
+      items,
+      furnished_status: furnishedStatus || undefined,
+      biohazard: biohazard || undefined,
+      discount_code: discountCode || undefined,
+    };
+    setQuoteLoading(true);
+    try {
+      const res = await axios.post(`${apiBase}/api/services/calculate_quote/`, payload, { headers });
+      setTotal(res.data.total || 0);
+    } catch (err) {
+      console.error('Quote calculation failed:', err);
+      alert('Failed to calculate total.');
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
+  // Recalculate when dependencies change
+  useEffect(() => {
+    calculateQuote();
+  }, [selectedServices, furnishedStatus, biohazard, discountCode]);
+
+  const handleSubmit = async () => {
+    if (!customerName || !customerEmail) {
+      alert('Name and email are required.');
+      return;
+    }
+    const quantities: Record<string, number> = {};
+    selectedServices.forEach(s => {
+      quantities[s.service_id] = s.quantity;
+    });
+
+    const selectedAreas = selectedServices.map(s => s.name);
+    selectedServices.forEach(s => {
+      selectedAreas.push(s.service_id);
+    });
+
+    const payload = {
+      customer_name: customerName,
+      customer_email: customerEmail,
+      phone: phone || '',
+      payment_method: paymentMethod,
+      status,
+      furnished_status: furnishedStatus,
+      parking,
+      biohazard,
+      total,
+      quantities,
+      selected_areas: selectedAreas,
+      property_details: {},
+      selected_datetime: {},
+    };
+    await onSave(payload);
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700"
-                onClick={() => onSort('id')}
-              >
-                Booking # {renderSortIndicator('id')}
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700"
-                onClick={() => onSort('customer_name')}
-              >
-                Customer {renderSortIndicator('customer_name')}
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700"
-                onClick={() => onSort('total')}
-              >
-                Total {renderSortIndicator('total')}
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700"
-                onClick={() => onSort('status')}
-              >
-                Status {renderSortIndicator('status')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Loading bookings...</td>
-              </tr>
-            ) : bookings.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No bookings found.</td>
-              </tr>
-            ) : (
-              bookings.map((booking) => {
-                const invoiceId = bookingInvoiceMap[booking.id];
-                const isLoading = bookingActionLoading[booking.id] || false;
-                return (
-                  <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{booking.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{booking.customer_name}</div>
-                      <div className="text-sm text-gray-500">{booking.customer_email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                      £{Number(booking.total).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          booking.status === 'confirmed'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {invoiceId ? (
-                          <>
-                            <span className="text-xs text-gray-500 mr-1">Inv #{invoiceId}</span>
-                            <button
-                              onClick={() => onDownloadPdf(invoiceId)}
-                              className="text-blue-600 hover:text-blue-900 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded"
-                              title="Download PDF"
-                            >
-                              <Download size={16} />
-                            </button>
-                            <button
-                              onClick={() => onEmailInvoice(invoiceId)}
-                              className="text-purple-600 hover:text-purple-900 flex items-center gap-1 bg-purple-50 px-3 py-1 rounded"
-                              title="Email Invoice"
-                            >
-                              <Mail size={16} />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => onCreateInvoice(booking)}
-                            disabled={isLoading}
-                            className="text-green-600 hover:text-green-900 flex items-center gap-1 bg-green-50 px-3 py-1 rounded disabled:opacity-50"
-                          >
-                            {isLoading ? 'Loading...' : <FileText size={16} />}
-                            {isLoading ? 'Loading...' : 'Create Invoice'}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => onEdit(booking)}
-                          className="text-amber-600 hover:text-amber-900 flex items-center gap-1 bg-amber-50 px-3 py-1 rounded"
-                          title="Edit Booking"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => onDelete(booking.id)}
-                          className="text-red-600 hover:text-red-900 flex items-center gap-1 bg-red-50 px-3 py-1 rounded"
-                          title="Delete Booking"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-      {/* Pagination controls */}
-      <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-700">Show</span>
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="border rounded-lg px-2 py-1 text-sm"
-          >
-            {[5, 10, 20, 50].map((size) => (
-              <option key={size} value={size}>{size}</option>
-            ))}
-          </select>
-          <span className="text-sm text-gray-700">entries</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">{initialData ? 'Edit Booking' : 'New Booking'}</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X size={24} />
+          </button>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onPageChange(Math.max(page - 1, 1))}
-            disabled={page === 1}
-            className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-gray-700">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => onPageChange(Math.min(page + 1, totalPages))}
-            disabled={page === totalPages}
-            className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50"
-          >
-            Next
-          </button>
+
+        <div className="space-y-4">
+          {/* Basic Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Customer Name *</label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email *</label>
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Phone</label>
+              <input
+                type="text"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="paid">Paid</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Fees */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Furnished Status</label>
+              <select
+                value={furnishedStatus}
+                onChange={(e) => setFurnishedStatus(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="">Unfurnished</option>
+                <option value="furnished">Furnished</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Parking</label>
+              <select
+                value={parking}
+                onChange={(e) => setParking(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="">None</option>
+                <option value="on-street-paid">On‑street Paid</option>
+                <option value="on-street-free">On‑street Free</option>
+                <option value="off-street">Off‑street</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Biohazard</label>
+              <select
+                value={biohazard}
+                onChange={(e) => setBiohazard(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="">None</option>
+                <option value="yes-human">Human</option>
+                <option value="yes-animal">Animal</option>
+                <option value="yes-blood">Blood</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Services */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Services</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {services.map((svc) => (
+                <button
+                  key={svc.id}
+                  type="button"
+                  onClick={() => addService(svc)}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                >
+                  <Plus size={14} />
+                  {svc.name}
+                </button>
+              ))}
+            </div>
+            {selectedServices.length > 0 && (
+              <div className="space-y-2 border rounded-lg p-3">
+                {selectedServices.map((item) => (
+                  <div key={item.service_id} className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{item.name}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.service_id, item.quantity - 1)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.service_id, item.quantity + 1)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <Plus size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeService(item.service_id)}
+                        className="text-red-500 hover:text-red-700 ml-2"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Discount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Discount Code</label>
+            <input
+              type="text"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+            />
+          </div>
+
+          {/* Total */}
+          <div className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
+            <span className="text-lg font-semibold">Total</span>
+            <span className="text-2xl font-bold text-blue-600">
+              £{total.toFixed(2)}
+              {quoteLoading && <span className="ml-2 text-sm text-gray-500">(calculating...)</span>}
+            </span>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={externalLoading}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+            >
+              {externalLoading ? 'Saving...' : (initialData ? 'Update' : 'Create')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

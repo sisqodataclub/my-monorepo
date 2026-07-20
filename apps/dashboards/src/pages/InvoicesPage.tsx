@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, type Variants } from 'framer-motion';
-import { Plus, Download, Edit, Mail, X, ChevronDown, ChevronRight } from 'lucide-react'; // ✅ removed FileText
+import { Plus, Download, Edit, Mail, X, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Service, Invoice } from '../api/invoiceApi';
 import {
   fetchServices,
@@ -14,11 +14,7 @@ import {
 } from '../api/invoiceApi';
 import axios from 'axios';
 import BookingsTable from '../components/BookingsTable';
-
-// ... rest of the file is identical to the previous fully corrected version ...
-
-
-
+import BookingFormModal from '../components/BookingFormModal';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://core.franciscodes.com';
 const TENANT = 'DDEEP';
@@ -96,14 +92,6 @@ export default function InvoicesPage() {
   // ---- Booking CRUD modal state ----
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState<any | null>(null);
-  const [bookingForm, setBookingForm] = useState({
-    customer_name: '',
-    customer_email: '',
-    phone: '',
-    total: '',
-    status: 'pending',
-    payment_method: 'cash',
-  });
   const [bookingModalLoading, setBookingModalLoading] = useState(false);
 
   // ---- Booking Invoice modal state ----
@@ -161,25 +149,14 @@ export default function InvoicesPage() {
   const createBooking = async (data: any) => {
     const token = await getToken();
     const headers = await getHeaders(token);
-    const payload = {
-      ...data,
-      total: parseFloat(data.total) || 0,
-      selected_areas: [],
-      quantities: {},
-      carpets: {},
-      appliances: {},
-      property_details: {},
-      selected_datetime: {},
-    };
-    const res = await axios.post(`${API_BASE}/api/cleaning-bookings/`, payload, { headers });
+    const res = await axios.post(`${API_BASE}/api/cleaning-bookings/`, data, { headers });
     return res.data;
   };
 
   const updateBooking = async (id: number, data: any) => {
     const token = await getToken();
     const headers = await getHeaders(token);
-    const payload = { ...data, total: parseFloat(data.total) || 0 };
-    const res = await axios.patch(`${API_BASE}/api/cleaning-bookings/${id}/`, payload, { headers });
+    const res = await axios.patch(`${API_BASE}/api/cleaning-bookings/${id}/`, data, { headers });
     return res.data;
   };
 
@@ -191,14 +168,6 @@ export default function InvoicesPage() {
 
   const handleEditBooking = (booking: any) => {
     setEditingBooking(booking);
-    setBookingForm({
-      customer_name: booking.customer_name || '',
-      customer_email: booking.customer_email || '',
-      phone: booking.phone || '',
-      total: booking.total || '',
-      status: booking.status || 'pending',
-      payment_method: booking.payment_method || 'cash',
-    });
     setShowBookingModal(true);
   };
 
@@ -214,18 +183,16 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleBookingModalSubmit = async () => {
+  const handleBookingModalSubmit = async (payload: any) => {
     setBookingModalLoading(true);
     try {
-      const data = { ...bookingForm };
       if (editingBooking) {
-        await updateBooking(editingBooking.id, data);
+        await updateBooking(editingBooking.id, payload);
       } else {
-        await createBooking(data);
+        await createBooking(payload);
       }
       setShowBookingModal(false);
       setEditingBooking(null);
-      setBookingForm({ customer_name: '', customer_email: '', phone: '', total: '', status: 'pending', payment_method: 'cash' });
       await loadData();
       alert(editingBooking ? 'Booking updated.' : 'Booking created.');
     } catch (err) {
@@ -239,10 +206,9 @@ export default function InvoicesPage() {
   const handleBookingModalClose = () => {
     setShowBookingModal(false);
     setEditingBooking(null);
-    setBookingForm({ customer_name: '', customer_email: '', phone: '', total: '', status: 'pending', payment_method: 'cash' });
   };
 
-  // ==================== INVOICE FORM (unchanged) ====================
+  // ==================== INVOICE FORM ====================
   const resetForm = () => {
     setFormData({
       title: '',
@@ -690,6 +656,8 @@ export default function InvoicesPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+            {/* ... same as before, unchanged ... */}
+            {/* Basic Details */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Basic Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -769,6 +737,7 @@ export default function InvoicesPage() {
               </div>
             </div>
 
+            {/* Design & Formatting */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Design & Formatting</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -801,6 +770,7 @@ export default function InvoicesPage() {
               </div>
             </div>
 
+            {/* Line Items */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Line Items</h3>
               <div className="space-y-3 bg-gray-50 p-4 rounded-lg border">
@@ -900,6 +870,7 @@ export default function InvoicesPage() {
               </div>
             </div>
 
+            {/* Additional Notes */}
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Additional Notes</h3>
               <textarea
@@ -938,7 +909,6 @@ export default function InvoicesPage() {
           <button
             onClick={() => {
               setEditingBooking(null);
-              setBookingForm({ customer_name: '', customer_email: '', phone: '', total: '', status: 'pending', payment_method: 'cash' });
               setShowBookingModal(true);
             }}
             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1"
@@ -970,90 +940,17 @@ export default function InvoicesPage() {
         />
       </div>
 
-      {/* ---- Booking CRUD Modal ---- */}
-      {showBookingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">{editingBooking ? 'Edit Booking' : 'New Booking'}</h2>
-              <button onClick={handleBookingModalClose} className="text-gray-500 hover:text-gray-700">
-                <X size={24} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
-                <input
-                  type="text"
-                  value={bookingForm.customer_name}
-                  onChange={(e) => setBookingForm({ ...bookingForm, customer_name: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={bookingForm.customer_email}
-                  onChange={(e) => setBookingForm({ ...bookingForm, customer_email: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input
-                  type="text"
-                  value={bookingForm.phone}
-                  onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total (£)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={bookingForm.total}
-                  onChange={(e) => setBookingForm({ ...bookingForm, total: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={bookingForm.status}
-                  onChange={(e) => setBookingForm({ ...bookingForm, status: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="paid">Paid</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                <select
-                  value={bookingForm.payment_method}
-                  onChange={(e) => setBookingForm({ ...bookingForm, payment_method: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                >
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                </select>
-              </div>
-              <button
-                onClick={handleBookingModalSubmit}
-                disabled={bookingModalLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg disabled:opacity-50"
-              >
-                {bookingModalLoading ? 'Saving...' : (editingBooking ? 'Update' : 'Create')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ---- Booking Form Modal (NEW) ---- */}
+      <BookingFormModal
+        isOpen={showBookingModal}
+        onClose={handleBookingModalClose}
+        onSave={handleBookingModalSubmit}
+        initialData={editingBooking}
+        services={services}
+        loading={bookingModalLoading}
+        apiBase={API_BASE}
+        tenant={TENANT}
+      />
 
       {/* ---- Booking Invoice Modal ---- */}
       {showBookingInvoiceModal && selectedBooking && (
@@ -1267,7 +1164,7 @@ export default function InvoicesPage() {
               </tbody>
             </table>
           </div>
-          {/* Pagination controls for invoices */}
+          {/* Pagination controls */}
           <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700">Show</span>
