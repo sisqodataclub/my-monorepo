@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef } from "react";
@@ -15,7 +15,7 @@ import FixedCTA2 from "../components/mobilenav";
 import DeepCleaningContent from "../components/landing/DeepCleaningContent";
 import { HomeFAQ } from "../components/HomeFAQ";
 import type { FAQItem } from "../components/HomeFAQ";
-import { usePageSEO } from "../hooks/usePageSEO";
+// ❌ REMOVED: import { usePageSEO } from "../hooks/usePageSEO";
 
 // FAQ data
 const faqData: FAQItem[] = [
@@ -105,26 +105,11 @@ export default function DeepClean() {
     console.log(`Conversion tracked: ${type}`);
   };
 
-  // SEO
-  usePageSEO({
-    title: "Deep Cleaning Services in Manchester | D Deep Cleaning Services",
-    description:
-      "Professional deep cleaning services in Manchester & Lancashire. Fully insured cleaners for homes and businesses. Free quotes available.",
-    keywords:
-      "deep cleaning manchester, professional deep cleaners near me, house deep cleaning services, commercial deep cleaning, end of tenancy cleaning, post construction cleaning",
-    schema: {
-      "@context": "https://schema.org",
-      "@type": "CleaningService",
-      name: "D Deep Cleaning Services",
-      areaServed: ["Manchester", "Lancashire"],
-      telephone: "+441234567890",
-      priceRange: "££",
-    },
-  });
+  // ❌ REMOVED: usePageSEO({ ... });
+  // This page is for advertising only and is not indexed by Google
 
   return (
     <main className="snap-y snap-mandatory scroll-smooth">
-
 
       {/* ================= DeepCleaningContent ================= */}
       <StoryCard>
@@ -152,8 +137,6 @@ export default function DeepClean() {
       <StoryCard>
         <HomeReviews />
       </StoryCard>
-
-      
 
       {/* ================= CTA Section ================= */}
       <StoryCard>
