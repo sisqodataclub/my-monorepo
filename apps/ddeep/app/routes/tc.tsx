@@ -1,15 +1,17 @@
-﻿"use client";
+"use client";
 
 import { PageTitle } from "../components/PageTitle";
 import { useEffect, useState } from "react";
-import { 
-  FaHome, FaMoneyBill, FaCalendarAlt, FaUserCheck, 
-  FaShieldAlt, FaSmile, FaLock, FaEdit, FaGavel, FaChevronUp 
+import {
+  FaHome, FaMoneyBill, FaCalendarAlt, FaUserCheck,
+  FaShieldAlt, FaSmile, FaLock, FaEdit, FaGavel, FaChevronUp
 } from "react-icons/fa";
 
 export const meta = () => [
   { title: "Terms & Conditions | D Deep Cleaning Services Manchester" },
-  { name: "description", content: "Our service terms, booking policies, and satisfaction guarantee for residential and commercial cleaning." }
+  { name: "description", content: "Our service terms, booking policies, and satisfaction guarantee for residential and commercial cleaning." },
+  // ✅ ADD THIS LINE – tells Google not to index this page
+  { name: "robots", content: "noindex, follow" },
 ];
 
 export default function Terms() {
@@ -30,7 +32,7 @@ export default function Terms() {
   const scrollToSection = (id: string) => {
     const section = document.getElementById(id);
     if (section) {
-      const offset = 100; // Account for sticky headers
+      const offset = 100;
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = section.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;
@@ -99,7 +101,7 @@ export default function Terms() {
           {/* CONTENT AREA */}
           <div className="lg:w-3/4">
             <div className="prose prose-slate prose-lg max-w-none">
-              
+
               {/* Importance Notice */}
               <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-2xl mb-12">
                 <p className="text-green-900 font-bold m-0 italic">
@@ -181,7 +183,7 @@ export default function Terms() {
                   >
                     <FaChevronUp /> Return to top
                   </button>
-                  
+
                   <div className="h-px bg-slate-100 mt-12 w-full" />
                 </div>
               ))}

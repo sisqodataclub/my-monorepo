@@ -2,10 +2,11 @@
 
 User-agent: *
 
-# Block non-public internal routes (future-proof)
+# Block non-public internal routes
 Disallow: /dashboard
 Disallow: /admin
 Disallow: /form
+Disallow: /api/
 
 # Sitemap
 Sitemap: https://www.ddeepcleaningservices.com/sitemap.xml
