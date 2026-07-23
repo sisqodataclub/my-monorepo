@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { RefreshCw, Zap } from 'lucide-react';   // ✅ Download removed
+import { RefreshCw, Zap, Globe, Users, Clock, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 
@@ -8,6 +8,7 @@ import axios from 'axios';
 import KPICard, { type KPI } from '../components/KPICard';
 import TrafficLineChart from '../components/TrafficLineChart';
 import DeviceChart from '../components/DeviceChart';
+import TopPagesTable from '../components/TopPagesTable'; // optional – we'll add later
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
@@ -16,6 +17,7 @@ export default function OverviewPage() {
   const [kpis, setKpis] = useState<KPI[]>([]);
   const [trafficChartData, setTrafficChartData] = useState([]);
   const [deviceChartData, setDeviceChartData] = useState([]);
+  const [topPages, setTopPages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Time controls
@@ -35,7 +37,7 @@ export default function OverviewPage() {
       try {
         const token = await getToken();
         const queryParams = new URLSearchParams({
-          chart_ids: '1,2',
+          // We no longer need chart_ids – just fetch Umami KPIs
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
@@ -48,29 +50,18 @@ export default function OverviewPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const supersetCharts = response.data.superset_charts || {};
+        // 1. Umami KPIs
         const umamiKpis = response.data.kpis || [];
+        setKpis(umamiKpis);
 
-        const chart1Data = supersetCharts['1'];
-        const totalBookings = chart1Data && chart1Data.length > 0 ? chart1Data[0].count : 'N/A';
-
-        const chart2Data = supersetCharts['2'];
-        const totalsConfirmed = chart2Data && chart2Data.length > 0 ? chart2Data[0].count : 'N/A';
-
-        const newKpis: KPI[] = [
-          { id: '1', title: 'Total Bookings', value: totalBookings, change: 0, prefix: '' },
-          { id: '2', title: 'Totals Confirmed', value: totalsConfirmed, change: 0, prefix: '' },
-        ];
-
-        if (umamiKpis.length >= 2) {
-          newKpis.push(umamiKpis[0]);
-          newKpis.push(umamiKpis[1]);
-        }
-
-        setKpis(newKpis);
-
+        // 2. Traffic chart (visitors over time)
         if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
+
+        // 3. Device breakdown
         if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
+
+        // 4. Top pages (if available)
+        if (response.data.top_pages) setTopPages(response.data.top_pages);
 
       } catch (error) {
         console.error('Failed to fetch Umami data:', error);
@@ -125,10 +116,12 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* KPIs */}
+        {/* KPIs – all from Umami */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {loading ? (
             [1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />)
+          ) : kpis.length === 0 ? (
+            <div className="col-span-4 text-center text-slate-500 py-8">No Umami data available.</div>
           ) : (
             kpis.map((kpi, idx) => <KPICard key={kpi.id} kpi={kpi} index={idx} />)
           )}
@@ -179,7 +172,7 @@ export default function OverviewPage() {
           />
         </motion.div>
 
-        {/* Device Breakdown */}
+        {/* Device Breakdown + Top Pages */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
@@ -189,8 +182,21 @@ export default function OverviewPage() {
           </div>
 
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
-            <h2 className="text-lg font-bold text-slate-800 mb-6">Top Pages (coming soon)</h2>
-            <p className="text-sm text-slate-500">We'll add more Umami metrics here later.</p>
+            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+              <Globe className="w-5 h-5 mr-2 text-blue-500" /> Top Pages
+            </h2>
+            {topPages.length === 0 ? (
+              <p className="text-sm text-slate-500">No page data available.</p>
+            ) : (
+              <div className="space-y-2">
+                {topPages.slice(0, 5).map((page: any, idx: number) => (
+                  <div key={idx} className="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span className="text-sm text-slate-700 truncate max-w-[70%]">{page.url}</span>
+                    <span className="text-sm font-semibold text-slate-900">{page.visits}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
       </motion.div>
