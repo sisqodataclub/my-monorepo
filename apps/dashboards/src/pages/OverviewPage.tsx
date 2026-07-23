@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { RefreshCw, Zap, Globe } from 'lucide-react';   // ✅ removed unused imports
+import { RefreshCw, Zap, Globe } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 
-// Components
 import KPICard, { type KPI } from '../components/KPICard';
 import TrafficLineChart from '../components/TrafficLineChart';
 import DeviceChart from '../components/DeviceChart';
@@ -48,13 +47,15 @@ export default function OverviewPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Umami KPIs
+        // KPIs – now includes bounce rate and avg session if available
         const umamiKpis = response.data.kpis || [];
         setKpis(umamiKpis);
 
+        // Traffic chart, device chart, top pages
         if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
         if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
         if (response.data.top_pages) setTopPages(response.data.top_pages);
+        else setTopPages([]);
 
       } catch (error) {
         console.error('Failed to fetch Umami data:', error);
@@ -139,17 +140,11 @@ export default function OverviewPage() {
               else if (preset === 'Custom') {
                 newDays = (new Date(customEndDate).getTime() - new Date(customStartDate).getTime()) / (1000 * 3600 * 24);
               }
-              if (preset === '24h') {
-                setGranularity('hour');
-              } else if (preset === 'This Year' && granularity === 'hour') {
-                setGranularity('month');
-              } else if (granularity === 'hour' && newDays > 2) {
-                setGranularity('day');
-              } else if (granularity === 'week' && newDays <= 14) {
-                setGranularity('day');
-              } else if (granularity === 'month' && newDays < 30) {
-                setGranularity('day');
-              }
+              if (preset === '24h') setGranularity('hour');
+              else if (preset === 'This Year' && granularity === 'hour') setGranularity('month');
+              else if (granularity === 'hour' && newDays > 2) setGranularity('day');
+              else if (granularity === 'week' && newDays <= 14) setGranularity('day');
+              else if (granularity === 'month' && newDays < 30) setGranularity('day');
             }}
             onGranularityChange={setGranularity}
             onCompareToggle={setIsComparing}
@@ -179,7 +174,7 @@ export default function OverviewPage() {
               <Globe className="w-5 h-5 mr-2 text-blue-500" /> Top Pages
             </h2>
             {topPages.length === 0 ? (
-              <p className="text-sm text-slate-500">No page data available.</p>
+              <p className="text-sm text-slate-500">No page data available for the selected period.</p>
             ) : (
               <div className="space-y-2">
                 {topPages.slice(0, 5).map((page: any, idx: number) => (
