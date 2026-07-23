@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { RefreshCw, Zap, Globe, Users, Clock, ArrowUpRight } from 'lucide-react';
+import { RefreshCw, Zap, Globe } from 'lucide-react';   // ✅ removed unused imports
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 
@@ -8,7 +8,6 @@ import axios from 'axios';
 import KPICard, { type KPI } from '../components/KPICard';
 import TrafficLineChart from '../components/TrafficLineChart';
 import DeviceChart from '../components/DeviceChart';
-import TopPagesTable from '../components/TopPagesTable'; // optional – we'll add later
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
@@ -37,7 +36,6 @@ export default function OverviewPage() {
       try {
         const token = await getToken();
         const queryParams = new URLSearchParams({
-          // We no longer need chart_ids – just fetch Umami KPIs
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
@@ -50,17 +48,12 @@ export default function OverviewPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // 1. Umami KPIs
+        // Umami KPIs
         const umamiKpis = response.data.kpis || [];
         setKpis(umamiKpis);
 
-        // 2. Traffic chart (visitors over time)
         if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
-
-        // 3. Device breakdown
         if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
-
-        // 4. Top pages (if available)
         if (response.data.top_pages) setTopPages(response.data.top_pages);
 
       } catch (error) {
@@ -116,7 +109,7 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* KPIs – all from Umami */}
+        {/* KPIs */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {loading ? (
             [1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />)
