@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { RefreshCw, Download, Zap } from 'lucide-react';
+import { RefreshCw, Zap } from 'lucide-react';   // ✅ Download removed
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 
@@ -35,7 +35,7 @@ export default function OverviewPage() {
       try {
         const token = await getToken();
         const queryParams = new URLSearchParams({
-          chart_ids: '1,2',         // We still fetch bookings/confirmed from Superset, but we can keep them
+          chart_ids: '1,2',
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
@@ -48,7 +48,6 @@ export default function OverviewPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // 1. KPIs – combine bookings from Superset with Umami KPIs
         const supersetCharts = response.data.superset_charts || {};
         const umamiKpis = response.data.kpis || [];
 
@@ -58,24 +57,19 @@ export default function OverviewPage() {
         const chart2Data = supersetCharts['2'];
         const totalsConfirmed = chart2Data && chart2Data.length > 0 ? chart2Data[0].count : 'N/A';
 
-        // Build the KPI list – first two are from Superset, next two are Umami
         const newKpis: KPI[] = [
           { id: '1', title: 'Total Bookings', value: totalBookings, change: 0, prefix: '' },
           { id: '2', title: 'Totals Confirmed', value: totalsConfirmed, change: 0, prefix: '' },
         ];
 
-        // Add Umami KPIs (page views, unique visitors, etc.)
         if (umamiKpis.length >= 2) {
-          newKpis.push(umamiKpis[0]); // e.g., Page Views
-          newKpis.push(umamiKpis[1]); // e.g., Unique Visitors
+          newKpis.push(umamiKpis[0]);
+          newKpis.push(umamiKpis[1]);
         }
 
         setKpis(newKpis);
 
-        // 2. Traffic line chart (Umami)
         if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
-
-        // 3. Device breakdown (Umami)
         if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
 
       } catch (error) {
@@ -152,7 +146,6 @@ export default function OverviewPage() {
             customEndDate={customEndDate}
             onPresetChange={(preset) => {
               setTimePreset(preset);
-              // Auto‑adjust granularity based on range
               let newDays = 7;
               if (preset === '24h') newDays = 1;
               else if (preset === '30D') newDays = 30;
@@ -186,7 +179,7 @@ export default function OverviewPage() {
           />
         </motion.div>
 
-        {/* Device Breakdown (Umami) */}
+        {/* Device Breakdown */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
@@ -195,7 +188,6 @@ export default function OverviewPage() {
             <DeviceChart data={deviceChartData} />
           </div>
 
-          {/* Optional: Add a "Top Pages" or "Referrers" card here if your backend provides that data */}
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             <h2 className="text-lg font-bold text-slate-800 mb-6">Top Pages (coming soon)</h2>
             <p className="text-sm text-slate-500">We'll add more Umami metrics here later.</p>
