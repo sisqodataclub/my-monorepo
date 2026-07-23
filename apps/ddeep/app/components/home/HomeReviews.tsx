@@ -5,17 +5,17 @@ import { FaStar, FaGoogle, FaQuoteLeft, FaCheckCircle, FaStarHalfAlt } from "rea
 
 // 1. STATS DATA
 const platformStats = [
-  { 
-    name: "Google", 
-    rating: 4.9, 
-    icon: FaGoogle, 
+  {
+    name: "Google",
+    rating: 4.9,
+    icon: FaGoogle,
     iconColor: "text-blue-500",
     url: "https://www.google.co.uk/search?ibp=gwp;0,7&q=D+Deep+cleaning+Services+ltd&ludocid=2179265534533258076&lsig=AB86z5WxQdL0CPBNvr0iyBeYQFV4&gfe_rd=mr&pli=1#gfe_rd=mr&lpg=cid:CgIgAQ%3D%3D&pli=1"
   },
-  { 
-    name: "Trustpilot", 
-    rating: 4.8, 
-    icon: FaStar, 
+  {
+    name: "Trustpilot",
+    rating: 4.8,
+    icon: FaStar,
     iconColor: "text-green-500",
     url: "" // <-- Paste your Trustpilot link here between the quotes when you have it!
   }
@@ -33,32 +33,16 @@ const reviews = [
 const marqueeReviews = [...reviews, ...reviews, ...reviews];
 
 export default function HomeReviewsCarousel() {
-  
-  const schemaData = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "D DEEP Cleaning Services",
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "215",
-      "bestRating": "5",
-      "worstRating": "1"
-    },
-    "review": reviews.map(r => ({
-      "@type": "Review",
-      "author": { "@type": "Person", "name": r.name },
-      "reviewBody": r.text,
-      "reviewRating": { "@type": "Rating", "ratingValue": r.rating }
-    }))
-  };
+
+  // ✅ REMOVED: The duplicate schema with aggregateRating
+  // The main LocalBusiness schema with aggregateRating is now only in _index.tsx
+  // This component ONLY renders the visual reviews.
 
   return (
     <section id="reviews" className="relative w-full h-[100dvh] flex flex-col justify-center overflow-hidden bg-white snap-start pt-24 pb-20 lg:py-0">
-      
-      <script type="application/ld+json">
-        {JSON.stringify(schemaData)}
-      </script>
+
+      {/* ✅ REMOVED: <script type="application/ld+json"> block */}
+      {/* The schema is now only defined once in app/routes/_index.tsx */}
 
       {/* ===== BACKGROUND ===== */}
       <div className="absolute inset-0 bg-gradient-to-tr from-green-50/50 via-white to-teal-50/50 pointer-events-none" aria-hidden="true" />
@@ -66,11 +50,11 @@ export default function HomeReviewsCarousel() {
 
       {/* ===== MAIN CONTENT ===== */}
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-evenly lg:justify-between h-full px-4 lg:px-8 gap-8 lg:gap-12">
-        
+
         {/* 1. LEFT SIDE: HEADER & STATS */}
         <div className="flex flex-col items-center lg:items-start gap-6 lg:gap-8 shrink-0 lg:w-5/12">
-          
-          <motion.div 
+
+          <motion.div
              initial={{ opacity: 0, x: -20 }}
              whileInView={{ opacity: 1, x: 0 }}
              viewport={{ once: true }}
@@ -88,7 +72,7 @@ export default function HomeReviewsCarousel() {
           </motion.div>
 
           {/* Stats Cards */}
-          <motion.div 
+          <motion.div
             className="flex flex-wrap justify-center lg:justify-start gap-3"
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -99,8 +83,8 @@ export default function HomeReviewsCarousel() {
               const CardWrapper = isLink ? "a" : "div";
 
               return (
-                 <CardWrapper 
-                   key={stat.name} 
+                 <CardWrapper
+                   key={stat.name}
                    {...(isLink ? { href: stat.url, target: "_blank", rel: "noopener noreferrer" } : {})}
                    className={`flex items-center gap-2 bg-white/80 backdrop-blur-md border border-green-100 px-3 py-1.5 md:px-5 md:py-3 rounded-lg md:rounded-xl shadow-sm min-w-[140px] md:min-w-[180px] ${isLink ? 'hover:scale-105 hover:bg-green-50 hover:shadow-md transition-all cursor-pointer' : ''}`}
                  >
@@ -123,13 +107,13 @@ export default function HomeReviewsCarousel() {
 
         {/* 2. RIGHT SIDE: MARQUEE SECTION */}
         <div className="relative w-full lg:w-7/12 flex-grow lg:flex-grow-0 flex flex-col justify-center overflow-hidden h-[50vh] lg:h-auto" role="region" aria-label="Customer testimonials">
-          
+
           <div className="absolute left-0 top-0 bottom-0 w-12 md:w-32 bg-gradient-to-r from-white to-transparent z-20 pointer-events-none" aria-hidden="true" />
           <div className="absolute right-0 top-0 bottom-0 w-12 md:w-32 bg-gradient-to-l from-white to-transparent z-20 pointer-events-none" aria-hidden="true" />
 
           {/* ROW 1 */}
           <div className="flex mb-0 md:mb-6">
-            <motion.div 
+            <motion.div
               className="flex gap-4 px-4"
               animate={{ x: ["0%", "-50%"] }}
               transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
@@ -142,9 +126,9 @@ export default function HomeReviewsCarousel() {
 
           {/* ROW 2 */}
           <div className="hidden md:flex">
-            <motion.div 
+            <motion.div
               className="flex gap-4 px-4"
-              animate={{ x: ["-50%", "0%"] }} 
+              animate={{ x: ["-50%", "0%"] }}
               transition={{ duration: 70, repeat: Infinity, ease: "linear" }}
             >
                {marqueeReviews.map((review, i) => (
@@ -163,7 +147,7 @@ export default function HomeReviewsCarousel() {
 function ReviewCard({ review }: { review: any }) {
   return (
     <div className="w-[260px] sm:w-[350px] shrink-0 p-4 md:p-6 rounded-xl md:rounded-[2rem] bg-white border border-green-50 shadow-sm transition-all cursor-default flex flex-col h-full justify-between">
-      
+
       <div className="flex justify-between items-start mb-2 md:mb-4">
         <div className="flex items-center gap-0.5 md:gap-1">
           {[...Array(5)].map((_, i) => (
