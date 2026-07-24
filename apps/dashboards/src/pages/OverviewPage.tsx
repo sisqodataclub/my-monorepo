@@ -32,7 +32,6 @@ export default function OverviewPage() {
   const [customStartDate, setCustomStartDate] = useState(defaultStart);
   const [customEndDate, setCustomEndDate] = useState(defaultEnd);
 
-  // Derive start/end for API calls
   const getDateRange = () => {
     let start = new Date();
     let end = new Date();
@@ -73,7 +72,7 @@ export default function OverviewPage() {
         if (umamiRes.data.device_chart) setDeviceChartData(umamiRes.data.device_chart);
         if (umamiRes.data.top_pages) setTopPages(umamiRes.data.top_pages);
 
-        // 2. Booking status counts from analytics endpoint (with date filter)
+        // 2. Booking status counts from analytics endpoint
         const statusParams = new URLSearchParams({
           start_date: start.toISOString().split('T')[0],
           end_date: end.toISOString().split('T')[0],
@@ -85,9 +84,18 @@ export default function OverviewPage() {
         const confirmedCount = bookings.filter((b: any) => b.status === 'confirmed').length;
         const cancelledCount = bookings.filter((b: any) => b.status === 'cancelled').length;
 
-        // Build combined KPI list
+        // Extract Umami KPIs
+        const pageViews = umamiKpis.find((k: any) => k.id === 'umami_1')?.value || 0;
+        const uniqueVisitors = umamiKpis.find((k: any) => k.id === 'umami_2')?.value || 0;
+        const bounceRate = umamiKpis.find((k: any) => k.id === 'umami_3')?.value || '0%';
+        const avgSession = umamiKpis.find((k: any) => k.id === 'umami_4')?.value || '0s';
+
+        // Build combined KPI list – all 7 metrics
         const combinedKpis: KPI[] = [
-          { id: 'visitors', title: `Unique Visitors (${timePreset})`, value: umamiKpis.find((k: any) => k.id === 'umami_2')?.value || 0, change: 0 },
+          { id: 'page_views', title: 'Page Views', value: pageViews, change: 0 },
+          { id: 'unique_visitors', title: 'Unique Visitors', value: uniqueVisitors, change: 0 },
+          { id: 'bounce_rate', title: 'Bounce Rate', value: bounceRate, change: 0 },
+          { id: 'avg_session', title: 'Avg. Session', value: avgSession, change: 0 },
           { id: 'pending', title: 'Pending Bookings', value: pendingCount, change: 0 },
           { id: 'confirmed', title: 'Confirmed Bookings', value: confirmedCount, change: 0 },
           { id: 'cancelled', title: 'Cancelled Bookings', value: cancelledCount, change: 0 },
@@ -166,7 +174,7 @@ export default function OverviewPage() {
           />
         </motion.div>
 
-        {/* KPI Grid */}
+        {/* KPI Grid – now shows all 7 KPIs */}
         <motion.div variants={itemVariants}>
           <KPIGrid kpis={kpis} loading={loading} />
         </motion.div>

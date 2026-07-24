@@ -1,5 +1,4 @@
 // src/components/overview/DateFilterBar.tsx
-
 interface DateFilterBarProps {
   preset: string;
   onPresetChange: (preset: string) => void;
