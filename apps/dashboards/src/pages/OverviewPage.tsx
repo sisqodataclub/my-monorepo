@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+// src/pages/OverviewPage.tsx
+import { useState, useEffect, useMemo } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { RefreshCw, Zap, Globe } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
 
-import KPICard, { type KPI } from '../components/KPICard';
+import KPIGrid from '../components/overview/KPIGrid';
+import DateFilterBar from '../components/overview/DateFilterBar';
 import TrafficLineChart from '../components/TrafficLineChart';
 import DeviceChart from '../components/DeviceChart';
+import { type KPI } from '../components/KPICard';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
@@ -29,42 +32,77 @@ export default function OverviewPage() {
   const [customStartDate, setCustomStartDate] = useState(defaultStart);
   const [customEndDate, setCustomEndDate] = useState(defaultEnd);
 
+  // Derive start/end for API calls
+  const getDateRange = () => {
+    let start = new Date();
+    let end = new Date();
+    if (timePreset === 'Custom') {
+      start = new Date(customStartDate);
+      end = new Date(customEndDate);
+    } else {
+      const now = new Date();
+      if (timePreset === '24h') start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      else if (timePreset === '7D') start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      else if (timePreset === '30D') start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      else if (timePreset === 'This Year') start = new Date(now.getFullYear(), 0, 1);
+      end = now;
+    }
+    return { start, end };
+  };
+
   useEffect(() => {
-    const fetchUmamiData = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
         const token = await getToken();
+        const { start, end } = getDateRange();
+        const headers = { Authorization: `Bearer ${token}`, 'X-Tenant': 'DDEEP' };
+
+        // 1. Umami KPIs + traffic + device + top pages
         const queryParams = new URLSearchParams({
           preset: timePreset,
           unit: granularity,
           compare: isComparing.toString(),
           compareType: compareType,
-          startDate: customStartDate,
-          endDate: customEndDate,
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0],
         });
+        const umamiRes = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${queryParams}`, { headers });
+        const umamiKpis = umamiRes.data.kpis || [];
+        if (umamiRes.data.traffic_chart) setTrafficChartData(umamiRes.data.traffic_chart);
+        if (umamiRes.data.device_chart) setDeviceChartData(umamiRes.data.device_chart);
+        if (umamiRes.data.top_pages) setTopPages(umamiRes.data.top_pages);
 
-        const response = await axios.get(`${API_BASE}/api/v1/dashboard/overview/?${queryParams}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        // 2. Booking status counts from analytics endpoint (with date filter)
+        const statusParams = new URLSearchParams({
+          start_date: start.toISOString().split('T')[0],
+          end_date: end.toISOString().split('T')[0],
         });
+        const statusRes = await axios.get(`${API_BASE}/api/service-bookings/analytics/?${statusParams}`, { headers });
+        const bookings = statusRes.data.results || [];
 
-        // KPIs – now includes bounce rate and avg session if available
-        const umamiKpis = response.data.kpis || [];
-        setKpis(umamiKpis);
+        const pendingCount = bookings.filter((b: any) => b.status === 'pending').length;
+        const confirmedCount = bookings.filter((b: any) => b.status === 'confirmed').length;
+        const cancelledCount = bookings.filter((b: any) => b.status === 'cancelled').length;
 
-        // Traffic chart, device chart, top pages
-        if (response.data.traffic_chart) setTrafficChartData(response.data.traffic_chart);
-        if (response.data.device_chart) setDeviceChartData(response.data.device_chart);
-        if (response.data.top_pages) setTopPages(response.data.top_pages);
-        else setTopPages([]);
+        // Build combined KPI list
+        const combinedKpis: KPI[] = [
+          { id: 'visitors', title: `Unique Visitors (${timePreset})`, value: umamiKpis.find((k: any) => k.id === 'umami_2')?.value || 0, change: 0 },
+          { id: 'pending', title: 'Pending Bookings', value: pendingCount, change: 0 },
+          { id: 'confirmed', title: 'Confirmed Bookings', value: confirmedCount, change: 0 },
+          { id: 'cancelled', title: 'Cancelled Bookings', value: cancelledCount, change: 0 },
+        ];
 
-      } catch (error) {
-        console.error('Failed to fetch Umami data:', error);
+        setKpis(combinedKpis);
+
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUmamiData();
+    fetchData();
   }, [getToken, timePreset, granularity, isComparing, compareType, customStartDate, customEndDate]);
 
   const containerVariants: Variants = {
@@ -86,39 +124,51 @@ export default function OverviewPage() {
         animate="show"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Website Analytics</h1>
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Business Intelligence</h1>
               <div className="hidden sm:flex items-center bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping absolute" />
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full relative mr-1.5" />
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Live (Umami)</span>
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Live</span>
               </div>
             </div>
-            <p className="text-sm font-medium text-slate-500">Real‑time visitor behaviour and engagement metrics</p>
+            <p className="text-sm font-medium text-slate-500">Unified analytics across Umami and bookings</p>
           </div>
-
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center justify-center px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 shadow-md shadow-slate-900/10 transition-all duration-200 active:scale-95 group"
-            >
-              <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-              Refresh
-            </button>
-          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center justify-center px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 shadow-md shadow-slate-900/10 transition-all duration-200 active:scale-95 group"
+          >
+            <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
+            Refresh
+          </button>
         </motion.div>
 
-        {/* KPIs */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {loading ? (
-            [1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-white/60 animate-pulse rounded-2xl border border-slate-200/60" />)
-          ) : kpis.length === 0 ? (
-            <div className="col-span-4 text-center text-slate-500 py-8">No Umami data available.</div>
-          ) : (
-            kpis.map((kpi, idx) => <KPICard key={kpi.id} kpi={kpi} index={idx} />)
-          )}
+        {/* Date Filter Bar */}
+        <motion.div variants={itemVariants} className="mb-6">
+          <DateFilterBar
+            preset={timePreset}
+            onPresetChange={setTimePreset}
+            granularity={granularity}
+            onGranularityChange={setGranularity}
+            isComparing={isComparing}
+            onCompareToggle={setIsComparing}
+            compareType={compareType}
+            onCompareTypeChange={setCompareType}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+            onCustomDateChange={(start, end) => {
+              setCustomStartDate(start);
+              setCustomEndDate(end);
+              setTimePreset('Custom');
+            }}
+          />
+        </motion.div>
+
+        {/* KPI Grid */}
+        <motion.div variants={itemVariants}>
+          <KPIGrid kpis={kpis} loading={loading} />
         </motion.div>
 
         {/* Traffic Line Chart */}
@@ -131,31 +181,14 @@ export default function OverviewPage() {
             compareType={compareType}
             customStartDate={customStartDate}
             customEndDate={customEndDate}
-            onPresetChange={(preset) => {
-              setTimePreset(preset);
-              let newDays = 7;
-              if (preset === '24h') newDays = 1;
-              else if (preset === '30D') newDays = 30;
-              else if (preset === 'This Year') newDays = 365;
-              else if (preset === 'Custom') {
-                newDays = (new Date(customEndDate).getTime() - new Date(customStartDate).getTime()) / (1000 * 3600 * 24);
-              }
-              if (preset === '24h') setGranularity('hour');
-              else if (preset === 'This Year' && granularity === 'hour') setGranularity('month');
-              else if (granularity === 'hour' && newDays > 2) setGranularity('day');
-              else if (granularity === 'week' && newDays <= 14) setGranularity('day');
-              else if (granularity === 'month' && newDays < 30) setGranularity('day');
-            }}
+            onPresetChange={setTimePreset}
             onGranularityChange={setGranularity}
             onCompareToggle={setIsComparing}
             onCompareTypeChange={setCompareType}
             onCustomDateChange={(start, end) => {
               setCustomStartDate(start);
               setCustomEndDate(end);
-              const newDays = (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 3600 * 24);
-              if (granularity === 'hour' && newDays > 2) setGranularity('day');
-              if (granularity === 'week' && newDays <= 14) setGranularity('day');
-              if (granularity === 'month' && newDays < 30) setGranularity('day');
+              setTimePreset('Custom');
             }}
           />
         </motion.div>
