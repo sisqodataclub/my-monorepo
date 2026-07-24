@@ -1,5 +1,5 @@
 // src/pages/OverviewPage.tsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { RefreshCw, Zap, Globe } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';

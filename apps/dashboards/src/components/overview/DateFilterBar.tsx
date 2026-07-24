@@ -1,5 +1,4 @@
 // src/components/overview/DateFilterBar.tsx
-import { Calendar, ChevronDown } from 'lucide-react';
 
 interface DateFilterBarProps {
   preset: string;
