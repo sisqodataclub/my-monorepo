@@ -26,7 +26,7 @@ export const meta: MetaFunction = () => {
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": "4.9",
-      "reviewCount": "82"
+      "reviewCount": "90"
     },
     "address": {
       "@type": "PostalAddress",
@@ -46,7 +46,12 @@ export const meta: MetaFunction = () => {
       { "@type": "City", "name": "Warrington" },
       { "@type": "City", "name": "Bolton" },
       { "@type": "City", "name": "Stockport" },
-      { "@type": "City", "name": "Oldham" }
+      { "@type": "City", "name": "Oldham" },
+      { "@type": "City", "name": "Rochdale" },
+      { "@type": "City", "name": "Bury" },
+      { "@type": "City", "name": "Wigan" },
+      { "@type": "City", "name": "Trafford" },
+      { "@type": "City", "name": "Tameside" }
     ],
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
@@ -75,7 +80,7 @@ export const meta: MetaFunction = () => {
       {
         "@type": "Question",
         "name": "What areas do your professional cleaners cover?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Our local cleaning teams cover Manchester, Liverpool, Salford, Warrington, Bolton, Stockport, Oldham, and the wider North West region." }
+        "acceptedAnswer": { "@type": "Answer", "text": "Our local cleaning teams cover Manchester, Liverpool, Salford, Warrington, Bolton, Stockport, Oldham, Rochdale, Bury, Wigan, Trafford, Tameside and the wider North West region." }
       },
       {
         "@type": "Question",
@@ -105,19 +110,30 @@ export const meta: MetaFunction = () => {
     ]
   };
 
-  // Full keywords – every service × every city
+  // Full keywords – every service × every city (including new towns)
   const fullKeywords = [
     "Deep Cleaning Manchester", "Deep Cleaning Liverpool", "Deep Cleaning Salford", "Deep Cleaning Oldham", "Deep Cleaning Bolton", "Deep Cleaning Stockport", "Deep Cleaning Warrington",
+    "Deep Cleaning Rochdale", "Deep Cleaning Bury", "Deep Cleaning Wigan", "Deep Cleaning Trafford", "Deep Cleaning Tameside",
     "Regular Cleaning Manchester", "Regular Cleaning Liverpool", "Regular Cleaning Salford", "Regular Cleaning Oldham", "Regular Cleaning Bolton", "Regular Cleaning Stockport", "Regular Cleaning Warrington",
+    "Regular Cleaning Rochdale", "Regular Cleaning Bury", "Regular Cleaning Wigan", "Regular Cleaning Trafford", "Regular Cleaning Tameside",
     "End of Tenancy Cleaning Manchester", "End of Tenancy Cleaning Liverpool", "End of Tenancy Cleaning Salford", "End of Tenancy Cleaning Oldham", "End of Tenancy Cleaning Bolton", "End of Tenancy Cleaning Stockport", "End of Tenancy Cleaning Warrington",
+    "End of Tenancy Cleaning Rochdale", "End of Tenancy Cleaning Bury", "End of Tenancy Cleaning Wigan", "End of Tenancy Cleaning Trafford", "End of Tenancy Cleaning Tameside",
     "Office Cleaning Manchester", "Office Cleaning Liverpool", "Office Cleaning Salford", "Office Cleaning Oldham", "Office Cleaning Bolton", "Office Cleaning Stockport", "Office Cleaning Warrington",
+    "Office Cleaning Rochdale", "Office Cleaning Bury", "Office Cleaning Wigan", "Office Cleaning Trafford", "Office Cleaning Tameside",
     "After Builders Cleaning Manchester", "After Builders Cleaning Liverpool", "After Builders Cleaning Salford", "After Builders Cleaning Oldham", "After Builders Cleaning Bolton", "After Builders Cleaning Stockport", "After Builders Cleaning Warrington",
+    "After Builders Cleaning Rochdale", "After Builders Cleaning Bury", "After Builders Cleaning Wigan", "After Builders Cleaning Trafford", "After Builders Cleaning Tameside",
     "Carpet Cleaning Manchester", "Carpet Cleaning Liverpool", "Carpet Cleaning Salford", "Carpet Cleaning Oldham", "Carpet Cleaning Bolton", "Carpet Cleaning Stockport", "Carpet Cleaning Warrington",
+    "Carpet Cleaning Rochdale", "Carpet Cleaning Bury", "Carpet Cleaning Wigan", "Carpet Cleaning Trafford", "Carpet Cleaning Tameside",
     "Oven Cleaning Manchester", "Oven Cleaning Liverpool", "Oven Cleaning Salford", "Oven Cleaning Oldham", "Oven Cleaning Bolton", "Oven Cleaning Stockport", "Oven Cleaning Warrington",
+    "Oven Cleaning Rochdale", "Oven Cleaning Bury", "Oven Cleaning Wigan", "Oven Cleaning Trafford", "Oven Cleaning Tameside",
     "Fridge Cleaning Manchester", "Fridge Cleaning Liverpool", "Fridge Cleaning Salford", "Fridge Cleaning Oldham", "Fridge Cleaning Bolton", "Fridge Cleaning Stockport", "Fridge Cleaning Warrington",
+    "Fridge Cleaning Rochdale", "Fridge Cleaning Bury", "Fridge Cleaning Wigan", "Fridge Cleaning Trafford", "Fridge Cleaning Tameside",
     "Kitchen Cleaning Manchester", "Kitchen Cleaning Liverpool", "Kitchen Cleaning Salford", "Kitchen Cleaning Oldham", "Kitchen Cleaning Bolton", "Kitchen Cleaning Stockport", "Kitchen Cleaning Warrington",
+    "Kitchen Cleaning Rochdale", "Kitchen Cleaning Bury", "Kitchen Cleaning Wigan", "Kitchen Cleaning Trafford", "Kitchen Cleaning Tameside",
     "Living Room Cleaning Manchester", "Living Room Cleaning Liverpool", "Living Room Cleaning Salford", "Living Room Cleaning Oldham", "Living Room Cleaning Bolton", "Living Room Cleaning Stockport", "Living Room Cleaning Warrington",
+    "Living Room Cleaning Rochdale", "Living Room Cleaning Bury", "Living Room Cleaning Wigan", "Living Room Cleaning Trafford", "Living Room Cleaning Tameside",
     "Bedroom Cleaning Manchester", "Bedroom Cleaning Liverpool", "Bedroom Cleaning Salford", "Bedroom Cleaning Oldham", "Bedroom Cleaning Bolton", "Bedroom Cleaning Stockport", "Bedroom Cleaning Warrington",
+    "Bedroom Cleaning Rochdale", "Bedroom Cleaning Bury", "Bedroom Cleaning Wigan", "Bedroom Cleaning Trafford", "Bedroom Cleaning Tameside",
     "Restaurant Cleaning Manchester", "Bar Cleaning Manchester", "Hospitality Cleaning Liverpool",
     "House Cleaning Manchester", "Domestic Cleaners Manchester", "Regular Cleaners Liverpool",
     "Move Out Cleaning Manchester", "Move In Cleaning Manchester", "Student Accommodation Cleaning Manchester"
@@ -126,7 +142,7 @@ export const meta: MetaFunction = () => {
   // Return SEO tags WITHOUT the schemas – they are now in the component
   return getSeoMeta({
     title: "Instant Quote | 5★ | Deep Cleaning, Regular Cleaning, End of Tenancy | Manchester & Liverpool",
-    description: "Expert deep cleaning, regular domestic, end of tenancy, office, carpet, oven, after builders & more in Manchester, Liverpool, Salford, Oldham, Bolton, Stockport & Warrington. Fully insured, vetted teams. Get your free quote in 60 seconds.",
+    description: "Expert deep cleaning, regular domestic, end of tenancy, office, carpet, oven, after builders & more in Manchester, Liverpool, Salford, Oldham, Bolton, Stockport, Warrington, Rochdale, Bury, Wigan, Trafford & Tameside. Fully insured, vetted teams. Get your free quote in 60 seconds.",
     url: "https://www.ddeepcleaningservices.com/",
     image: "https://www.ddeepcleaningservices.com/logo.png",
     keywords: fullKeywords
@@ -149,7 +165,7 @@ import ScrollProgress from "../components/home/ScrollProgress";
 
 // FAQ data for rendering (must match the schema)
 const homepageFaqs = [
-  { question: "What areas do your professional cleaners cover?", answer: "Our local cleaning teams cover Manchester, Liverpool, Salford, Warrington, Bolton, Stockport, Oldham, and the wider North West region." },
+  { question: "What areas do your professional cleaners cover?", answer: "Our local cleaning teams cover Manchester, Liverpool, Salford, Warrington, Bolton, Stockport, Oldham, Rochdale, Bury, Wigan, Trafford, Tameside and the wider North West region." },
   { question: "What is included in an end of tenancy clean?", answer: "Our comprehensive end of tenancy cleaning is designed to help secure your deposit. It includes a top-to-bottom deep clean of all rooms, inside cupboards, skirting boards, window frames, and full appliance cleaning (including ovens and fridge-freezers)." },
   { question: "What is the difference between a deep clean and a regular domestic clean?", answer: "A regular domestic clean keeps your home fresh on a weekly or fortnightly basis. A deep clean is a much more intensive, one-off service that tackles hard-to-reach areas, heavy grime, and scale buildup—perfect for spring cleaning or moving into a new home." },
   { question: "Do you bring your own cleaning supplies and equipment?", answer: "Yes, our vetted cleaners arrive fully equipped with industry-grade vacuums, mops, and premium cleaning products to handle everything from standard housekeeping to heavy-duty after builders cleaning." },
@@ -184,7 +200,7 @@ export default function HomePage() {
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": "4.9",
-            "reviewCount": "82"
+            "reviewCount": "90"
           },
           "address": {
             "@type": "PostalAddress",
@@ -204,7 +220,12 @@ export default function HomePage() {
             { "@type": "City", "name": "Warrington" },
             { "@type": "City", "name": "Bolton" },
             { "@type": "City", "name": "Stockport" },
-            { "@type": "City", "name": "Oldham" }
+            { "@type": "City", "name": "Oldham" },
+            { "@type": "City", "name": "Rochdale" },
+            { "@type": "City", "name": "Bury" },
+            { "@type": "City", "name": "Wigan" },
+            { "@type": "City", "name": "Trafford" },
+            { "@type": "City", "name": "Tameside" }
           ],
           "hasOfferCatalog": {
             "@type": "OfferCatalog",
@@ -235,7 +256,7 @@ export default function HomePage() {
             {
               "@type": "Question",
               "name": "What areas do your professional cleaners cover?",
-              "acceptedAnswer": { "@type": "Answer", "text": "Our local cleaning teams cover Manchester, Liverpool, Salford, Warrington, Bolton, Stockport, Oldham, and the wider North West region." }
+              "acceptedAnswer": { "@type": "Answer", "text": "Our local cleaning teams cover Manchester, Liverpool, Salford, Warrington, Bolton, Stockport, Oldham, Rochdale, Bury, Wigan, Trafford, Tameside and the wider North West region." }
             },
             {
               "@type": "Question",
