@@ -1,10 +1,11 @@
+// app/components/home/HomeReviews.tsx
 "use client";
 
 import { motion } from "framer-motion";
 import { FaStar, FaGoogle, FaQuoteLeft, FaCheckCircle, FaStarHalfAlt } from "react-icons/fa";
 import { useEffect, useState } from "react";
 
-// 1. STATS DATA (unchanged)
+// 1. STATS DATA
 const platformStats = [
   {
     name: "Google",
@@ -22,7 +23,7 @@ const platformStats = [
   }
 ];
 
-// 2. REVIEWS DATA (unchanged)
+// 2. REVIEWS DATA
 const reviews = [
   { name: "Sarah J.", role: "Homeowner", text: "Professional and reliable. DDeep is the only company I kept for my weekly deep cleaning.", rating: 5 },
   { name: "Mark T.", role: "Office Mgr", text: "Punctual and invisible. Our office has never looked better. Highly recommend their commercial team.", rating: 5 },
@@ -34,14 +35,9 @@ const reviews = [
 const marqueeReviews = [...reviews, ...reviews, ...reviews];
 
 export default function HomeReviewsCarousel() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+  // Client mount check to prevent Framer Motion static-to-hydration mismatch (#418)
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
 
   return (
     <section id="reviews" className="relative w-full min-h-screen flex flex-col justify-center overflow-hidden bg-white snap-start pt-24 pb-20 lg:py-0">
@@ -53,19 +49,33 @@ export default function HomeReviewsCarousel() {
         
         {/* Left Header & Stats */}
         <div className="flex flex-col items-center lg:items-start gap-6 lg:gap-8 shrink-0 lg:w-5/12">
-          <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="text-center lg:text-left">
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-green-950 tracking-tight leading-tight">
-              5-Star Rated <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500">
-                Cleaning Experts.
-              </span>
-            </h2>
-            <p className="mt-3 lg:mt-6 text-sm lg:text-lg text-slate-500 max-w-md">
-              The North West's most trusted choice for deep cleaning, end-of-tenancy, and commercial maintenance.
-            </p>
-          </motion.div>
+          {isMounted ? (
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-center lg:text-left">
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-green-950 tracking-tight leading-tight">
+                5-Star Rated <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500">
+                  Cleaning Experts.
+                </span>
+              </h2>
+              <p className="mt-3 lg:mt-6 text-sm lg:text-lg text-slate-500 max-w-md">
+                The North West's most trusted choice for deep cleaning, end-of-tenancy, and commercial maintenance.
+              </p>
+            </motion.div>
+          ) : (
+            <div className="text-center lg:text-left">
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-green-950 tracking-tight leading-tight">
+                5-Star Rated <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500">
+                  Cleaning Experts.
+                </span>
+              </h2>
+              <p className="mt-3 lg:mt-6 text-sm lg:text-lg text-slate-500 max-w-md">
+                The North West's most trusted choice for deep cleaning, end-of-tenancy, and commercial maintenance.
+              </p>
+            </div>
+          )}
 
-          <motion.div className="flex flex-wrap justify-center lg:justify-start gap-3" initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}>
+          <div className="flex flex-wrap justify-center lg:justify-start gap-3">
             {platformStats.map((stat) => {
               const isLink = Boolean(stat.url);
               const CardWrapper = isLink ? "a" : "div";
@@ -87,13 +97,13 @@ export default function HomeReviewsCarousel() {
                 </CardWrapper>
               );
             })}
-          </motion.div>
+          </div>
         </div>
 
         {/* RIGHT SIDE: REVIEWS */}
         <div className="relative w-full lg:w-7/12 flex-grow lg:flex-grow-0 flex flex-col justify-center overflow-hidden">
           
-          {/* 📱 MOBILE: Sleek Swipeable Horizontal Snap Carousel */}
+          {/* 📱 MOBILE: Swipeable Horizontal Snap Carousel */}
           <div className="lg:hidden w-full">
             <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none gap-4 px-2 py-2 -mx-4 sm:mx-0">
               {reviews.map((review, i) => (
@@ -102,7 +112,6 @@ export default function HomeReviewsCarousel() {
                 </div>
               ))}
             </div>
-            {/* Swipe prompt indicator */}
             <div className="flex justify-center items-center gap-1 mt-3 text-xs text-slate-400 font-medium">
               <span>Swipe for more reviews</span>
               <span className="animate-pulse">→</span>
@@ -114,31 +123,41 @@ export default function HomeReviewsCarousel() {
             <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-white to-transparent z-20 pointer-events-none" aria-hidden="true" />
             <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-white to-transparent z-20 pointer-events-none" aria-hidden="true" />
 
-            {/* Row 1 */}
-            <div className="flex mb-4">
-              <motion.div
-                className="flex gap-4 px-4"
-                animate={{ x: ["0%", "-50%"] }}
-                transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-              >
-                {marqueeReviews.map((review, i) => (
-                  <ReviewCard key={`top-${i}`} review={review} />
-                ))}
-              </motion.div>
-            </div>
+            {isMounted ? (
+              <>
+                {/* Row 1 */}
+                <div className="flex mb-4">
+                  <motion.div
+                    className="flex gap-4 px-4"
+                    animate={{ x: ["0%", "-50%"] }}
+                    transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                  >
+                    {marqueeReviews.map((review, i) => (
+                      <ReviewCard key={`top-${i}`} review={review} />
+                    ))}
+                  </motion.div>
+                </div>
 
-            {/* Row 2 */}
-            <div className="hidden md:flex">
-              <motion.div
-                className="flex gap-4 px-4"
-                animate={{ x: ["-50%", "0%"] }}
-                transition={{ duration: 70, repeat: Infinity, ease: "linear" }}
-              >
-                {marqueeReviews.map((review, i) => (
-                  <ReviewCard key={`bot-${i}`} review={review} />
+                {/* Row 2 */}
+                <div className="hidden md:flex">
+                  <motion.div
+                    className="flex gap-4 px-4"
+                    animate={{ x: ["-50%", "0%"] }}
+                    transition={{ duration: 70, repeat: Infinity, ease: "linear" }}
+                  >
+                    {marqueeReviews.map((review, i) => (
+                      <ReviewCard key={`bot-${i}`} review={review} />
+                    ))}
+                  </motion.div>
+                </div>
+              </>
+            ) : (
+              <div className="flex gap-4 px-4 overflow-hidden">
+                {reviews.map((review, i) => (
+                  <ReviewCard key={`static-${i}`} review={review} />
                 ))}
-              </motion.div>
-            </div>
+              </div>
+            )}
           </div>
 
         </div>
