@@ -142,7 +142,7 @@ import HomeServices from "../components/home/HomeServices";
 import HomeProcess from "../components/home/HomeProcess";
 import HomeAreas from "../components/home/HomeAreas";
 import HomeCTA from "../components/home/HomeCTA";
-import { HomeFAQ } from "../components/home/HomeFAQ";
+import { HomeFAQ } from "../components/HomeFAQ";
 import StoryCard from "../components/home/StoryCard";
 import ScrollProgress from "../components/home/ScrollProgress";
 
