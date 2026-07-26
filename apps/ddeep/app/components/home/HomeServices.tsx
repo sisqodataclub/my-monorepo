@@ -1,5 +1,4 @@
 import { Link } from "react-router";
-import { motion } from "framer-motion";
 import {
   FaBroom, FaHome, FaBoxOpen, FaSnowflake, FaLayerGroup,
   FaBuilding, FaHardHat, FaUtensils, FaGraduationCap, FaArrowRight, FaHospitalSymbol
@@ -95,15 +94,11 @@ export default function HomeServices() {
           </p>
         </div>
 
-        {/* Services Grid - Fixed List Style */}
+        {/* Services Grid – No animations, loads instantly */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {services.map((service, index) => (
-            <motion.div
+            <div
               key={service.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
               className="relative group"
             >
               <Link
@@ -137,7 +132,7 @@ export default function HomeServices() {
                 {/* Bottom Border Accent */}
                 <div className="absolute bottom-0 left-0 w-0 h-1.5 bg-gradient-to-r from-green-500 to-teal-500 group-hover:w-full transition-all duration-500" />
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
