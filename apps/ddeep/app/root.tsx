@@ -16,9 +16,6 @@ export default function Root() {
         {/* ===== FAVICON (green "D") ===== */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-        {/* Preload the logo to improve LCP (optional but recommended) */}
-        <link rel="preload" as="image" href="/favicon.svg" />
-
         <link rel="stylesheet" href={appStylesHref} />
         <script defer src="https://analytics.ddeepcleaningservices.com/script.js" data-website-id="6c2b6b9b-67d7-4a66-8a22-f7b1a33c4c78"></script>
       </head>

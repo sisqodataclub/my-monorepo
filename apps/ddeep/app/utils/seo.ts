@@ -7,7 +7,6 @@ export interface SEOProps {
   keywords?: string;
   url?: string;        // Explicit canonical link (must match Nginx trailing slashes)
   image?: string;      // Preview image for iMessage, WhatsApp, Facebook
-  schema?: object | object[]; // Single schema block or an array of schemas
 }
 
 export function getSeoMeta({
@@ -16,7 +15,6 @@ export function getSeoMeta({
   keywords,
   url,
   image,
-  schema,
 }: SEOProps): MetaDescriptor[] {
   const metaTags: MetaDescriptor[] = [
     // --- Standard Meta ---
@@ -40,41 +38,21 @@ export function getSeoMeta({
     metaTags.push({ name: "keywords", content: keywords });
   }
 
-  // --- Canonical URL (correct React Router v7 custom element) ---
+  // --- Canonical URL (correct React Router v7 syntax) ---
   if (url) {
     metaTags.push({ property: "og:url", content: url });
+    // ✅ Corrected: uses tag/rel/href, not tagName/attributes
     metaTags.push({
-      tagName: "link",
-      attributes: {
-        rel: "canonical",
-        href: url,
-      },
-    } as MetaDescriptor); // Type assertion needed for custom link tag
+      tag: "link",
+      rel: "canonical",
+      href: url,
+    } as MetaDescriptor);
   }
 
   // --- Social Preview Image (with fallback) ---
   const previewImage = image || "https://www.ddeepcleaningservices.com/favicon.svg";
   metaTags.push({ property: "og:image", content: previewImage });
   metaTags.push({ name: "twitter:image", content: previewImage });
-
-  // --- Rich Snippets (Schema.org JSON-LD) ---
-  if (schema) {
-    if (Array.isArray(schema)) {
-      // Automatically assigns an ID to prevent React hydration duplication
-      schema.forEach((s: any, index) =>
-        metaTags.push({ 
-          "script:ld+json": s,
-          id: `schema-${s["@type"] || index}` 
-        } as any) 
-      );
-    } else {
-      const singleSchema = schema as any;
-      metaTags.push({ 
-        "script:ld+json": singleSchema,
-        id: `schema-${singleSchema["@type"] || "main"}`
-      } as any);
-    }
-  }
 
   return metaTags;
 }
