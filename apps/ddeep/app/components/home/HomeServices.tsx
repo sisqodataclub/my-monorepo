@@ -80,7 +80,7 @@ export default function HomeServices() {
           <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
             <span className="h-0.5 w-6 bg-green-500 rounded-full"></span>
             <span className="text-green-600 font-bold tracking-widest text-xs uppercase">
-              Specialist North West Cleaners
+              Our Services
             </span>
           </div>
 

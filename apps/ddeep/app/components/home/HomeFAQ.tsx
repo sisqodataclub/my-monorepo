@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { PageTitle } from "../components/PageTitle";
 
@@ -13,19 +11,6 @@ interface HomeFAQProps {
 }
 
 export const HomeFAQ: React.FC<HomeFAQProps> = ({ faqs }) => {
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer,
-      },
-    })),
-  };
-
   return (
     <section className="max-w-6xl mx-auto px-6 py-20 space-y-8">
       <PageTitle title="Frequently Asked Questions" />
@@ -44,12 +29,6 @@ export const HomeFAQ: React.FC<HomeFAQProps> = ({ faqs }) => {
           </div>
         ))}
       </div>
-
-      {/* FAQ JSON-LD for SEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
     </section>
   );
 };

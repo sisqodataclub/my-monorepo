@@ -1,16 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Link } from "react-router"; 
-import { 
-  FaPhone, 
-  FaEnvelope, 
-  FaWhatsapp, 
-  FaClipboardList, 
-  FaCalendarAlt, 
-  FaMagic, 
-  FaSmileBeam, 
-  FaArrowRight 
+import { Link } from "react-router";
+import {
+  FaPhone,
+  FaEnvelope,
+  FaWhatsapp,
+  FaClipboardList,
+  FaCalendarAlt,
+  FaMagic,
+  FaSmileBeam,
+  FaArrowRight
 } from "react-icons/fa";
 
 // ===== CONTACT CONSTANTS =====
@@ -28,23 +28,6 @@ const steps = [
 
 export default function HomeCTA() {
 
-  // SEO: HowTo Schema for the 4-step process
-  const schemaData = {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": "How to Book a Professional Clean",
-    "description": "Four simple steps to booking a deep clean for your home or office.",
-    "step": steps.map((step, index) => ({
-      "@type": "HowToStep",
-      "position": index + 1,
-      "name": step.title,
-      "itemListElement": [{
-        "@type": "HowToDirection",
-        "text": step.desc
-      }]
-    }))
-  };
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -52,17 +35,13 @@ export default function HomeCTA() {
 
   return (
     <section id="contact" className="relative w-full min-h-[100dvh] flex flex-col justify-center items-center overflow-hidden bg-white snap-start pt-24 pb-24 lg:py-0">
-      
-      <script type="application/ld+json">
-        {JSON.stringify(schemaData)}
-      </script>
 
       <div className="absolute inset-0 bg-gradient-to-b from-white via-green-50/50 to-teal-50/30 pointer-events-none" aria-hidden="true" />
-      
+
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col items-center h-full justify-evenly">
 
         <header className="text-center shrink-0 mb-12">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -78,27 +57,24 @@ export default function HomeCTA() {
           </motion.p>
         </header>
 
-        
-
         {/* ACTION BAR */}
-        {/* ACTION BAR */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="w-full max-w-5xl"
         >
           <div className="bg-white/80 backdrop-blur-xl border border-green-100 rounded-[2rem] p-4 md:p-6 shadow-2xl shadow-green-900/10 flex flex-col gap-6">
-            
+
             {/* 4 EQUAL CONTACT OPTIONS GRID */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-              
+
               {/* 1. Instant Quote */}
-              <a 
-                href="https://api.ddeepcleaningservices.com/" 
-                target="_blank" 
+              <a
+                href="https://api.ddeepcleaningservices.com/"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 rounded-2xl bg-green-50/50 border border-green-100 hover:bg-green-100 transition-colors group" 
+                className="flex items-center gap-4 p-4 rounded-2xl bg-green-50/50 border border-green-100 hover:bg-green-100 transition-colors group"
                 aria-label="Get an instant quote"
               >
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-green-700 shadow-sm group-hover:scale-110 transition-transform shrink-0">
@@ -144,7 +120,7 @@ export default function HomeCTA() {
                   <p className="text-sm font-bold">Live Chat</p>
                 </div>
               </a>
-              
+
             </div>
 
             {/* Trust Badges */}

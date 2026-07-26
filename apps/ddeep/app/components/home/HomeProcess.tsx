@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { FaLeaf, FaUserCheck, FaShieldAlt, FaStar, FaArrowRight } from "react-icons/fa";
-import { Link } from "react-router";
+import { FaLeaf, FaUserCheck, FaShieldAlt, FaStar } from "react-icons/fa";
+// Removed unused imports: FaArrowRight, Link
 
 const whyUsPoints = [
   {
@@ -34,20 +34,6 @@ const whyUsPoints = [
 ];
 
 export default function HomeWhyUs() {
-  
-  // SEO Schema - Using ItemList for the unique selling points
-  const schemaData = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": "Why Choose D DEEP Cleaning Services",
-    "description": "Our core values and service standards for residential and commercial cleaning.",
-    "itemListElement": whyUsPoints.map((item, index) => ({
-      "@type": "ListItem",
-      "position": index + 1,
-      "name": item.title,
-      "description": item.description
-    }))
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -64,16 +50,11 @@ export default function HomeWhyUs() {
 
   return (
     <section id="why-us" className="relative w-full min-h-screen flex flex-col justify-center bg-white overflow-hidden snap-start py-20 lg:py-0">
-      
-      {/* ===== SEO ===== */}
-      <script type="application/ld+json">
-        {JSON.stringify(schemaData)}
-      </script>
 
       {/* ===== BACKGROUND ===== */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-50/60 via-white to-white pointer-events-none" aria-hidden="true" />
-      
-      <motion.div 
+
+      <motion.div
         animate={{ scale: [1, 1.1, 1], rotate: 360 }}
         transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] bg-green-100/30 rounded-full blur-[100px] pointer-events-none"
@@ -81,10 +62,10 @@ export default function HomeWhyUs() {
       />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col h-full justify-center">
-        
+
         {/* ===== HEADER ===== */}
         <header className="text-center mb-6 lg:mb-16 shrink-0">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -93,8 +74,8 @@ export default function HomeWhyUs() {
              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true" />
              <span className="text-green-800 text-[10px] md:text-xs font-bold tracking-widest uppercase">The North West Choice</span>
           </motion.div>
-          
-          <motion.h2 
+
+          <motion.h2
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -108,7 +89,7 @@ export default function HomeWhyUs() {
         </header>
 
         {/* ===== BENTO GRID LAYOUT ===== */}
-        <motion.div 
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -124,7 +105,7 @@ export default function HomeWhyUs() {
               role="listitem"
             >
               <div className="h-full bg-white/60 backdrop-blur-xl border border-green-100 rounded-2xl lg:rounded-[2rem] p-4 lg:p-8 flex flex-col transition-all duration-300 hover:bg-white hover:shadow-xl hover:shadow-green-900/10 hover:border-green-200">
-                
+
                 <span className="absolute right-2 top-2 text-4xl lg:text-[6rem] font-bold text-green-900/5 select-none font-serif leading-none" aria-hidden="true">
                   {item.id}
                 </span>
@@ -138,19 +119,19 @@ export default function HomeWhyUs() {
                 <h3 className="text-sm lg:text-xl font-bold text-green-950 mb-1 lg:mb-3 group-hover:text-green-700 transition-colors">
                   {item.title}
                 </h3>
-                
+
                 <p className="text-slate-500 text-xs lg:text-sm leading-snug lg:leading-relaxed">
                   {item.description}
                 </p>
 
                 <div className={`mt-4 lg:mt-auto h-0.5 lg:h-1 w-6 lg:w-8 rounded-full bg-gradient-to-r ${item.color} opacity-40 group-hover:w-full group-hover:opacity-100 transition-all duration-500`} aria-hidden="true" />
-              
+
               </div>
             </motion.div>
           ))}
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ delay: 0.6 }}

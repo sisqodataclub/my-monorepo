@@ -3,10 +3,10 @@
 
 import { Link } from "react-router";
 import type { ServiceData } from "./servicesContent";
+import { useContactModal } from "../../context/ContactModalContext";
 
 /* ================= HOME SECTIONS ================= */
-import HomeIntro from "../home/HomeIntro";
-import HomeIntro2 from "../home/HomeIntro2";
+// ❌ HomeIntro and HomeIntro2 removed
 import HomeProcess from "../home/HomeProcess";
 import HomeAreas from "../home/HomeAreas";
 import HomeReviews from "../home/HomeReviews";
@@ -23,14 +23,20 @@ interface StoryCardProps {
   bgImage?: string;
   className?: string;
   isDark?: boolean;
+  isAboveFold?: boolean;
 }
 
-function StoryCard({ children, bgImage, className = "" }: StoryCardProps) {
+function StoryCard({ children, bgImage, className = "", isAboveFold = false }: StoryCardProps) {
   return (
     <section className={`relative w-full min-h-[80vh] flex flex-col items-center justify-center py-20 lg:py-32 overflow-hidden ${className}`}>
       {bgImage && (
         <div className="absolute inset-0 z-0">
-          <img src={bgImage} alt="Background" className="w-full h-full object-cover" />
+          <img
+            src={bgImage}
+            alt=""
+            loading={isAboveFold ? undefined : "lazy"}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
         </div>
       )}
@@ -43,11 +49,17 @@ function StoryCard({ children, bgImage, className = "" }: StoryCardProps) {
 
 /* ================= HERO SECTION ================= */
 function ServiceHero({ data }: { data: ServiceData }) {
+  const { openModal } = useContactModal();
   const badges = [
     { icon: <FaShieldAlt />, text: "Fully Insured" },
     { icon: <FaLeaf />, text: "Eco-Friendly" },
     { icon: <FaCertificate />, text: "Vetted Pros" },
   ];
+
+  // Build location string from cities array
+  const locationText = data.cities?.length
+    ? `in ${data.cities.slice(0, 3).join(", ")} & North West`
+    : "";
 
   return (
     <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
@@ -59,29 +71,43 @@ function ServiceHero({ data }: { data: ServiceData }) {
         ))}
       </div>
 
+      {/* H1 now includes location */}
       <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 drop-shadow-md">
-        {data.heroTitle}
+        {data.heroTitle} {locationText}
         <span className="block text-green-400 text-xl md:text-3xl mt-4 font-bold uppercase tracking-[0.2em]">
           Professional Service
         </span>
       </h1>
 
-      <p className="text-lg md:text-xl text-slate-100 max-w-2xl mb-10 font-medium">{data.heroSubtitle}</p>
+      <p className="text-lg md:text-xl text-slate-100 max-w-2xl mb-4 font-medium">{data.heroSubtitle}</p>
+
+      {/* City availability line */}
+      {data.cities && data.cities.length > 0 && (
+        <p className="text-slate-300 text-sm mb-6">
+          Available in {data.cities.join(", ")}
+        </p>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-4">
-        {data.heroButtons.map((btn, i) => (
-          <Link
-            key={i}
-            to={btn.href}
-            className={`px-10 py-4 rounded-full font-bold text-lg shadow-2xl transition-all hover:-translate-y-1 active:scale-95 ${
-              btn.primary
-                ? "bg-green-600 hover:bg-green-500 text-white"
-                : "bg-white/10 backdrop-blur-md border border-white/30 text-white hover:bg-white/20"
-            }`}
-          >
-            {btn.label}
-          </Link>
-        ))}
+        {data.heroButtons.map((btn, i) =>
+          btn.primary ? (
+            <button
+              key={i}
+              onClick={openModal}
+              className="bg-green-600 hover:bg-green-500 text-white px-10 py-4 rounded-full font-bold text-lg shadow-2xl transition-all hover:-translate-y-1 active:scale-95"
+            >
+              {btn.label}
+            </button>
+          ) : (
+            <button
+              key={i}
+              onClick={openModal}
+              className="bg-white/10 backdrop-blur-md border border-white/30 text-white hover:bg-white/20 px-10 py-4 rounded-full font-bold text-lg shadow-2xl transition-all hover:-translate-y-1 active:scale-95"
+            >
+              {btn.label}
+            </button>
+          )
+        )}
       </div>
     </div>
   );
@@ -126,21 +152,40 @@ function ServiceFeatures({ data }: { data: ServiceData }) {
 export default function DynamicServicePage({ data }: { data: ServiceData }) {
   return (
     <div className="w-full">
-      <StoryCard bgImage={HeroImage}>
+      {/* 1. Hero */}
+      <StoryCard bgImage={HeroImage} isAboveFold>
         <ServiceHero data={data} />
       </StoryCard>
 
+      {/* 2. What’s Included (service‑specific) */}
       <StoryCard className="bg-slate-50">
         <ServiceFeatures data={data} />
       </StoryCard>
 
-      <StoryCard><HomeIntro /></StoryCard>
-      <StoryCard className="bg-slate-50"><HomeIntro2 /></StoryCard>
-      <StoryCard><HomeProcess /></StoryCard>
-      <StoryCard className="bg-slate-50"><HomeAreas /></StoryCard>
-      <StoryCard><HomeReviews /></StoryCard>
-      <StoryCard className="bg-green-950 text-white"><HomeCTA /></StoryCard>
-      <StoryCard><HomeFAQ faqs={data.faqs} /></StoryCard>
+      {/* 3. Social Proof – Reviews right after the core service info */}
+      <StoryCard>
+        <HomeReviews />
+      </StoryCard>
+
+      {/* 4. Why Choose Us (Process) */}
+      <StoryCard>
+        <HomeProcess />
+      </StoryCard>
+
+      {/* 5. Areas Served */}
+      <StoryCard className="bg-slate-50">
+        <HomeAreas />
+      </StoryCard>
+
+      {/* 6. FAQ (service‑specific FAQs) */}
+      <StoryCard>
+        <HomeFAQ faqs={data.faqs} />
+      </StoryCard>
+
+      {/* 7. Final Call‑to‑Action */}
+      <StoryCard className="bg-green-950 text-white">
+        <HomeCTA />
+      </StoryCard>
     </div>
   );
 }
