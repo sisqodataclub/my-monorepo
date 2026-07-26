@@ -3,7 +3,7 @@ import type { MetaFunction } from "react-router";
 import { getSeoMeta } from "../utils/seo";
 
 // ==========================================
-// 1. SERVER-RENDERED SEO & SCHEMA
+// 1. SERVER‑RENDERED SEO & SCHEMA
 // ==========================================
 export const meta: MetaFunction = () => {
   const businessSchema = {
@@ -26,7 +26,7 @@ export const meta: MetaFunction = () => {
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": "4.9",
-      "reviewCount": "82"
+      "reviewCount": "90"
     },
     "address": {
       "@type": "PostalAddress",
@@ -123,18 +123,32 @@ export const meta: MetaFunction = () => {
     "Move Out Cleaning Manchester", "Move In Cleaning Manchester", "Student Accommodation Cleaning Manchester"
   ].join(", ");
 
-  return getSeoMeta({
+  // 1. Get all standard SEO tags WITHOUT the schemas
+  const baseSeo = getSeoMeta({
     title: "Instant Quote | 5★ | Deep Cleaning, Regular Cleaning, End of Tenancy | Manchester & Liverpool",
     description: "Expert deep cleaning, regular domestic, end of tenancy, office, carpet, oven, after builders & more in Manchester, Liverpool, Salford, Oldham, Bolton, Stockport & Warrington. Fully insured, vetted teams. Get your free quote in 60 seconds.",
     url: "https://www.ddeepcleaningservices.com/",
     image: "https://www.ddeepcleaningservices.com/logo.png",
-    keywords: fullKeywords,
-    schema: [businessSchema, faqSchema]
+    keywords: fullKeywords
+    // Schema intentionally left out – we add them manually below with unique id's
   });
+
+  // 2. Return everything with unique id's to prevent React Router duplication
+  return [
+    ...baseSeo,
+    {
+      id: "schema-business",   // id ensures React Router deduplicates and attaches it to the script tag
+      "script:ld+json": businessSchema,
+    },
+    {
+      id: "schema-faq",
+      "script:ld+json": faqSchema,
+    },
+  ];
 };
 
 // ==========================================
-// 2. IMPORTS (Eager – everything server-rendered for SEO)
+// 2. IMPORTS (Eager – everything server‑rendered for SEO)
 // ==========================================
 import HomeHero from "../components/home/HomeHero";
 import HomeReviews from "../components/home/HomeReviews";
@@ -203,12 +217,12 @@ export default function HomePage() {
         <HomeAreas />
       </StoryCard>
 
-      {/* FAQ Section – matches the JSON-LD schema */}
+      {/* FAQ Section – matches the JSON‑LD schema */}
       <StoryCard>
         <HomeFAQ faqs={homepageFaqs} />
       </StoryCard>
 
-      {/* Final Call-to-Action */}
+      {/* Final Call‑to‑Action */}
       <StoryCard>
         <HomeCTA />
       </StoryCard>
