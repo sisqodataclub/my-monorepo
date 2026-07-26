@@ -3,12 +3,12 @@ import type { MetaFunction } from "react-router";
 import { getSeoMeta } from "../utils/seo";
 
 // ==========================================
-// 1. SERVER‑RENDERED SEO & SCHEMA
+// 1. SERVER-RENDERED SEO & SCHEMA
 // ==========================================
 export const meta: MetaFunction = () => {
   const businessSchema = {
     "@context": "https://schema.org",
-    "@type": "CleaningService",
+    "@type": "LocalBusiness", // ✅ FIXED: Google requires this for review snippets
     "name": "D DEEP Cleaning Services",
     "image": "https://www.ddeepcleaningservices.com/logo.png",
     "@id": "https://www.ddeepcleaningservices.com",
@@ -124,7 +124,7 @@ export const meta: MetaFunction = () => {
   ].join(", ");
 
   return getSeoMeta({
-    title: " Instant Quote |5★ | Deep Cleaning, Regular Cleaning, End of Tenancy | Manchester & Liverpool ",
+    title: "Instant Quote | 5★ | Deep Cleaning, Regular Cleaning, End of Tenancy | Manchester & Liverpool",
     description: "Expert deep cleaning, regular domestic, end of tenancy, office, carpet, oven, after builders & more in Manchester, Liverpool, Salford, Oldham, Bolton, Stockport & Warrington. Fully insured, vetted teams. Get your free quote in 60 seconds.",
     url: "https://www.ddeepcleaningservices.com/",
     image: "https://www.ddeepcleaningservices.com/logo.png",
@@ -134,10 +134,10 @@ export const meta: MetaFunction = () => {
 };
 
 // ==========================================
-// 2. IMPORTS (Eager – everything server‑rendered for SEO)
+// 2. IMPORTS (Eager – everything server-rendered for SEO)
 // ==========================================
 import HomeHero from "../components/home/HomeHero";
-import HomeReviews from "../components/home/HomeReviews";   // ← moved right after hero
+import HomeReviews from "../components/home/HomeReviews";
 import HomeServices from "../components/home/HomeServices";
 import HomeProcess from "../components/home/HomeProcess";
 import HomeAreas from "../components/home/HomeAreas";
@@ -180,10 +180,8 @@ const homepageFaqs = [
 export default function HomePage() {
   return (
     <main className="scroll-smooth">
-      {/* Hero Section */}
-      <StoryCard>
-        <HomeHero />
-      </StoryCard>
+      {/* Hero Section - UNWRAPPED for instant page load speeds (LCP) */}
+      <HomeHero />
 
       {/* Social Proof – Reviews immediately after hero */}
       <StoryCard>
@@ -205,12 +203,12 @@ export default function HomePage() {
         <HomeAreas />
       </StoryCard>
 
-      {/* FAQ Section – matches the JSON‑LD schema */}
+      {/* FAQ Section – matches the JSON-LD schema */}
       <StoryCard>
         <HomeFAQ faqs={homepageFaqs} />
       </StoryCard>
 
-      {/* Final Call‑to‑Action */}
+      {/* Final Call-to-Action */}
       <StoryCard>
         <HomeCTA />
       </StoryCard>
