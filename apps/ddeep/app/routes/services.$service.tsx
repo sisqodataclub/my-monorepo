@@ -91,7 +91,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     title,
     description,
     url: `https://www.ddeepcleaningservices.com/services/${slug}/`,
-    image: "https://www.ddeepcleaningservices.com/logo.png",
+    image: "https://www.ddeepcleaningservices.com/favicon.svg",
     keywords,
     schema: schemas,
   });

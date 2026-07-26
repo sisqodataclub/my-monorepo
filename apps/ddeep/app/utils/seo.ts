@@ -53,7 +53,7 @@ export function getSeoMeta({
   }
 
   // --- Social Preview Image (with fallback) ---
-  const previewImage = image || "https://www.ddeepcleaningservices.com/logo.png";
+  const previewImage = image || "https://www.ddeepcleaningservices.com/favicon.svg";
   metaTags.push({ property: "og:image", content: previewImage });
   metaTags.push({ name: "twitter:image", content: previewImage });
 
