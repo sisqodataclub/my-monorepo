@@ -22,13 +22,13 @@ export function getSeoMeta({
     // --- Standard Meta ---
     { title },
     { name: "description", content: description },
-    
+
     // --- Open Graph (Facebook, LinkedIn, iMessage, WhatsApp) ---
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:type", content: "website" },
     { property: "og:site_name", content: "D DEEP Cleaning Services" },
-    
+
     // --- Twitter Cards ---
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
@@ -60,12 +60,19 @@ export function getSeoMeta({
   // --- Rich Snippets (Schema.org JSON-LD) ---
   if (schema) {
     if (Array.isArray(schema)) {
-      // Each schema must be in its own script tag
-      schema.forEach((s) =>
-        metaTags.push({ "script:ld+json": s } as MetaDescriptor)
+      // Automatically assigns an ID to prevent React hydration duplication
+      schema.forEach((s: any, index) =>
+        metaTags.push({ 
+          "script:ld+json": s,
+          id: `schema-${s["@type"] || index}` 
+        } as any) 
       );
     } else {
-      metaTags.push({ "script:ld+json": schema } as MetaDescriptor);
+      const singleSchema = schema as any;
+      metaTags.push({ 
+        "script:ld+json": singleSchema,
+        id: `schema-${singleSchema["@type"] || "main"}`
+      } as any);
     }
   }
 
