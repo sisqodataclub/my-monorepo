@@ -1,3 +1,4 @@
+// vite.config.ts
 import { defineConfig } from "vite";
 import { reactRouter } from "@react-router/dev/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -6,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { servicesContent } from "./app/components/landing/servicesContent";
+import { targetCities } from "./app/utils/locations";
 
 export default defineConfig({
   plugins: [
@@ -48,16 +50,40 @@ export default defineConfig({
           }
         }
 
-        // Build the page list – trailing slashes, exclude /tc/
-        const pages = [
+        // 1. Base pages (Homepage)
+        const pages: { url: string; priority: string }[] = [
           { url: "/", priority: "1.0" },
-          ...Object.keys(servicesContent)
-            .filter((slug) => slug !== "tc")
-            .map((slug) => ({
+        ];
+
+        // 2. Core Service pages
+        Object.keys(servicesContent)
+          .filter((slug) => slug !== "tc")
+          .forEach((slug) => {
+            pages.push({
               url: `/services/${slug}/`,
               priority: "0.8",
-            })),
-        ];
+            });
+          });
+
+        // 3. Location Hub pages (/locations/[city]/)
+        targetCities.forEach((citySlug) => {
+          pages.push({
+            url: `/locations/${citySlug}/`,
+            priority: "0.7",
+          });
+        });
+
+        // 4. Hyper-Local Service pages (/services/[service]/in/[city]/)
+        Object.keys(servicesContent)
+          .filter((slug) => slug !== "tc")
+          .forEach((serviceSlug) => {
+            targetCities.forEach((citySlug) => {
+              pages.push({
+                url: `/services/${serviceSlug}/in/${citySlug}/`,
+                priority: "0.6",
+              });
+            });
+          });
 
         // Generate the XML
         const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -83,8 +109,8 @@ ${pages
         const outputPath = path.resolve(outDir, "sitemap.xml");
         fs.writeFileSync(outputPath, sitemapXML, "utf-8");
         console.log(`✅ Sitemap generated at ${outputPath}`);
-        console.log(`   📅 lastmod: ${lastModifiedDate}`);
-        console.log(`   📄 Pages: ${pages.length}`);
+        console.log(`    📅 lastmod: ${lastModifiedDate}`);
+        console.log(`    📄 Total Indexed Pages: ${pages.length}`);
       },
     },
   ],
