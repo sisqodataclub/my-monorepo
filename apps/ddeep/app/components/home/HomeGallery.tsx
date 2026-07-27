@@ -87,8 +87,8 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
             <div
               key={img.id || idx}
               onClick={() => setActiveImage(img)}
-              // 🚀 FIXED: Uniform heights (h-[340px] on mobile, h-[380px] on desktop) ensuring identical card sizing
-              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-100 border border-green-100/80 shadow-md h-[340px] sm:h-[380px] shrink-0"
+              // 🚀 UPDATED: Sleek dark background matching the modal, with flex centering for object-contain
+              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md h-[340px] sm:h-[380px] shrink-0 flex items-center justify-center p-2"
             >
               <img
                 src={img.src}
@@ -96,7 +96,8 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
                 loading={idx < 2 ? "eager" : "lazy"}
                 fetchPriority={idx < 2 ? "high" : "auto"}
                 decoding="async"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 bg-slate-200"
+                // 🚀 UPDATED: object-contain ensures no cropping or zooming, matching modal view exactly
+                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Hover Overlay */}
