@@ -9,6 +9,7 @@ import { useContactModal } from "../../context/ContactModalContext";
 import HomeProcess from "../home/HomeProcess";
 import HomeAreas from "../home/HomeAreas";
 import HomeReviews from "../home/HomeReviews";
+import HomeGallery from "../home/HomeGallery"; // ✅ 1. Imported HomeGallery
 import HomeCTA from "../home/HomeCTA";
 import { HomeFAQ } from "../HomeFAQ";
 
@@ -178,27 +179,32 @@ export default function DynamicServicePage({ data }: { data: ServiceData & { cit
         <ServiceFeatures data={data} />
       </StoryCard>
 
-      {/* 3. Social Proof */}
+      {/* 3. ✅ Visual Gallery (Filtered dynamically by service title if desired, or showing all) */}
       <StoryCard>
+        <HomeGallery filterCategory={data.title} />
+      </StoryCard>
+
+      {/* 4. Social Proof */}
+      <StoryCard className="bg-slate-50">
         <HomeReviews />
       </StoryCard>
 
-      {/* 4. Why Choose Us (Process) */}
+      {/* 5. Why Choose Us (Process) */}
       <StoryCard>
         <HomeProcess />
       </StoryCard>
 
-      {/* 5. Areas Served */}
+      {/* 6. Areas Served */}
       <StoryCard className="bg-slate-50">
         <HomeAreas />
       </StoryCard>
 
-      {/* 6. FAQ */}
+      {/* 7. FAQ */}
       <StoryCard>
         <HomeFAQ faqs={data.faqs} />
       </StoryCard>
 
-      {/* 7. Final Call-to-Action */}
+      {/* 8. Final Call-to-Action */}
       <StoryCard className="bg-green-950 text-white">
         <HomeCTA />
       </StoryCard>

@@ -5,6 +5,7 @@ import { servicesContent } from "../components/landing/servicesContent";
 import { getSeoMeta } from "../utils/seo";
 import HomeCTA from "../components/home/HomeCTA";
 import HomeReviews from "../components/home/HomeReviews";
+import HomeGallery from "../components/home/HomeGallery"; // ✅ 1. Imported HomeGallery
 import { FaArrowRight, FaMapMarkerAlt, FaShieldAlt, FaLeaf, FaCertificate, FaCheckCircle } from "react-icons/fa";
 import HeroImage from "../assets/bg.jpg";
 
@@ -134,8 +135,18 @@ export default function LocationHub() {
         </div>
       </section>
 
+      {/* ✅ 2. Visual Gallery Section for this City Hub */}
+      <section className="bg-white py-12">
+        <div className="max-w-7xl mx-auto px-6 text-center mb-4">
+          <h2 className="text-2xl md:text-4xl font-black text-slate-900">
+            Recent Work in <span className="text-green-600">{cityName}</span> & Surrounding Areas
+          </h2>
+        </div>
+        <HomeGallery />
+      </section>
+
       {/* Customer Reviews Section */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-slate-50">
         <HomeReviews />
       </section>
 
