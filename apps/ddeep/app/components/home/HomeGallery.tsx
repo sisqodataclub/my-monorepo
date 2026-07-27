@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaExpand, FaTimes, FaChevronLeft, FaChevronRight, FaHandPointLeft } from "react-icons/fa";
+import { FaExpand, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { galleryImages, type GalleryImage } from "../../utils/galleryImages";
 
 interface HomeGalleryProps {
@@ -87,7 +87,8 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
             <div
               key={img.id || idx}
               onClick={() => setActiveImage(img)}
-              className="min-w-[85%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-100 border border-green-100/80 shadow-md aspect-[4/3] shrink-0"
+              // 🚀 FIXED: Uniform heights (h-[340px] on mobile, h-[380px] on desktop) ensuring identical card sizing
+              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-100 border border-green-100/80 shadow-md h-[340px] sm:h-[380px] shrink-0"
             >
               <img
                 src={img.src}
