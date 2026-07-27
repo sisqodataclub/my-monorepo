@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaExpand, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaExpand, FaTimes, FaChevronLeft, FaChevronRight, FaHandPointLeft } from "react-icons/fa";
 import { galleryImages, type GalleryImage } from "../../utils/galleryImages";
 
 interface HomeGalleryProps {
@@ -38,23 +38,23 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header & Navigation Arrows */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-10">
           {!hideHeader && (
-            <div className="text-left mb-6 md:mb-0">
+            <div className="text-left mb-4 md:mb-0">
               <h2 className="text-3xl md:text-4xl font-black text-green-950 tracking-tight mb-2">
                 {filterCategory ? `${filterCategory} ` : "Recent Work & "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500">
                   {filterCategory ? "Results" : "Transformations"}
                 </span>
               </h2>
-              <p className="text-slate-500 text-base">
-                Swipe or click to view our latest cleaning results.
+              <p className="text-slate-500 text-sm md:text-base">
+                Swipe across to view our latest cleaning results.
               </p>
             </div>
           )}
 
-          {/* Carousel Arrows */}
-          <div className="flex gap-3">
+          {/* Desktop Only Carousel Arrows */}
+          <div className="hidden md:flex gap-3">
             <button
               onClick={() => scroll("left")}
               className="w-12 h-12 rounded-full bg-slate-100 hover:bg-green-600 hover:text-white text-slate-700 flex items-center justify-center transition-all shadow-sm"
@@ -72,10 +72,15 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
           </div>
         </div>
 
+        {/* Mobile Swipe Indicator Text */}
+        <div className="flex md:hidden items-center gap-2 text-xs font-semibold uppercase tracking-wider text-green-600 mb-4 bg-green-50 px-3 py-1.5 rounded-full w-fit">
+          <span>👈 Swipe to see more</span>
+        </div>
+
         {/* Sideway Scrolling Container */}
         <div
           ref={scrollRef}
-          className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 pt-2 px-1 focus:outline-none"
+          className="flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 pt-2 px-1 focus:outline-none [-webkit-overflow-scrolling:touch]"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {displayedImages.map((img, idx) => (
