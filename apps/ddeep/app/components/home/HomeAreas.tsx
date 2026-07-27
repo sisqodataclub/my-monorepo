@@ -1,63 +1,44 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FaMapMarkerAlt, FaPhoneAlt, FaSearchLocation, FaCheck, FaGlobeEurope } from "react-icons/fa";
-
-const areas = [
-  "Manchester City Centre", "Salford Quays", "Trafford Park", "Didsbury",
-  "Altrincham", "Stockport", "Bolton", "Bury", "Oldham", "Rochdale",
-  "Preston", "Blackburn", "Burnley", "Warrington", "Wigan", "Chorley",
-  "Liverpool City Centre", "St Helens", "Bootle", "Birkenhead"
-];
+import { Link } from "react-router";
+import { FaPhoneAlt, FaCheck, FaGlobeEurope } from "react-icons/fa";
+import { targetCities } from "../../utils/locations";   // single source of truth
 
 // ===== CONTACT CONSTANT =====
 const CONTACT_PHONE = "07459416262";
 
-// Logic to split areas for the SEO Grid
-const regions = [
-  {
-    name: "Greater Manchester Cleaning Services",
-    towns: ["Manchester City Centre", "Salford Quays", "Trafford Park", "Didsbury", "Altrincham", "Stockport", "Bolton", "Bury", "Oldham", "Rochdale"]
-  },
-  {
-    name: "Merseyside & Lancashire Coverage",
-    towns: ["Liverpool City Centre", "St Helens", "Warrington", "Wigan", "Preston", "Blackburn", "Burnley", "Chorley", "Bootle", "Birkenhead"]
-  }
-];
+// Helper: turn "manchester-city-centre" -> "Manchester City Centre"
+const formatCityName = (slug: string) =>
+  slug
+    .split("-")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
-const marqueeList = [...areas, ...areas];
+const marqueeList = [...targetCities.map(formatCityName), ...targetCities.map(formatCityName)];
 
 export default function HomeAreas() {
-
-  // ✅ REMOVED: The duplicate schema with LocalBusiness
-  // The main LocalBusiness schema with aggregateRating is now only in _index.tsx
-  // This component ONLY renders the visual service areas.
-
   return (
     <section id="areas" className="relative w-full min-h-screen flex flex-col items-center py-24 bg-white overflow-hidden">
-
-      {/* ✅ REMOVED: <script type="application/ld+json"> block */}
-      {/* The schema is now only defined once in app/routes/_index.tsx */}
-
       {/* ===== AMBIENT BACKGROUND ===== */}
       <div className="absolute inset-0 bg-gradient-to-b from-white via-green-50/20 to-white pointer-events-none z-0" aria-hidden="true" />
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0"
-           style={{ backgroundImage: 'radial-gradient(#15803d 1px, transparent 1px)', backgroundSize: '40px 40px' }}
-           aria-hidden="true">
-      </div>
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none z-0"
+        style={{ backgroundImage: 'radial-gradient(#15803d 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+        aria-hidden="true"
+      />
 
       {/* Radar Pulse */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none" aria-hidden="true">
-         <motion.div
-            animate={{ scale: [1, 2.5], opacity: [0.1, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }}
-            className="w-[400px] h-[400px] bg-green-400 rounded-full blur-3xl opacity-20"
-         />
+        <motion.div
+          animate={{ scale: [1, 2.5], opacity: [0.1, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }}
+          className="w-[400px] h-[400px] bg-green-400 rounded-full blur-3xl opacity-20"
+        />
       </div>
 
       {/* ===== CONTENT CONTAINER ===== */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 text-center flex flex-col items-center">
-
         {/* 1. HEADER */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -80,34 +61,31 @@ export default function HomeAreas() {
           </p>
         </motion.div>
 
-        {/* 2. REGIONAL GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mb-16" role="list">
-          {regions.map((region, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="bg-white/60 backdrop-blur-sm border border-slate-100 p-8 rounded-[2rem] shadow-sm hover:shadow-md transition-all text-left"
-              role="listitem"
-            >
-              <h3 className="text-xl font-bold text-green-900 mb-6 flex items-center gap-3">
-                <span className="w-1.5 h-6 bg-green-500 rounded-full" aria-hidden="true" />
-                {region.name}
-              </h3>
-              <div className="grid grid-cols-2 gap-y-3 gap-x-2">
-                {region.towns.map((town, tIdx) => (
-                  <div key={tIdx} className="flex items-center gap-2 group">
-                    <FaCheck className="text-green-500 text-[10px]" aria-hidden="true" />
-                    <span className="text-slate-600 text-sm font-semibold group-hover:text-green-700 transition-colors">{town}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {/* 2. CITY GRID (dynamically generated from the locations list) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="w-full max-w-5xl mb-16"
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {targetCities.map(citySlug => (
+              <Link
+                key={citySlug}
+                to={`/locations/${citySlug}/`}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/60 backdrop-blur-sm border border-slate-100 hover:bg-green-50 hover:border-green-200 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50"
+                title={`Cleaning Services in ${formatCityName(citySlug)}`}
+              >
+                <FaCheck className="text-green-500 text-[10px]" aria-hidden="true" />
+                <span className="text-slate-600 text-sm font-semibold group-hover:text-green-700 group-hover:underline transition-all">
+                  {formatCityName(citySlug)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
 
-        {/* 4. MARQUEE */}
+        {/* 3. MARQUEE */}
         <div className="w-full max-w-5xl overflow-hidden mb-16 py-4 border-y border-slate-50" aria-hidden="true">
           <motion.div
             className="flex gap-8"
@@ -122,7 +100,7 @@ export default function HomeAreas() {
           </motion.div>
         </div>
 
-        {/* 5. CTA CARD */}
+        {/* 4. CTA CARD */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -131,13 +109,12 @@ export default function HomeAreas() {
         >
           <div className="bg-green-950 rounded-[2.5rem] p-2 shadow-2xl shadow-green-900/30">
             <div className="bg-gradient-to-br from-green-800 to-green-950 rounded-[2.2rem] px-6 py-6 md:px-16 md:py-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
-
               <div className="text-left">
                 <h3 className="text-white font-black text-xl md:text-2xl lg:text-3xl leading-tight mb-1 md:mb-2 italic">
                   Looking for cleaners near you?
                 </h3>
                 <p className="text-green-200/70 font-medium text-sm md:text-base">
-                  We specialize in end of tenancy and commercial deep cleans throughout the North West.
+                  We specialise in end of tenancy and commercial deep cleans throughout the North West.
                 </p>
               </div>
 
@@ -152,11 +129,9 @@ export default function HomeAreas() {
                 </div>
                 <span className="text-green-700 font-bold text-xs md:text-sm lg:text-base">{CONTACT_PHONE}</span>
               </a>
-
             </div>
           </div>
         </motion.div>
-
       </div>
     </section>
   );

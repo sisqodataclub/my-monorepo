@@ -1,19 +1,29 @@
-// app/routes/services.$service.tsx
+// app/routes/services.$service.in.$city.tsx
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { servicesContent } from "../components/landing/servicesContent";
 import DynamicServicePage from "../components/landing/dynamic";
 import { getSeoMeta } from "../utils/seo";
 
+function formatCityName(slug: string) {
+  return slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const slug = params.service;
+  const citySlug = params.city;
 
-  if (!slug || !servicesContent[slug]) {
-    throw new Response("Service not found", { status: 404 });
+  if (!slug || !servicesContent[slug] || !citySlug) {
+    throw new Response("Not Found", { status: 404 });
   }
 
   return {
     slug,
+    citySlug,
+    cityName: formatCityName(citySlug),
     serviceData: servicesContent[slug],
   };
 };
@@ -21,23 +31,32 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) return [{ title: "Not Found | D DEEP Cleaning" }];
 
-  const { serviceData, slug } = data;
+  const { slug, citySlug, cityName, serviceData } = data;
 
   return getSeoMeta({
-    title: `${serviceData.heroTitle} | 5★ D DEEP Cleaning Services`,
-    description: serviceData.heroSubtitle,
-    url: `https://www.ddeepcleaningservices.com/services/${slug}/`,
+    title: `${serviceData.heroTitle} in ${cityName} | 5★ D DEEP`,
+    description: `Professional ${serviceData.heroTitle.toLowerCase()} in ${cityName}. ${serviceData.heroSubtitle} Fully insured, vetted cleaners. Book your free quote today.`,
+    url: `https://www.ddeepcleaningservices.com/services/${slug}/in/${citySlug}/`,
   });
 };
 
-export default function ServiceRoute() {
-  const { slug, serviceData } = useLoaderData<typeof loader>();
+export default function CityServiceRoute() {
+  const { serviceData, cityName } = useLoaderData<typeof loader>();
 
-  // Service Schema
+  // Override the service data so the page becomes city‑specific
+  const localizedData = {
+    ...serviceData,
+    heroTitle: `${serviceData.heroTitle} in ${cityName}`,
+    heroSubtitle: `${serviceData.heroSubtitle} Professional local cleaners serving ${cityName}.`,
+    ctaSecondaryText: `Trusted by homes and businesses across ${cityName}.`,
+    cities: [],   // ← removes the generic “Available in…” line
+  };
+
+  // Structured data (Service + optional FAQ) for this city page
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: serviceData.heroTitle,
+    name: `${serviceData.heroTitle} in ${cityName}`,
     description: serviceData.heroSubtitle,
     provider: {
       "@type": "LocalBusiness",
@@ -51,36 +70,9 @@ export default function ServiceRoute() {
       },
       priceRange: "From £50",
     },
-    areaServed: { "@type": "AdministrativeArea", name: "North West England" },
+    areaServed: { "@type": "City", name: cityName },
   };
 
-  // Breadcrumb Schema
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: "https://www.ddeepcleaningservices.com/",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Services",
-        item: "https://www.ddeepcleaningservices.com/services/",
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: serviceData.heroTitle,
-        item: `https://www.ddeepcleaningservices.com/services/${slug}/`,
-      },
-    ],
-  };
-
-  // FAQ Schema
   const faqSchema = serviceData.faqs?.length
     ? {
         "@context": "https://schema.org",
@@ -100,11 +92,6 @@ export default function ServiceRoute() {
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
       {faqSchema && (
         <script
           type="application/ld+json"
@@ -113,7 +100,7 @@ export default function ServiceRoute() {
         />
       )}
 
-      <DynamicServicePage key={slug} data={serviceData} />
+      <DynamicServicePage key={cityName} data={localizedData} />
     </>
   );
 }

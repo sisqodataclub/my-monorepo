@@ -6,7 +6,6 @@ import type { ServiceData } from "./servicesContent";
 import { useContactModal } from "../../context/ContactModalContext";
 
 /* ================= HOME SECTIONS ================= */
-// ❌ HomeIntro and HomeIntro2 removed
 import HomeProcess from "../home/HomeProcess";
 import HomeAreas from "../home/HomeAreas";
 import HomeReviews from "../home/HomeReviews";
@@ -48,7 +47,7 @@ function StoryCard({ children, bgImage, className = "", isAboveFold = false }: S
 }
 
 /* ================= HERO SECTION ================= */
-function ServiceHero({ data }: { data: ServiceData }) {
+function ServiceHero({ data }: { data: ServiceData & { cityName?: string } }) {
   const { openModal } = useContactModal();
   const badges = [
     { icon: <FaShieldAlt />, text: "Fully Insured" },
@@ -56,8 +55,10 @@ function ServiceHero({ data }: { data: ServiceData }) {
     { icon: <FaCertificate />, text: "Vetted Pros" },
   ];
 
-  // Build location string from cities array
-  const locationText = data.cities?.length
+  // Use specific city name if available (hyper-local page), otherwise fall back to multi-city list
+  const locationText = data.cityName
+    ? `in ${data.cityName}`
+    : data.cities?.length
     ? `in ${data.cities.slice(0, 3).join(", ")} & North West`
     : "";
 
@@ -71,7 +72,7 @@ function ServiceHero({ data }: { data: ServiceData }) {
         ))}
       </div>
 
-      {/* H1 now includes location */}
+      {/* H1 now includes dynamic location */}
       <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 drop-shadow-md">
         {data.heroTitle} {locationText}
         <span className="block text-green-400 text-xl md:text-3xl mt-4 font-bold uppercase tracking-[0.2em]">
@@ -81,8 +82,8 @@ function ServiceHero({ data }: { data: ServiceData }) {
 
       <p className="text-lg md:text-xl text-slate-100 max-w-2xl mb-4 font-medium">{data.heroSubtitle}</p>
 
-      {/* City availability line */}
-      {data.cities && data.cities.length > 0 && (
+      {/* City availability line - only render on generic pages, hide on hyper-local pages */}
+      {!data.cityName && data.cities && data.cities.length > 0 && (
         <p className="text-slate-300 text-sm mb-6">
           Available in {data.cities.join(", ")}
         </p>
@@ -123,6 +124,21 @@ function ServiceFeatures({ data }: { data: ServiceData }) {
         <p className="text-slate-500 text-lg md:text-xl max-w-3xl mx-auto">{data.ctaPrimaryText}</p>
       </div>
 
+      {/* Unique "Why Choose Us" Section */}
+      {data.whyChooseUs && data.whyChooseUs.length > 0 && (
+        <div className="mb-16 max-w-4xl mx-auto bg-white border border-slate-100 rounded-3xl p-8 shadow-sm w-full text-left">
+          <h3 className="text-2xl font-black text-slate-900 mb-6 text-center">Why Choose Our Service</h3>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data.whyChooseUs.map((point, index) => (
+              <li key={index} className="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                <span className="w-2 h-2 bg-green-600 rounded-full mt-2 shrink-0" />
+                {point}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
         {data.featureCards.map((card, idx) => (
           <div key={idx} className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all">
@@ -149,7 +165,7 @@ function ServiceFeatures({ data }: { data: ServiceData }) {
 }
 
 /* ================= MAIN DYNAMIC PAGE ================= */
-export default function DynamicServicePage({ data }: { data: ServiceData }) {
+export default function DynamicServicePage({ data }: { data: ServiceData & { cityName?: string } }) {
   return (
     <div className="w-full">
       {/* 1. Hero */}
@@ -157,12 +173,12 @@ export default function DynamicServicePage({ data }: { data: ServiceData }) {
         <ServiceHero data={data} />
       </StoryCard>
 
-      {/* 2. What’s Included (service‑specific) */}
+      {/* 2. What’s Included & Why Choose Us */}
       <StoryCard className="bg-slate-50">
         <ServiceFeatures data={data} />
       </StoryCard>
 
-      {/* 3. Social Proof – Reviews right after the core service info */}
+      {/* 3. Social Proof */}
       <StoryCard>
         <HomeReviews />
       </StoryCard>
@@ -177,12 +193,12 @@ export default function DynamicServicePage({ data }: { data: ServiceData }) {
         <HomeAreas />
       </StoryCard>
 
-      {/* 6. FAQ (service‑specific FAQs) */}
+      {/* 6. FAQ */}
       <StoryCard>
         <HomeFAQ faqs={data.faqs} />
       </StoryCard>
 
-      {/* 7. Final Call‑to‑Action */}
+      {/* 7. Final Call-to-Action */}
       <StoryCard className="bg-green-950 text-white">
         <HomeCTA />
       </StoryCard>

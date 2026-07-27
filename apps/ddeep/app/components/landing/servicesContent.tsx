@@ -17,7 +17,9 @@ export interface ServiceData {
   ctaPrimaryText: string;
   ctaSecondaryText: string;
   faqs: FAQItem[];
-  cities: string[];   // NEW
+  cities: string[];
+  cityName?: string;
+  whyChooseUs: string[]; // Unique value proposition points per service
 }
 
 export const servicesContent: Record<string, ServiceData> = {
@@ -31,6 +33,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "Our regular cleaning services maintain hygiene, comfort, and a spotless environment all year round.",
     ctaSecondaryText: "Trusted by households and businesses across the North West.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Consistent weekly or fortnightly visits from your dedicated local cleaner",
+      "Fully vetted, insured, and background-checked domestic cleaning professionals",
+      "Customizable cleaning checklists tailored entirely to your household routine",
+      "Eco-friendly products safe for children, pets, and sensitive surfaces"
+    ],
     featureCards: [
       { title: "Living Areas & Workspaces", items: ["Dust and wipe all surfaces", "Vacuum carpets and rugs", "Mop hard floors", "Empty bins and replace liners"] },
       { title: "Kitchen Cleaning", items: ["Clean and sanitise worktops", "Wipe appliance exteriors", "Clean sinks and taps", "Disinfect high-touch areas"] },
@@ -54,6 +62,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "Our deep cleaning service targets built-up dirt, grease, and bacteria for a complete reset.",
     ctaSecondaryText: "Ideal for homes, offices, inspections, and special occasions.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Intensive detailing that targets hidden grime behind furniture and appliances",
+      "Specialized heavy-duty lime-scale and grease removal treatments",
+      "Professional-grade equipment and industrial sanitisation agents",
+      "Comprehensive top-to-bottom property restoration for an immaculate finish"
+    ],
     featureCards: [
       { title: "Full Property Deep Clean", items: ["All surfaces scrubbed and sanitised", "Skirting boards and doors cleaned", "Fixtures and fittings detailed", "Hard-to-reach areas covered"] },
       { title: "Kitchen Deep Clean", items: ["Oven and appliance deep cleaning", "Cupboards cleaned inside and out", "Grease and grime removal", "Descaling sinks and taps"] },
@@ -77,6 +91,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "We clean every room to inspection-ready standards for tenants and landlords.",
     ctaSecondaryText: "Landlord and letting-agent approved cleaning service.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Strict adherence to official inventory and letting agency check-out checklists",
+      "Deposit back guarantee with professional cleaning certificate provided on completion",
+      "Includes comprehensive deep oven cleaning and window glass detailing",
+      "Fast turnaround times designed to match tight moving schedules"
+    ],
     featureCards: [
       { title: "Kitchen & Appliances", items: ["Oven and hob deep cleaned", "Appliances cleaned inside and out", "Cupboards and drawers wiped", "Sinks and taps descaled"] },
       { title: "Bathrooms & Toilets", items: ["Full bathroom sanitisation", "Limescale and mould removal", "Tiles and grout scrubbed", "Floors disinfected"] },
@@ -100,6 +120,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "We keep offices clean, safe, and welcoming for staff and visitors.",
     ctaSecondaryText: "Trusted by offices and businesses across the North West.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Flexible out-of-hours scheduling including early mornings, evenings, and weekends",
+      "Strict key-holding security protocols managed by vetted commercial operatives",
+      "Customized janitorial and washroom restocking management solutions",
+      "Creates a pristine, health-compliant corporate environment for employees and clients"
+    ],
     featureCards: [
       { title: "Workstations & Offices", items: ["Desks wiped and sanitised", "Chairs and surfaces cleaned", "Bins emptied", "Floors vacuumed or mopped"] },
       { title: "Shared Areas", items: ["Break rooms cleaned", "Kitchen areas sanitised", "Meeting rooms refreshed", "High-touch points disinfected"] },
@@ -123,6 +149,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "We help keep student living spaces clean, hygienic, and landlord-ready.",
     ctaSecondaryText: "Trusted by students, landlords, and letting agents.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Specialized summer turnaround packages for high-volume student property portfolios",
+      "Budget-friendly pricing tailored specifically to student tenant agreements",
+      "Rigorous disinfection of communal kitchens, hallways, and private study rooms",
+      "Guaranteed compliance with university accommodation inspection standards"
+    ],
     featureCards: [
       { title: "Bedrooms & Living Areas", items: ["Dust and wipe surfaces", "Vacuum carpets", "Empty bins", "Floors cleaned"] },
       { title: "Shared Kitchens", items: ["Surfaces disinfected", "Appliances cleaned", "Bins emptied", "Grease and food residue removed"] },
@@ -146,6 +178,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "Extend the life of your appliances with expert cleaning.",
     ctaSecondaryText: "Ideal for homes, landlords, and property managers.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "100% fume-free, non-caustic, and child-safe cleaning formulations",
+      "Restores energy efficiency and heating performance across all white goods",
+      "Expert removal of stubborn carbon deposits, burnt grease, and food odours",
+      "Fully insured technicians protecting your kitchen fixtures and worktops"
+    ],
     featureCards: [
       { title: "Oven & Hob Cleaning", items: ["Carbon and grease removal", "Glass and racks cleaned", "Control panels wiped", "Safe degreasing products"] },
       { title: "Fridge & Freezer", items: ["Interior sanitisation", "Shelves and drawers cleaned", "Odour removal", "Food-safe products used"] },
@@ -169,6 +207,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "We remove dirt, stains, and allergens for a fresh, long-lasting clean.",
     ctaSecondaryText: "Trusted by homes and offices across the North West.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Advanced hot water extraction (steam cleaning) technology reaching deep into carpet fibers",
+      "Specialized enzymatic spot treatments for stubborn pet urine and organic stains",
+      "Rapid-drying extraction systems minimizing downtime for homes and busy offices",
+      "Eliminates trapped allergens, dust mites, and bacteria to improve indoor air quality"
+    ],
     featureCards: [
       { title: "Deep Carpet Cleaning", items: ["Deep fibre dirt removal", "High-traffic areas treated", "Professional equipment used", "Fresh finish restored"] },
       { title: "Stain & Odour Treatment", items: ["Targeted stain removal", "Odour neutralisation", "Pet stain treatment", "Spill and wear care"] },
@@ -192,6 +236,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "Our hospitality cleaning services ensure your premises meet the highest hygiene standards for staff and guests.",
     ctaSecondaryText: "Trusted by hotels, bars, and restaurants across the North West.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Strict compliance protocols tailored for Environmental Health Officer (EHO) standards",
+      "Overnight and pre-opening service schedules designed around hospitality operating hours",
+      "Food-safe, certified sanitisation agents used across all food preparation areas",
+      "Immaculate front-of-house glass, bar counters, and guest washroom detailing"
+    ],
     featureCards: [
       { title: "Front of House", items: ["Floors vacuumed and mopped", "Tables, counters, and displays cleaned", "Glass and mirrors polished", "High-touch areas sanitised"] },
       { title: "Kitchens & Food Prep Areas", items: ["Worktops and surfaces sanitised", "Ovens, fridges, and appliances cleaned", "Sinks and taps descaled", "Floors and drains thoroughly cleaned"] },
@@ -215,6 +265,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "We make your new or renovated property ready for handover, inspection, or occupation.",
     ctaSecondaryText: "Trusted by builders, contractors, and property developers.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "CSCS certified cleaning operatives equipped with full site safety PPE",
+      "Specialized removal of stubborn fine masonry dust, paint splatters, and silicone residues",
+      "Detailed builder sparkle clean ensuring flawless handover readiness",
+      "Collaborative scheduling working directly with main contractors and developers"
+    ],
     featureCards: [
       { title: "Debris & Dust Removal", items: ["Vacuum and remove construction dust", "Sweep and mop all floors", "Clean walls and ceilings", "Remove stickers, labels, and residues"] },
       { title: "Kitchen & Bathroom Focus", items: ["Cabinets wiped inside and out", "Sinks, taps, and appliances sanitised", "Tiles and grout cleaned", "Mirrors and glass polished"] },
@@ -228,7 +284,7 @@ export const servicesContent: Record<string, ServiceData> = {
     ]
   },
 
-  "healthcare-cleaning": {
+    "healthcare-cleaning": {
     heroTitle: "Healthcare & Clinical Cleaning",
     heroSubtitle: "Specialised cleaning services for hospitals, clinics, GP surgeries, and medical facilities.",
     heroButtons: [
@@ -238,6 +294,12 @@ export const servicesContent: Record<string, ServiceData> = {
     ctaPrimaryText: "We maintain high-level hygiene standards to protect patients, staff, and visitors.",
     ctaSecondaryText: "Trusted by NHS facilities, clinics, and private healthcare providers.",
     cities: ["Manchester", "Liverpool", "Salford", "Warrington", "Bolton", "Stockport", "Oldham"],
+    whyChooseUs: [
+      "Strict compliance with CQC (Care Quality Commission) infection control standards",
+      "Medical-grade disinfectants proven to eliminate MRSA, pathogens, and viruses",
+      "Rigorous cross-contamination prevention protocols and specialized waste handling",
+      "Fully trained, vetted, and health-screened clinical cleaning specialists"
+    ],
     featureCards: [
       { title: "Patient & Clinical Areas", items: ["Disinfect high-touch surfaces", "Sanitise beds, trolleys, and equipment", "Floors thoroughly cleaned and mopped", "Waste safely disposed of"] },
       { title: "Bathrooms & Toilets", items: ["Toilets, sinks, and showers disinfected", "Mirrors and fixtures polished", "Floors sanitised", "Supplies restocked as needed"] },

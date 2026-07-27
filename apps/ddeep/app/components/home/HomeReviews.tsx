@@ -19,23 +19,59 @@ const platformStats = [
     rating: 4.8,
     icon: FaStar,
     iconColor: "text-green-500",
-    url: "" // add your link
+    url: "" 
   }
 ];
 
-// 2. REVIEWS DATA
+// 2. REAL REVIEWS DATA (Imported from your verified profile)
 const reviews = [
-  { name: "Sarah J.", role: "Homeowner", text: "Professional and reliable. DDeep is the only company I kept for my weekly deep cleaning.", rating: 5 },
-  { name: "Mark T.", role: "Office Mgr", text: "Punctual and invisible. Our office has never looked better. Highly recommend their commercial team.", rating: 5 },
-  { name: "Emma W.", role: "Tenant", text: "Got my full deposit back. End-of-tenancy experts in Manchester. Stress-free experience.", rating: 5 },
-  { name: "James A.", role: "Restaurateur", text: "Hygiene is critical. They understand kitchen inspection standards and clinical cleanliness.", rating: 5 },
-  { name: "Chloe E.", role: "Parent", text: "Eco-friendly products were a must for my kids. They delivered a perfect house clean.", rating: 4.5 },
+  { 
+    name: "Side Eye", 
+    role: "Verified Customer", 
+    text: "Their enquiries response was swift and right on time on the day of my booking! The gentleman that came to clean my bathroom did an amazing job! I will use them again and again. Don’t hesitate to call them!", 
+    rating: 5 
+  },
+  { 
+    name: "Barbara Walker", 
+    role: "Verified Customer", 
+    text: "Great price and outstanding quality. Exceptional cleaning service from start to finish!", 
+    rating: 5 
+  },
+  { 
+    name: "Silvana Pedro", 
+    role: "Homeowner", 
+    text: "Excellent service! The team was highly professional, careful and polite throughout. I was absolutely delighted with the service and very pleased with the final result. I would highly recommend them without hesitation!", 
+    rating: 5 
+  },
+  { 
+    name: "Cherry Blossom", 
+    role: "Landlord", 
+    text: "Absolutely brilliant service. After my tenants moved out, my three-floor house was in a terrible state. The team arrived and transformed the property completely.", 
+    rating: 5 
+  },
+  { 
+    name: "Smith", 
+    role: "Local Guide", 
+    text: "I recently hired D Deep Cleaning Services Ltd for a full deep clean and I couldn't be happier with the results. The team was thorough, efficient, and professional.", 
+    rating: 5 
+  },
+  { 
+    name: "Zak Headworth-Singh", 
+    role: "Homeowner", 
+    text: "Great and friendly service. Full deep steam clean - all grub and dirt gone!", 
+    rating: 5 
+  },
+  { 
+    name: "Haitham Mahdi", 
+    role: "Local Guide", 
+    text: "Thanks for your amazing deep cleaning. The price was so fair and the results exceeded expectations!", 
+    rating: 5 
+  },
 ];
 
 const marqueeReviews = [...reviews, ...reviews, ...reviews];
 
 export default function HomeReviewsCarousel() {
-  // Client mount check to prevent Framer Motion static-to-hydration mismatch (#418)
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => setIsMounted(true), []);
 
@@ -46,7 +82,7 @@ export default function HomeReviewsCarousel() {
       <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#15803d 1px, transparent 1px)', backgroundSize: '30px 30px' }} aria-hidden="true"></div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-evenly lg:justify-between h-full px-4 lg:px-8 gap-8 lg:gap-12">
-        
+
         {/* Left Header & Stats */}
         <div className="flex flex-col items-center lg:items-start gap-6 lg:gap-8 shrink-0 lg:w-5/12">
           {isMounted ? (
@@ -58,7 +94,7 @@ export default function HomeReviewsCarousel() {
                 </span>
               </h2>
               <p className="mt-3 lg:mt-6 text-sm lg:text-lg text-slate-500 max-w-md">
-                The North West's most trusted choice for deep cleaning, end-of-tenancy, and commercial maintenance.
+                Real feedback from real customers across the North West. Fully insured, trusted, and top-rated.
               </p>
             </motion.div>
           ) : (
@@ -70,7 +106,7 @@ export default function HomeReviewsCarousel() {
                 </span>
               </h2>
               <p className="mt-3 lg:mt-6 text-sm lg:text-lg text-slate-500 max-w-md">
-                The North West's most trusted choice for deep cleaning, end-of-tenancy, and commercial maintenance.
+                Real feedback from real customers across the North West. Fully insured, trusted, and top-rated.
               </p>
             </div>
           )}
@@ -102,7 +138,7 @@ export default function HomeReviewsCarousel() {
 
         {/* RIGHT SIDE: REVIEWS */}
         <div className="relative w-full lg:w-7/12 flex-grow lg:flex-grow-0 flex flex-col justify-center overflow-hidden">
-          
+
           {/* 📱 MOBILE: Swipeable Horizontal Snap Carousel */}
           <div className="lg:hidden w-full">
             <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none gap-4 px-2 py-2 -mx-4 sm:mx-0">
@@ -130,7 +166,7 @@ export default function HomeReviewsCarousel() {
                   <motion.div
                     className="flex gap-4 px-4"
                     animate={{ x: ["0%", "-50%"] }}
-                    transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 70, repeat: Infinity, ease: "linear" }}
                   >
                     {marqueeReviews.map((review, i) => (
                       <ReviewCard key={`top-${i}`} review={review} />
@@ -143,7 +179,7 @@ export default function HomeReviewsCarousel() {
                   <motion.div
                     className="flex gap-4 px-4"
                     animate={{ x: ["-50%", "0%"] }}
-                    transition={{ duration: 70, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
                   >
                     {marqueeReviews.map((review, i) => (
                       <ReviewCard key={`bot-${i}`} review={review} />
@@ -169,7 +205,7 @@ export default function HomeReviewsCarousel() {
 // ReviewCard component
 function ReviewCard({ review }: { review: any }) {
   return (
-    <div className="w-full lg:w-[350px] shrink-0 p-5 md:p-6 rounded-2xl md:rounded-[2rem] bg-white border border-green-100/80 shadow-md shadow-green-950/[0.03] transition-all cursor-default flex flex-col h-full justify-between">
+    <div className="w-full lg:w-[360px] shrink-0 p-5 md:p-6 rounded-2xl md:rounded-[2rem] bg-white border border-green-100/80 shadow-md shadow-green-950/[0.03] transition-all cursor-default flex flex-col h-full justify-between">
       <div className="flex justify-between items-start mb-3 md:mb-4">
         <div className="flex items-center gap-0.5 md:gap-1">
           {[...Array(5)].map((_, i) => (
