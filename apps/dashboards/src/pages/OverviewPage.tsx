@@ -8,10 +8,13 @@ import axios from 'axios';
 import KPIGrid from '../components/overview/KPIGrid';
 import DateFilterBar from '../components/overview/DateFilterBar';
 import { FunnelChart } from '../components/overview/FunnelChart';
-import { funnelStages } from '../data/funnelData'; // <-- imported from data folder
+import FeedbackEngine from '../components/overview/FeedbackEngine';
 import TrafficLineChart from '../components/TrafficLineChart';
 import DeviceChart from '../components/DeviceChart';
 import { type KPI } from '../components/KPICard';
+
+// Import data
+import { funnelStages, mockFeedbackInsights } from '../data/funnelData';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://core.franciscodes.com';
 
@@ -92,7 +95,6 @@ export default function OverviewPage() {
         const bounceRate = umamiKpis.find((k: any) => k.id === 'umami_3')?.value || '0%';
         const avgSession = umamiKpis.find((k: any) => k.id === 'umami_4')?.value || '0s';
 
-        // Build combined KPI list – all 7 metrics
         const combinedKpis: KPI[] = [
           { id: 'page_views', title: 'Page Views', value: pageViews, change: 0 },
           { id: 'unique_visitors', title: 'Unique Visitors', value: uniqueVisitors, change: 0 },
@@ -231,7 +233,7 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* Conversion Funnel – now imported from data/funnelData.ts */}
+        {/* Conversion Funnel */}
         <motion.div variants={itemVariants} className="mt-8">
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             <div className="flex items-center justify-between mb-6">
@@ -244,6 +246,11 @@ export default function OverviewPage() {
             </div>
             <FunnelChart stages={funnelStages} />
           </div>
+        </motion.div>
+
+        {/* --- Automated Feedback Loop Engine --- */}
+        <motion.div variants={itemVariants} className="mt-8">
+          <FeedbackEngine insights={mockFeedbackInsights} />
         </motion.div>
 
       </motion.div>

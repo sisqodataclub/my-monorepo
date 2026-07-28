@@ -39,3 +39,40 @@ export const funnelStages: FunnelStage[] = [
     ],
   },
 ];
+
+// --- Mock Feedback Loop Insights ---
+export interface FeedbackInsight {
+  id: string;
+  type: 'critical' | 'warning' | 'success';
+  stage: string;
+  title: string;
+  metric: string;
+  description: string;
+  action: string;
+  impact: string;
+}
+
+export const mockFeedbackInsights: FeedbackInsight[] = [
+  {
+    id: '1',
+    type: 'critical',
+    stage: 'Traffic → Leads',
+    title: 'High Visitor Drop-Off on Mobile',
+    metric: '7.5% Lead Rate (Target: >12%)',
+    description:
+      'Umami shows 68% mobile traffic, but form submission completion on iOS is down 40%.',
+    action: 'Trigger Twilio SMS Lead Magnet',
+    impact: 'Estimated +18 leads/week',
+  },
+  {
+    id: '2',
+    type: 'success',
+    stage: 'Leads → Conversions',
+    title: 'High Close Rate on Phone Call Leads',
+    metric: '20% Conversion Rate',
+    description:
+      'Twilio call leads are converting 3x faster than web forms.',
+    action: 'Reallocate 15% Meta Ad Budget to Call Ads',
+    impact: 'Estimated +£1,200 revenue/mo',
+  },
+];
