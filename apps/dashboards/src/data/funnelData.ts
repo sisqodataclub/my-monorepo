@@ -1,5 +1,5 @@
 // src/data/funnelData.ts
-import { FunnelStage } from '../components/overview/FunnelChart';
+import type { FunnelStage } from '../components/overview/FunnelChart';
 
 export const funnelStages: FunnelStage[] = [
   {
