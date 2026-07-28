@@ -7,7 +7,8 @@ import axios from 'axios';
 
 import KPIGrid from '../components/overview/KPIGrid';
 import DateFilterBar from '../components/overview/DateFilterBar';
-import { FunnelChart } from '../components/overview/FunnelChart'; // <-- new import
+import { FunnelChart } from '../components/overview/FunnelChart';
+import { funnelStages } from '../data/funnelData'; // <-- imported from data folder
 import TrafficLineChart from '../components/TrafficLineChart';
 import DeviceChart from '../components/DeviceChart';
 import { type KPI } from '../components/KPICard';
@@ -124,14 +125,6 @@ export default function OverviewPage() {
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
   };
 
-  // --- Dummy funnel data (not connected to backend yet) ---
-  const funnelStages = [
-    { label: 'IMPRESSIONS', volume: 100_000 },
-    { label: 'TRAFFIC / CLICKS', volume: 5_000 },
-    { label: 'LEADS', volume: 400 },
-    { label: 'CONVERSIONS', volume: 80 },
-  ];
-
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-slate-100/50 to-slate-50 pt-6">
       <motion.div
@@ -183,7 +176,7 @@ export default function OverviewPage() {
           />
         </motion.div>
 
-        {/* KPI Grid – now shows all 7 KPIs */}
+        {/* KPI Grid */}
         <motion.div variants={itemVariants}>
           <KPIGrid kpis={kpis} loading={loading} />
         </motion.div>
@@ -238,7 +231,7 @@ export default function OverviewPage() {
           </div>
         </motion.div>
 
-        {/* --- 🆕 Conversion Funnel (full‑width) --- */}
+        {/* Conversion Funnel – now imported from data/funnelData.ts */}
         <motion.div variants={itemVariants} className="mt-8">
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 transition-all duration-300 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]">
             <div className="flex items-center justify-between mb-6">
