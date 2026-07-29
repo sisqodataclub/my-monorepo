@@ -11,7 +11,6 @@ from rest_framework.decorators import action
 from .models import Resume, JobApplication
 from .serializers import ResumeSerializer, JobApplicationSerializer
 
-# Optional: keep this if you need the React demo page
 def react_demo_view(request):
     return render(request, 'resumesite/react_demo.html')
 
@@ -20,27 +19,21 @@ class ResumeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return only resumes belonging to the authenticated user."""
         return Resume.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        """Automatically set the user when creating a resume."""
         serializer.save(user=self.request.user)
 
     @action(detail=True, methods=['get'], url_path='pdf')
     def download_pdf(self, request, pk=None):
-        """Generate and download a PDF version of the resume with Markdown support."""
         resume = self.get_object()
 
-        # Helper to convert Markdown to HTML
         def render_markdown(text):
             if not text:
                 return ''
-            # Convert Markdown to HTML with extensions for lists, tables, and line breaks
             html = markdown.markdown(text, extensions=['extra', 'nl2br'])
             return mark_safe(html)
 
-        # Fetch related data
         educations = resume.educations.all().order_by('order', '-start_date')
         experiences = resume.experiences.all().order_by('order', '-start_date')
         projects = resume.projects.all().order_by('order', '-start_date')
@@ -48,20 +41,13 @@ class ResumeViewSet(viewsets.ModelViewSet):
         languages = resume.languages.all()
         achievements = resume.achievements.all()
 
-        # ---------------------------------------------------------
-        # PRE-RENDER MARKDOWN BEFORE PASSING TO TEMPLATE
-        # ---------------------------------------------------------
         resume.about_html = render_markdown(resume.about)
-        
         for edu in educations:
             edu.description_html = render_markdown(edu.description)
-            
         for exp in experiences:
             exp.description_html = render_markdown(exp.description)
-            
         for proj in projects:
             proj.description_html = render_markdown(proj.description)
-            
         for ach in achievements:
             ach.description_html = render_markdown(ach.description)
 
@@ -76,10 +62,7 @@ class ResumeViewSet(viewsets.ModelViewSet):
             'now': timezone.now(),
         }
 
-        # Render HTML template
         html = render_to_string('cv/pdf_template.html', context)
-
-        # PDF options
         options = {
             'page-size': 'A4',
             'margin-top': '0.75in',
@@ -93,7 +76,6 @@ class ResumeViewSet(viewsets.ModelViewSet):
         try:
             pdf = pdfkit.from_string(html, False, options=options)
             response = HttpResponse(pdf, content_type='application/pdf')
-            # Use title or full_name for filename
             filename = f"CV_{resume.title or resume.full_name}.pdf"
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
@@ -106,9 +88,11 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Return only applications belonging to the authenticated user."""
-        return JobApplication.objects.filter(user=self.request.user)
+        queryset = JobApplication.objects.filter(user=self.request.user)
+        tag = self.request.query_params.get('tag')
+        if tag:
+            queryset = queryset.filter(tags__name__iexact=tag)
+        return queryset
 
     def perform_create(self, serializer):
-        """Automatically set the user when creating a job application."""
         serializer.save(user=self.request.user)

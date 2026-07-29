@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
-
-
+from django.utils import timezone
 
 class Resume(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='resumes')
@@ -17,7 +16,6 @@ class Resume(models.Model):
 
     def __str__(self):
         return self.title or self.full_name
-
 
 
 class Education(models.Model):
@@ -97,10 +95,18 @@ class Achievement(models.Model):
         return self.description[:50]
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class JobApplication(models.Model):
     STATUS_CHOICES = [
         ('saved', 'Saved'),
         ('applied', 'Applied'),
+        ('follow_up', 'Follow-up'),
         ('interviewing', 'Interviewing'),
         ('offered', 'Offered'),
         ('rejected', 'Rejected'),
@@ -121,6 +127,8 @@ class JobApplication(models.Model):
         related_name='applications'
     )
     notes = models.TextField(blank=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name='applications')
+    status_updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

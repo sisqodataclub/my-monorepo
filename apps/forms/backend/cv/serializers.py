@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Resume, Education, Experience, Project,
-    Skill, Language, Achievement, JobApplication
+    Skill, Language, Achievement, JobApplication, Tag
 )
 
 # ========== Nested Serializers ==========
@@ -44,6 +44,11 @@ class AchievementSerializer(serializers.ModelSerializer):
         model = Achievement
         fields = ['id', 'description']
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
+
 
 # ========== Resume Serializer (with nested writes) ==========
 
@@ -58,7 +63,7 @@ class ResumeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resume
         fields = [
-            'id', 'user', 'title',  # <-- added 'title' field
+            'id', 'user', 'title',
             'full_name', 'about', 'age', 'email', 'phone',
             'educations', 'experiences', 'projects',
             'skills', 'languages', 'achievements',
@@ -68,7 +73,6 @@ class ResumeSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'created_at', 'updated_at']
 
     def create(self, validated_data):
-        # Pop nested data
         educations_data = validated_data.pop('educations', [])
         experiences_data = validated_data.pop('experiences', [])
         projects_data = validated_data.pop('projects', [])
@@ -137,11 +141,38 @@ class ResumeSerializer(serializers.ModelSerializer):
 # ========== JobApplication Serializer ==========
 
 class JobApplicationSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
+    tag_names = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
+
     class Meta:
         model = JobApplication
         fields = [
             'id', 'user', 'job_link', 'company', 'position',
             'date_applied', 'deadline_date',
-            'status', 'resume_used', 'notes', 'created_at', 'updated_at'
+            'status', 'resume_used', 'notes',
+            'tags', 'tag_names', 'status_updated_at',
+            'created_at', 'updated_at'
         ]
-        read_only_fields = ['user', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at', 'status_updated_at']
+
+    def create(self, validated_data):
+        tag_names = validated_data.pop('tag_names', [])
+        application = JobApplication.objects.create(**validated_data)
+        for name in tag_names:
+            if name.strip():
+                tag, _ = Tag.objects.get_or_create(name=name.strip())
+                application.tags.add(tag)
+        return application
+
+    def update(self, instance, validated_data):
+        tag_names = validated_data.pop('tag_names', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if tag_names is not None:
+            instance.tags.clear()
+            for name in tag_names:
+                if name.strip():
+                    tag, _ = Tag.objects.get_or_create(name=name.strip())
+                    instance.tags.add(tag)
+        return instance
