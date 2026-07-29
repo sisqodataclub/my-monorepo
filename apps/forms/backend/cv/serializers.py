@@ -151,9 +151,10 @@ class JobApplicationSerializer(serializers.ModelSerializer):
             'date_applied', 'deadline_date',
             'status', 'resume_used', 'notes',
             'tags', 'tag_names', 'status_updated_at',
+            'highest_stage_reached',  # <-- added
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['user', 'created_at', 'updated_at', 'status_updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at', 'status_updated_at', 'highest_stage_reached']
 
     def create(self, validated_data):
         tag_names = validated_data.pop('tag_names', [])

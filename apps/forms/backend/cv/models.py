@@ -112,6 +112,14 @@ class JobApplication(models.Model):
         ('rejected', 'Rejected'),
     ]
 
+    STAGE_CHOICES = [
+        (0, 'Saved'),
+        (1, 'Applied'),
+        (2, 'Follow-up'),
+        (3, 'Interviewing'),
+        (4, 'Offered'),
+    ]
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='applications')
     job_link = models.URLField()
     company = models.CharField(max_length=200)
@@ -129,9 +137,32 @@ class JobApplication(models.Model):
     notes = models.TextField(blank=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name='applications')
     status_updated_at = models.DateTimeField(auto_now=True)
+    highest_stage_reached = models.IntegerField(choices=STAGE_CHOICES, default=0, help_text="Highest stage ever reached")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         name = self.user.get_full_name() or self.user.email or "User"
         return f"{name} - {self.position} at {self.company}"
+
+    def save(self, *args, **kwargs):
+        stage_map = {
+            'saved': 0,
+            'applied': 1,
+            'follow_up': 2,
+            'interviewing': 3,
+            'offered': 4,
+            'rejected': 0,  # Rejection doesn't increase the highest stage
+        }
+        current_stage = stage_map.get(self.status, 0)
+        if self.pk:
+            old = JobApplication.objects.get(pk=self.pk)
+            old_stage = stage_map.get(old.status, 0)
+            # If the new status is a higher stage, update highest_stage_reached
+            if current_stage > old_stage and current_stage > self.highest_stage_reached:
+                self.highest_stage_reached = current_stage
+        else:
+            # New record – set the initial highest stage based on initial status
+            if current_stage > self.highest_stage_reached:
+                self.highest_stage_reached = current_stage
+        super().save(*args, **kwargs)
