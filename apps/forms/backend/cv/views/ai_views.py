@@ -1,4 +1,3 @@
-# cv/views/ai_views.py
 import requests
 from django.http import StreamingHttpResponse
 from rest_framework.decorators import api_view
@@ -50,21 +49,35 @@ def stream_mission(request, task_id):
     Returns Server‑Sent Events (SSE) – must be a regular Django view, not a DRF view.
     """
     def event_stream():
+        # Send an immediate "connected" ping to flush headers and keep the connection alive.
+        yield 'data: {"event": "connected"}\n\n'
+
         url = f"{AI_API_URL}/missions/{task_id}/stream"
         try:
-            with requests.get(url, stream=True, headers={"Accept": "text/event-stream"}) as resp:
+            # Timeout tuple: (connect_timeout, read_timeout)
+            # Connect timeout ensures we don't hang if the orchestrator is unreachable.
+            # Read timeout is None because SSE streams indefinitely.
+            with requests.get(
+                url,
+                stream=True,
+                headers={"Accept": "text/event-stream"},
+                timeout=(5, None)
+            ) as resp:
                 resp.raise_for_status()
-                # Proxy the raw SSE bytes exactly as FastAPI sends them
-                for chunk in resp.iter_content(chunk_size=1024, decode_unicode=True):
+                # chunk_size=None forces unbuffered streaming – no byte hoarding.
+                for chunk in resp.iter_content(chunk_size=None, decode_unicode=True):
                     if chunk:
                         yield chunk
         except requests.exceptions.RequestException as e:
-            # Format errors as valid SSE so the frontend can handle them
+            # Format errors as valid SSE so the frontend can handle them.
             yield f'data: {{"error": "{str(e)}"}}\n\n'
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"   # Prevent Nginx from buffering the stream
+    response["X-Accel-Buffering"] = "no"   # Prevent Nginx from buffering
+    # Explicit CORS headers (fallback if middleware doesn't add them)
+    response["Access-Control-Allow-Origin"] = "https://www.franciscodes.com"
+    response["Access-Control-Allow-Credentials"] = "true"
     return response
 
 
@@ -74,7 +87,6 @@ def fetch_cv_report(request, task_id):
     Fetch the final cv_report.json artifact from the AI orchestrator.
     """
     try:
-        # Django specifies exactly which artifact it wants from the generic engine
         target_filename = "cv_report.json"
         response = requests.get(
             f"{AI_API_URL}/missions/{task_id}/artifacts/{target_filename}"
