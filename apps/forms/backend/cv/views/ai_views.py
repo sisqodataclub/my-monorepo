@@ -1,8 +1,10 @@
-# cv/views/ai_views.py
 import requests
+import logging
 from django.http import StreamingHttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+logger = logging.getLogger(__name__)
 
 AI_API_URL = "https://aiapi.franciscodes.com"
 
@@ -42,40 +44,40 @@ def stream_mission(request, task_id):
     Stream the progress of a mission from the AI API with Keep-Alive Heartbeats.
     """
     def event_stream():
-        # Immediate ping to flush headers and keep connection alive
+        # Immediate ping
         yield 'data: {"event": "connected"}\n\n'
 
         url = f"{AI_API_URL}/missions/{task_id}/stream"
+        logger.info(f"Starting stream for task {task_id}")
+
         try:
-            # Create a session with a 15‑second read timeout.
-            # If the AI is silent for longer than that, we catch the ReadTimeout
-            # and send a heartbeat to the client, resetting Nginx's timeout.
             session = requests.Session()
             req = requests.Request('GET', url, headers={"Accept": "text/event-stream"}).prepare()
             resp = session.send(req, stream=True, timeout=(5, 15))  # 5s connect, 15s read
             resp.raise_for_status()
+            logger.info(f"Connected to orchestrator for task {task_id}")
 
             while True:
                 try:
-                    # Iterate over lines – this will block until a line is received
-                    # or the read timeout is reached.
+                    chunk_count = 0
                     for line in resp.iter_lines(decode_unicode=True):
                         if line:
-                            # Forward the raw SSE line as-is
+                            chunk_count += 1
+                            logger.debug(f"Received chunk #{chunk_count}: {line[:80]}...")
                             yield f"{line}\n\n"
-                    # If we exit the loop, the stream ended naturally
+                    logger.info(f"Stream for task {task_id} ended naturally after {chunk_count} chunks")
                     break
                 except requests.exceptions.ReadTimeout:
-                    # No data received for 15 seconds – send a heartbeat
+                    logger.info(f"Read timeout for task {task_id} – sending heartbeat")
                     yield 'data: {"event": "heartbeat", "message": "AI is still thinking..."}\n\n'
-                    # Continue the loop to keep listening
                     continue
         except requests.exceptions.RequestException as e:
+            logger.error(f"Stream error for task {task_id}: {str(e)}")
             yield f'data: {{"error": "{str(e)}"}}\n\n'
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"   # Disable Nginx buffering
+    response["X-Accel-Buffering"] = "no"
     response["Access-Control-Allow-Origin"] = "https://www.franciscodes.com"
     response["Access-Control-Allow-Credentials"] = "true"
     return response
