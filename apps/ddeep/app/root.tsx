@@ -1,10 +1,40 @@
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import type { LinksFunction, MetaFunction } from "react-router";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
-import { ScrollRestoration, Scripts, Links, Meta, Outlet } from "react-router";
-import appStylesHref from "./app.css?url";
-import { ContactModalProvider } from "./context/ContactModalContext";
+import "./app.css";
 
-export default function Root() {
+export const links: LinksFunction = () => [
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+];
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "D Deep Cleaning Services | Professional Cleaning in Manchester, Liverpool & Salford" },
+    { name: "description", content: "Professional cleaning services in Manchester, Liverpool, Salford and the North West. End of tenancy cleaning, carpet cleaning, office cleaning and more. Contact us at clean@ddeepcleaningservices.com" },
+    { name: "robots", content: "index, follow" },
+    { rel: "canonical", href: "https://www.ddeepcleaningservices.com/" },
+    { property: "og:title", content: "D Deep Cleaning Services | Professional Cleaning in Manchester, Liverpool & Salford" },
+    { property: "og:description", content: "Professional cleaning services in Manchester, Liverpool, Salford and the North West." },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: "https://www.ddeepcleaningservices.com/" },
+    { property: "og:site_name", content: "D Deep Cleaning Services" },
+  ];
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "D Deep Cleaning Services",
+  "email": "clean@ddeepcleaningservices.com",
+  "areaServed": ["Manchester", "Liverpool", "Salford", "North West"],
+  "url": "https://www.ddeepcleaningservices.com/",
+  "telephone": "",
+  "priceRange": "££",
+};
+
+export default function App() {
   return (
     <html lang="en">
       <head>
@@ -12,23 +42,12 @@ export default function Root() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-
-        {/* ===== FAVICON (green "D") ===== */}
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-        <link rel="stylesheet" href={appStylesHref} />
-        <script defer src="https://analytics.ddeepcleaningservices.com/script.js" data-website-id="6c2b6b9b-67d7-4a66-8a22-f7b1a33c4c78"></script>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
-
-      <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased">
-        <ContactModalProvider>
-          <Navbar />
-          <main className="flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <Outlet />
-          </main>
-          <Footer />
-        </ContactModalProvider>
-
+      <body>
+        <Navbar />
+        <Outlet />
+        <Footer />
         <ScrollRestoration />
         <Scripts />
       </body>
