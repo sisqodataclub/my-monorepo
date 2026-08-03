@@ -1,10 +1,11 @@
 # cv/views/ai_views.py
 import requests
+from django.http import StreamingHttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import StreamingHttpResponse
 
 AI_API_URL = "https://aiapi.franciscodes.com"
+
 
 @api_view(['POST'])
 def analyze_cv(request):
@@ -16,7 +17,6 @@ def analyze_cv(request):
     if not resume_data:
         return Response({"error": "No CV data provided"}, status=400)
 
-    # Write a clear, detailed mission – the orchestrator will generate its own agents.
     mission = f"""
     Review the following CV and provide comprehensive feedback on content, structure, and impact.
 
@@ -33,7 +33,6 @@ def analyze_cv(request):
     """
 
     try:
-        # No 'agents' field – let the orchestrator decide.
         response = requests.post(
             f"{AI_API_URL}/missions/start",
             json={"mission": mission}
@@ -45,30 +44,41 @@ def analyze_cv(request):
         return Response({"error": str(e)}, status=500)
 
 
-@api_view(['GET'])
 def stream_mission(request, task_id):
     """
-    Stream the progress and result of a mission.
-    Returns Server‑Sent Events (SSE).
+    Stream the progress of a mission from the AI API.
+    Returns Server‑Sent Events (SSE) – must be a regular Django view, not a DRF view.
     """
     def event_stream():
-        stream_url = f"{AI_API_URL}/missions/{task_id}/stream"
-        with requests.get(stream_url, stream=True) as response:
-            for line in response.iter_lines():
-                if line:
-                    yield f"data: {line.decode('utf-8')}\n\n"
+        url = f"{AI_API_URL}/missions/{task_id}/stream"
+        try:
+            with requests.get(url, stream=True, headers={"Accept": "text/event-stream"}) as resp:
+                resp.raise_for_status()
+                # Proxy the raw SSE bytes exactly as FastAPI sends them
+                for chunk in resp.iter_content(chunk_size=1024, decode_unicode=True):
+                    if chunk:
+                        yield chunk
+        except requests.exceptions.RequestException as e:
+            # Format errors as valid SSE so the frontend can handle them
+            yield f'data: {{"error": "{str(e)}"}}\n\n'
 
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"   # Prevent Nginx from buffering the stream
+    return response
 
 
 @api_view(['GET'])
 def fetch_cv_report(request, task_id):
     """
     Fetch the final cv_report.json artifact from the AI orchestrator.
-    Returns the JSON report directly.
     """
     try:
-        response = requests.get(f"{AI_API_URL}/missions/{task_id}/artifact")
+        # Django specifies exactly which artifact it wants from the generic engine
+        target_filename = "cv_report.json"
+        response = requests.get(
+            f"{AI_API_URL}/missions/{task_id}/artifacts/{target_filename}"
+        )
         response.raise_for_status()
         return Response(response.json())
     except requests.exceptions.RequestException as e:
