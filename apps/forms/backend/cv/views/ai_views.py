@@ -1,3 +1,4 @@
+# cv/views/ai_views.py
 import requests
 from django.http import StreamingHttpResponse
 from rest_framework.decorators import api_view
@@ -8,25 +9,18 @@ AI_API_URL = "https://aiapi.franciscodes.com"
 
 @api_view(['POST'])
 def analyze_cv(request):
-    """
-    Start an AI mission to analyse a CV.
-    Expects JSON: {"resume_data": "..."} (the full CV content)
-    """
     resume_data = request.data.get('resume_data')
     if not resume_data:
         return Response({"error": "No CV data provided"}, status=400)
 
     mission = f"""
     Review the following CV and provide comprehensive feedback on content, structure, and impact.
-
     You MUST save your final output as a file named exactly 'cv_report.json' in your scratch directory.
-
     Output a structured JSON report with:
     - "rating": an overall score from 1 to 10,
     - "strengths": a list of key strengths,
     - "weaknesses": a list of areas for improvement,
     - "suggestions": actionable recommendations for each section.
-
     CV Content:
     {resume_data}
     """
@@ -45,37 +39,43 @@ def analyze_cv(request):
 
 def stream_mission(request, task_id):
     """
-    Stream the progress of a mission from the AI API.
-    Returns Server‑Sent Events (SSE) – must be a regular Django view, not a DRF view.
+    Stream the progress of a mission from the AI API with Keep-Alive Heartbeats.
     """
     def event_stream():
-        # Send an immediate "connected" ping to flush headers and keep the connection alive.
+        # Immediate ping to flush headers and keep connection alive
         yield 'data: {"event": "connected"}\n\n'
 
         url = f"{AI_API_URL}/missions/{task_id}/stream"
         try:
-            # Timeout tuple: (connect_timeout, read_timeout)
-            # Connect timeout ensures we don't hang if the orchestrator is unreachable.
-            # Read timeout is None because SSE streams indefinitely.
-            with requests.get(
-                url,
-                stream=True,
-                headers={"Accept": "text/event-stream"},
-                timeout=(5, None)
-            ) as resp:
-                resp.raise_for_status()
-                # chunk_size=None forces unbuffered streaming – no byte hoarding.
-                for chunk in resp.iter_content(chunk_size=None, decode_unicode=True):
-                    if chunk:
-                        yield chunk
+            # Create a session with a 15‑second read timeout.
+            # If the AI is silent for longer than that, we catch the ReadTimeout
+            # and send a heartbeat to the client, resetting Nginx's timeout.
+            session = requests.Session()
+            req = requests.Request('GET', url, headers={"Accept": "text/event-stream"}).prepare()
+            resp = session.send(req, stream=True, timeout=(5, 15))  # 5s connect, 15s read
+            resp.raise_for_status()
+
+            while True:
+                try:
+                    # Iterate over lines – this will block until a line is received
+                    # or the read timeout is reached.
+                    for line in resp.iter_lines(decode_unicode=True):
+                        if line:
+                            # Forward the raw SSE line as-is
+                            yield f"{line}\n\n"
+                    # If we exit the loop, the stream ended naturally
+                    break
+                except requests.exceptions.ReadTimeout:
+                    # No data received for 15 seconds – send a heartbeat
+                    yield 'data: {"event": "heartbeat", "message": "AI is still thinking..."}\n\n'
+                    # Continue the loop to keep listening
+                    continue
         except requests.exceptions.RequestException as e:
-            # Format errors as valid SSE so the frontend can handle them.
             yield f'data: {{"error": "{str(e)}"}}\n\n'
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"   # Prevent Nginx from buffering
-    # Explicit CORS headers (fallback if middleware doesn't add them)
+    response["X-Accel-Buffering"] = "no"   # Disable Nginx buffering
     response["Access-Control-Allow-Origin"] = "https://www.franciscodes.com"
     response["Access-Control-Allow-Credentials"] = "true"
     return response
