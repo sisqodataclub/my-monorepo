@@ -1,19 +1,19 @@
 import requests
-import logging
-import threading
 import queue
+import threading
 import time
+import logging
 from django.http import StreamingHttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
+
 AI_API_URL = "https://aiapi.franciscodes.com"
 
 
 @api_view(['POST'])
 def analyze_cv(request):
-    # [Keep this exactly as you currently have it]
     resume_data = request.data.get('resume_data')
     if not resume_data:
         return Response({"error": "No CV data provided"}, status=400)
@@ -26,13 +26,15 @@ def analyze_cv(request):
     - "strengths": a list of key strengths,
     - "weaknesses": a list of areas for improvement,
     - "suggestions": actionable recommendations for each section.
-
     CV Content:
     {resume_data}
     """
 
     try:
-        response = requests.post(f"{AI_API_URL}/missions/start", json={"mission": mission})
+        response = requests.post(
+            f"{AI_API_URL}/missions/start",
+            json={"mission": mission}
+        )
         response.raise_for_status()
         task_id = response.json().get("task_id")
         return Response({"task_id": task_id, "status": "Mission started"})
@@ -41,21 +43,31 @@ def analyze_cv(request):
 
 
 def stream_mission(request, task_id):
+    """
+    Stream the progress of a mission from the AI API with aggressive keep‑alive padding.
+    Uses a background thread to fetch from the orchestrator while the main thread sends
+    continuous padding to overflow proxy buffers and keep the connection alive.
+    """
     def event_stream():
-        # 1. 1KB Padding trick: Overflows Nginx/Cloudflare buffers to force immediate network delivery
-        padding = ":" + (" " * 1024) + "\n\n"
-        
-        # Instantly ping the frontend
-        yield f'data: {{"event": "connected"}}\n\n{padding}'
+        # 1. Heavy initial padding (8KB) – instantly flushes proxy buffers so Cloudflare
+        #    sees the connection as active.
+        heavy_padding = ":" + (" " * 8192) + "\n\n"
+        yield f'data: {{"event": "connected"}}\n\n{heavy_padding}'
 
         url = f"{AI_API_URL}/missions/{task_id}/stream"
         q = queue.Queue()
         stop_event = threading.Event()
 
         def fetch_stream():
+            """Background thread that reads from the orchestrator and puts data into the queue."""
             try:
-                # 600s timeout allows the AI up to 10 minutes to process the massive prompt
-                with requests.get(url, stream=True, timeout=(5, 600), headers={"Accept": "text/event-stream"}) as resp:
+                # Use a very long read timeout (600 seconds = 10 minutes) because the AI can be slow.
+                with requests.get(
+                    url,
+                    stream=True,
+                    headers={"Accept": "text/event-stream"},
+                    timeout=(5, 600)
+                ) as resp:
                     resp.raise_for_status()
                     for chunk in resp.iter_content(chunk_size=None, decode_unicode=True):
                         if stop_event.is_set():
@@ -66,17 +78,18 @@ def stream_mission(request, task_id):
             except Exception as e:
                 q.put(("error", str(e)))
 
+        # Start the background thread
         t = threading.Thread(target=fetch_stream, daemon=True)
         t.start()
 
         last_heartbeat = time.time()
+
         try:
             while True:
                 try:
-                    # 2. Fast Yield: 2-second timeout allows Django to hit 'yield' frequently.
-                    # This prevents the "took too long to shut down" Daphne crash if the client disconnects.
+                    # Wait up to 2 seconds for new data from the orchestrator
                     msg_type, content = q.get(timeout=2)
-                    
+
                     if msg_type == "data":
                         yield content
                     elif msg_type == "done":
@@ -86,20 +99,21 @@ def stream_mission(request, task_id):
                         break
 
                 except queue.Empty:
-                    # Ping an invisible comment to check if the browser disconnected
-                    yield ": ping\n\n"
-                    
-                    # 3. Padded Heartbeat: Sent every 15 seconds to bypass Cloudflare's 100s kill switch
+                    # 2. Continuous 2KB padding – sends an invisible SSE comment every 2 seconds.
+                    # This guarantees that data flows over the wire, resetting Cloudflare's timeout.
+                    yield f": ping {' ' * 2048}\n\n"
+
+                    # Send a user‑friendly heartbeat every 15 seconds if the AI is silent.
                     if time.time() - last_heartbeat > 15:
-                        yield f'data: {{"event": "heartbeat", "message": "AI is deeply analyzing..."}}\n\n{padding}'
+                        yield f'data: {{"event": "heartbeat", "message": "AI is deeply analyzing..."}}\n\n'
                         last_heartbeat = time.time()
 
         finally:
-            stop_event.set()
+            stop_event.set()  # Signal the background thread to stop
 
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"
+    response["X-Accel-Buffering"] = "no"   # Nginx: disable buffering
     response["Access-Control-Allow-Origin"] = "https://www.franciscodes.com"
     response["Access-Control-Allow-Credentials"] = "true"
     return response
@@ -107,11 +121,18 @@ def stream_mission(request, task_id):
 
 @api_view(['GET'])
 def fetch_cv_report(request, task_id):
-    # [Keep this exactly as you currently have it]
+    """
+    Fetch the final cv_report.json artifact from the AI orchestrator.
+    """
     try:
         target_filename = "cv_report.json"
-        response = requests.get(f"{AI_API_URL}/missions/{task_id}/artifacts/{target_filename}")
+        response = requests.get(
+            f"{AI_API_URL}/missions/{task_id}/artifacts/{target_filename}"
+        )
         response.raise_for_status()
         return Response(response.json())
     except requests.exceptions.RequestException as e:
-        return Response({"error": "Report not ready or failed", "details": str(e)}, status=404)
+        return Response(
+            {"error": "Report not ready or failed to generate", "details": str(e)},
+            status=404
+        )
