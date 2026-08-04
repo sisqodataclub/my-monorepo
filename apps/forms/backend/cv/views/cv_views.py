@@ -55,7 +55,6 @@ class ResumeViewSet(viewsets.ModelViewSet):
             return mark_safe(html)
 
         # ---- Resolve sections using the new profile library ----
-        # If profile IDs are set, use those; otherwise fall back to legacy nested data
         if resume.profile_education_ids:
             educations = ProfileEducation.objects.filter(
                 id__in=resume.profile_education_ids
@@ -92,7 +91,6 @@ class ResumeViewSet(viewsets.ModelViewSet):
         else:
             achievements = resume.achievements.all()
 
-        # Render markdown for descriptions
         resume.about_html = render_markdown(resume.about)
         for edu in educations:
             edu.description_html = render_markdown(edu.description)
@@ -165,6 +163,10 @@ class ProfileEducationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ProfileEducation.objects.filter(user=self.request.user)
 
+    def perform_create(self, serializer):
+        """Set the user automatically when creating."""
+        serializer.save(user=self.request.user)
+
     def create(self, request, *args, **kwargs):
         """
         Get or create: if an education with same institution+degree+field exists,
@@ -181,7 +183,6 @@ class ProfileEducationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Try to find an existing one
         existing = ProfileEducation.objects.filter(
             user=user,
             institution=institution,
@@ -190,16 +191,14 @@ class ProfileEducationViewSet(viewsets.ModelViewSet):
         ).first()
 
         if existing:
-            # Update with new data (partial update)
             serializer = self.get_serializer(existing, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            # Create new
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
+            self.perform_create(serializer)   # now sets user
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -209,6 +208,9 @@ class ProfileExperienceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ProfileExperience.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """Get or create: dedupe on (company, position)."""
@@ -247,6 +249,9 @@ class ProfileProjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ProfileProject.objects.filter(user=self.request.user)
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
     def create(self, request, *args, **kwargs):
         """Get or create: dedupe on (name)."""
         user = request.user
@@ -281,6 +286,9 @@ class ProfileSkillViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ProfileSkill.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """Get or create: dedupe on (name)."""
@@ -317,6 +325,9 @@ class ProfileLanguageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ProfileLanguage.objects.filter(user=self.request.user)
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
     def create(self, request, *args, **kwargs):
         """Get or create: dedupe on (name)."""
         user = request.user
@@ -352,6 +363,9 @@ class ProfileAchievementViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ProfileAchievement.objects.filter(user=self.request.user)
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
     def create(self, request, *args, **kwargs):
         """Get or create: dedupe on (description) (exact match)."""
         user = request.user
@@ -369,7 +383,6 @@ class ProfileAchievementViewSet(viewsets.ModelViewSet):
         ).first()
 
         if existing:
-            # For achievements, we typically don't update; just return the existing
             serializer = self.get_serializer(existing)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
