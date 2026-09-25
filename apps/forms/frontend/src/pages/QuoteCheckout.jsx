@@ -38,30 +38,46 @@ export default function QuoteCheckout() {
     }
 
     const fetchData = async () => {
+      // 1) Authoritative: fetch the quote first. If this fails, the page cannot work.
+      let data;
       try {
-        const [quoteRes, timesRes] = await Promise.all([
-          api.get(`/api/cleaning-bookings/${quoteId}/`),
-          api.get("/api/blocked-times/"),
-        ]);
-        const data = quoteRes.data;
+        const quoteRes = await api.get(`/api/cleaning-bookings/${quoteId}/`);
+        data = quoteRes.data;
         setQuoteData(data);
-        
+
         // Pre-fill if data exists from the initial quote
         setBookingDate(data.selected_datetime?.booking_date || "");
         setTimeslot(data.selected_datetime?.timeslot || "");
         setPaymentMethod(data.payment_method || "");
         setAddress(data.property_details?.address || "");
         setPostcode(data.property_details?.postcode || "");
-        setPhone(data.phone || ""); 
-        
+        setPhone(data.phone || "");
+      } catch (err) {
+        console.error(err);
+        const status = err.response?.status;
+        if (status === 404) {
+          setError("This quote link is no longer valid.");
+        } else if (status === 401 || status === 403) {
+          setError("Please sign in or use the original email link to view this quote.");
+        } else {
+          setError("Could not load your quote. Please try again.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 2) Non-authoritative: blocked-times is best-effort. Degrade to empty arrays on failure.
+      try {
+        const timesRes = await api.get("/api/blocked-times/");
         setBlockedDates(timesRes.data.fully_blocked_dates || []);
         setPartiallyBlockedSlots(timesRes.data.partially_blocked_slots || {});
       } catch (err) {
-        console.error(err);
-        setError("Could not load your quote. It may be invalid or expired.");
-      } finally {
-        setLoading(false);
+        console.warn("blocked-times unavailable; continuing without availability hints", err);
+        setBlockedDates([]);
+        setPartiallyBlockedSlots({});
       }
+
+      setLoading(false);
     };
     fetchData();
   }, [quoteId]);
@@ -116,147 +132,3 @@ export default function QuoteCheckout() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
-        <div className="animate-pulse text-xl">Loading your quote...</div>
-      </div>
-    );
-  }
-
-  if (error && !quoteData) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white p-4">
-        <div className="bg-red-900/30 border border-red-500 text-red-200 p-6 rounded-xl text-center max-w-md">
-          <p>{error}</p>
-          <button onClick={() => navigate("/")} className="mt-4 px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">
-            Return Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const disabledSlotsForDate = bookingDate ? (partiallyBlockedSlots[bookingDate] || []) : [];
-
-  // Extract the main service name (first item in selected_areas)
-  const mainService = quoteData.selected_areas && quoteData.selected_areas.length > 0
-    ? quoteData.selected_areas[0]
-    : "Cleaning Service";
-
-  return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-gray-900 to-black p-4 sm:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
-      <div className="max-w-3xl mx-auto w-full space-y-6">
-        
-        <header className="text-center mb-8">
-          {/* ✅ UK spelling and removed quote ID */}
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-            Finalise Your Booking
-          </h1>
-        </header>
-
-        {/* Selected Service Banner */}
-        <div className="bg-blue-600/20 border border-blue-500/30 rounded-xl p-4 text-center">
-          <p className="text-blue-300 text-sm font-medium">Selected Service</p>
-          <p className="text-white text-xl font-bold mt-1">{mainService}</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg text-center animate-fade-in">
-            {error}
-          </div>
-        )}
-
-        <ReviewSummary
-          selectedAreas={quoteData.selected_areas || []}
-          quantities={quoteData.quantities || {}}
-          carpets={quoteData.carpets || {}}
-          appliances={quoteData.appliances || {}}
-          SIZED_AREAS={SIZED_AREAS}
-          furnished_status={quoteData.furnished_status}
-          biohazard={quoteData.biohazard}
-          hideDiscountInput={true}
-        />
-
-        <GlassLayout title="Final Details">
-          
-          {/* Section 1: Date & Time */}
-          <div className="mb-8 space-y-4 border-b border-gray-700/50 pb-8">
-            <h3 className="text-lg font-semibold text-blue-400 mb-4">1. Confirm Date & Time</h3>
-            <BookingDatePicker
-              required
-              value={bookingDate}
-              holidays={blockedDates}
-              onChange={(data) => {
-                setBookingDate(data.booking_date);
-                setTimeslot("");
-              }}
-            />
-            <TimeSlotSelector
-              required
-              value={timeslot}
-              disabledSlots={disabledSlotsForDate}
-              onChange={setTimeslot}
-            />
-          </div>
-
-          {/* Section 2: Contact & Address */}
-          <div className="mb-8 border-b border-gray-700/50 pb-8">
-            <h3 className="text-lg font-semibold text-blue-400 mb-4">2. Your Contact Details & Address</h3>
-            <div className="space-y-4">
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Phone Number *"
-                className="w-full md:w-1/2 bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              />
-              <textarea
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Full property address *"
-                rows="2"
-                className="w-full bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
-              />
-              <input
-                type="text"
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-                placeholder="UK Postcode *"
-                className="w-full md:w-1/2 bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Section 3: Payment */}
-          <div>
-            <h3 className="text-lg font-semibold text-blue-400 mb-4">3. Confirm Payment Method</h3>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="bg-gray-800/60 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none w-full md:w-1/2"
-            >
-              <option value="" disabled>Select...</option>
-              <option value="cash">Cash on the day</option>
-              <option value="bank_transfer">Bank Transfer</option>
-            </select>
-          </div>
-          
-        </GlassLayout>
-
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleConfirm}
-            disabled={submitting}
-            className={`px-8 py-4 rounded-xl text-white font-bold transition shadow-lg ${
-              submitting ? "bg-gray-600 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-500"
-            }`}
-          >
-            {submitting ? "Processing..." : `Confirm & Pay £${quoteData.total}`}
-          </button>
-        </div>
-        
-      </div>
-      <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} type="booking" />
-    </div>
-  );
-}
