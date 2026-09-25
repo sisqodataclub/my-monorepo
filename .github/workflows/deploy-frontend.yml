@@ -25,5 +25,5 @@ jobs:
           # This tells GitHub to run your exact bash script on the server
           script: |
             cd /opt
-            chmod +x deploy_frontend.sh
-            ./deploy_frontend.sh
+            chmod +x deploy_mr.sh
+            ./deploy_mr.sh
