@@ -4,7 +4,8 @@ packages:
   - apps/forms/frontend
   - apps/forms/backend
 
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - esbuild
-  - react-vertical-timeline-component
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  puppeteer: true
+  react-vertical-timeline-component: true
