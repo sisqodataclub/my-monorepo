@@ -132,3 +132,123 @@ export default function QuoteCheckout() {
   };
 
   if (loading) {
+    return (
+      <GlassLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-white/80">Loading your quote…</p>
+        </div>
+      </GlassLayout>
+    );
+  }
+
+  if (error && !quoteData) {
+    return (
+      <GlassLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <p className="text-red-300">{error}</p>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
+          >
+            Back to home
+          </button>
+        </div>
+      </GlassLayout>
+    );
+  }
+
+  return (
+    <GlassLayout>
+      <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
+        <h1 className="text-2xl font-semibold text-white">Confirm your booking</h1>
+
+        {error && (
+          <div className="rounded-lg bg-red-500/20 text-red-100 px-4 py-3">
+            {error}
+          </div>
+        )}
+
+        {quoteData && <ReviewSummary quote={quoteData} />}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-white/80 mb-1">Phone number</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-lg bg-white/10 text-white px-3 py-2 outline-none"
+              placeholder="e.g. 07123 456789"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-white/80 mb-1">Address</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full rounded-lg bg-white/10 text-white px-3 py-2 outline-none"
+              placeholder="123 Example Street"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-white/80 mb-1">Postcode</label>
+            <input
+              type="text"
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value)}
+              className="w-full rounded-lg bg-white/10 text-white px-3 py-2 outline-none"
+              placeholder="AB1 2CD"
+            />
+          </div>
+
+          <BookingDatePicker
+            value={bookingDate}
+            onChange={setBookingDate}
+            blockedDates={blockedDates}
+            partiallyBlockedSlots={partiallyBlockedSlots}
+          />
+
+          <TimeSlotSelector
+            value={timeslot}
+            onChange={setTimeslot}
+            bookingDate={bookingDate}
+            blockedDates={blockedDates}
+            partiallyBlockedSlots={partiallyBlockedSlots}
+          />
+
+          <div>
+            <label className="block text-sm text-white/80 mb-1">Payment method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full rounded-lg bg-white/10 text-white px-3 py-2 outline-none"
+            >
+              <option value="">Select…</option>
+              <option value="card">Card</option>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank transfer</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={submitting}
+          className="w-full rounded-lg bg-emerald-500 text-white py-3 font-medium hover:bg-emerald-600 disabled:opacity-60"
+        >
+          {submitting ? "Confirming…" : "Confirm booking"}
+        </button>
+      </div>
+
+      <BookingSuccessModal
+        open={showSuccess}
+        onClose={() => setShowSuccess(false)}
+      />
+    </GlassLayout>
+  );
+}
