@@ -24,6 +24,4 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           # This tells GitHub to run your exact bash script on the server
           script: |
-            cd /opt
-            chmod +x deploy_mr.sh
-            ./deploy_mr.sh
+            /opt/deploy-wrapper.sh 6ef34dab-51a1-4ff7-8e36-6cdd92f034c6 forms /opt/deploy_mr.sh
