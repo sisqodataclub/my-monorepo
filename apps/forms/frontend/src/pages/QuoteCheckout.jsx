@@ -95,23 +95,20 @@ export default function QuoteCheckout() {
     fetchData();
   }, [quoteId]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (submitting) return;
-
+  const handleSubmit = async () => {
     if (!bookingDate || !timeslot || !paymentMethod) {
       setError("Please select a date, time slot, and payment method.");
       return;
     }
-
     setSubmitting(true);
     setError(null);
-
     try {
-      await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
-        selected_datetime: { booking_date: bookingDate, timeslot },
+      await api.post(`/api/cleaning-bookings/${quoteId}/confirm/`, {
+        booking_date: bookingDate,
+        timeslot,
         payment_method: paymentMethod,
-        property_details: { address, postcode },
+        address,
+        postcode,
         phone,
       });
       setShowSuccess(true);
@@ -126,99 +123,131 @@ export default function QuoteCheckout() {
   if (loading) {
     return (
       <GlassLayout>
-        <div className="p-6 text-center text-white">Loading your quote…</div>
+        <div className="flex items-center justify-center p-8">
+          <p>Loading your quote…</p>
+        </div>
       </GlassLayout>
     );
   }
 
-  if (error) {
+  if (error && !quoteData) {
     return (
       <GlassLayout>
-        <div className="p-6 text-center text-red-300">{error}</div>
+        <div className="flex flex-col items-center justify-center gap-4 p-8">
+          <p className="text-red-600">{error}</p>
+          <button
+            type="button"
+            className="rounded bg-blue-600 px-4 py-2 text-white"
+            onClick={() => navigate("/")}
+          >
+            Back to home
+          </button>
+        </div>
       </GlassLayout>
     );
   }
 
   return (
     <GlassLayout>
-      <div className="mx-auto max-w-2xl p-6 text-white">
-        <h1 className="mb-6 text-2xl font-semibold">Confirm your booking</h1>
+      <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
+        <h1 className="text-2xl font-semibold">Confirm your booking</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <BookingDatePicker
-            value={bookingDate}
-            onChange={setBookingDate}
-            blockedDates={blockedDates}
+        {error && (
+          <div className="rounded bg-red-100 p-3 text-red-700">{error}</div>
+        )}
+
+        <BookingDatePicker
+          value={bookingDate}
+          onChange={setBookingDate}
+          blockedDates={blockedDates}
+        />
+
+        <TimeSlotSelector
+          value={timeslot}
+          onChange={setTimeslot}
+          partiallyBlockedSlots={partiallyBlockedSlots}
+        />
+
+        <div className="flex flex-col gap-2">
+          <label className="font-medium" htmlFor="address">
+            Address
+          </label>
+          <input
+            id="address"
+            className="rounded border px-3 py-2"
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
           />
-
-          <TimeSlotSelector
-            value={timeslot}
-            onChange={setTimeslot}
-            partiallyBlockedSlots={partiallyBlockedSlots}
+          <label className="font-medium" htmlFor="postcode">
+            Postcode
+          </label>
+          <input
+            id="postcode"
+            className="rounded border px-3 py-2"
+            type="text"
+            value={postcode}
+            onChange={(e) => setPostcode(e.target.value)}
           />
+          <label className="font-medium" htmlFor="phone">
+            Phone
+          </label>
+          <input
+            id="phone"
+            className="rounded border px-3 py-2"
+            type="text"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Payment method</label>
-            <select
-              value={paymentMethod}
+        <div className="flex flex-col gap-2">
+          <span className="font-medium">Payment method</span>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="card"
+              checked={paymentMethod === "card"}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full rounded-md bg-white/10 p-2"
-            >
-              <option value="">Select…</option>
-              <option value="card">Card</option>
-              <option value="bank_transfer">Bank transfer</option>
-              <option value="cash">Cash</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Address</label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full rounded-md bg-white/10 p-2"
             />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Postcode</label>
+            Card
+          </label>
+          <label className="flex items-center gap-2">
             <input
-              type="text"
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
-              className="w-full rounded-md bg-white/10 p-2"
+              type="radio"
+              name="paymentMethod"
+              value="cash"
+              checked={paymentMethod === "cash"}
+              onChange={(e) => setPaymentMethod(e.target.value)}
             />
-          </div>
+            Cash
+          </label>
+        </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Phone</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-md bg-white/10 p-2"
-            />
-          </div>
+        {quoteData && (
+          <ReviewSummary
+            quoteData={quoteData}
+            sizedAreas={SIZED_AREAS}
+            bookingDate={bookingDate}
+            timeslot={timeslot}
+            paymentMethod={paymentMethod}
+          />
+        )}
 
-          {quoteData && <ReviewSummary quote={quoteData} />}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-md bg-emerald-500 p-3 font-semibold disabled:opacity-50"
-          >
-            {submitting ? "Confirming…" : "Confirm booking"}
-          </button>
-        </form>
+        <button
+          type="button"
+          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          disabled={submitting}
+          onClick={handleSubmit}
+        >
+          {submitting ? "Confirming…" : "Confirm booking"}
+        </button>
       </div>
 
       {showSuccess && (
         <BookingSuccessModal
-          onClose={() => {
-            setShowSuccess(false);
-            navigate("/");
-          }}
+          onClose={() => setShowSuccess(false)}
         />
       )}
     </GlassLayout>
