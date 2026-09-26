@@ -41,8 +41,17 @@ export default function QuoteCheckout() {
       // 1) Authoritative: fetch the quote first. If this fails, the page cannot work.
       let data;
       try {
-        const quoteRes = await api.get(`/api/bookings/${quoteId}/`);
+        const quoteRes = await api.get(`/api/cleaning-bookings/${quoteId}/`);
         data = quoteRes.data;
+
+        // Guard: a non-JSON payload (string/HTML) must not propagate into quoteData,
+        // or the page will blank out when it tries to read properties off a string.
+        if (!data || typeof data !== "object") {
+          setError("Could not load your quote. Please try again.");
+          setLoading(false);
+          return;
+        }
+
         setQuoteData(data);
 
         // Pre-fill if data exists from the initial quote
@@ -55,7 +64,10 @@ export default function QuoteCheckout() {
       } catch (err) {
         console.error(err);
         const status = err.response?.status;
-        if (status === 404) {
+        // Guard: coerce any non-object response payload (string/HTML error page) to a generic message.
+        if (!err.response?.data || typeof err.response.data !== "object") {
+          setError("Could not load your quote. Please try again.");
+        } else if (status === 404) {
           setError("This quote link is no longer valid.");
         } else if (status === 401 || status === 403) {
           setError("Please sign in or use the original email link to view this quote.");
@@ -83,5 +95,4 @@ export default function QuoteCheckout() {
     fetchData();
   }, [quoteId]);
 
-  // ... (rest of component unchanged)
-}
+  // ... rest of component unchanged ...
