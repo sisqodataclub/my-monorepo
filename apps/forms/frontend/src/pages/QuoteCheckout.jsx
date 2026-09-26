@@ -41,8 +41,16 @@ export default function QuoteCheckout() {
       // 1) Authoritative: fetch the quote first. If this fails, the page cannot work.
       let data;
       try {
-        const quoteRes = await api.get(`/api/bookings/${quoteId}/`);
+        const quoteRes = await api.get(`/api/cleaning-bookings/${quoteId}/`);
         data = quoteRes.data;
+
+        // Guard: a non-JSON / HTML payload must not propagate into quoteData.
+        if (!data || typeof data !== "object") {
+          setError("Could not load your quote. Please try again.");
+          setLoading(false);
+          return;
+        }
+
         setQuoteData(data);
 
         // Pre-fill if data exists from the initial quote
@@ -55,10 +63,13 @@ export default function QuoteCheckout() {
       } catch (err) {
         console.error(err);
         const status = err.response?.status;
+        const respData = err.response?.data;
         if (status === 404) {
           setError("This quote link is no longer valid.");
         } else if (status === 401 || status === 403) {
           setError("Please sign in or use the original email link to view this quote.");
+        } else if (!respData || typeof respData !== "object") {
+          setError("Could not load your quote. Please try again.");
         } else {
           setError("Could not load your quote. Please try again.");
         }
@@ -83,5 +94,37 @@ export default function QuoteCheckout() {
     fetchData();
   }, [quoteId]);
 
-  // ... (rest of component unchanged)
+  return (
+    <GlassLayout>
+      <div className="quote-checkout">
+        {loading && <div>Loading…</div>}
+        {error && <div className="error">{error}</div>}
+        {!loading && !error && quoteData && (
+          <div className="quote-content">
+            <h1>Complete your booking</h1>
+            <BookingDatePicker
+              value={bookingDate}
+              onChange={setBookingDate}
+              blockedDates={blockedDates}
+            />
+            <TimeSlotSelector
+              value={timeslot}
+              onChange={setTimeslot}
+              partiallyBlockedSlots={partiallyBlockedSlots}
+            />
+            <ReviewSummary
+              quoteData={quoteData}
+              address={address}
+              postcode={postcode}
+              phone={phone}
+              bookingDate={bookingDate}
+              timeslot={timeslot}
+              paymentMethod={paymentMethod}
+            />
+          </div>
+        )}
+        <BookingSuccessModal open={showSuccess} onClose={() => setShowSuccess(false)} />
+      </div>
+    </GlassLayout>
+  );
 }
