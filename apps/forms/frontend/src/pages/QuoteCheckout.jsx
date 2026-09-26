@@ -80,11 +80,19 @@ export default function QuoteCheckout() {
 
       // 2) Non-authoritative: blocked-times is best-effort. Degrade to empty arrays on failure.
       try {
-        const timesRes = await api.get("/api/blocked-times/");
-        setBlockedDates(timesRes.data.fully_blocked_dates || []);
-        setPartiallyBlockedSlots(timesRes.data.partially_blocked_slots || {});
+        const blockedRes = await api.get("/api/blocked-times/");
+        const blockedData = blockedRes.data;
+        if (blockedData && typeof blockedData === "object") {
+          setBlockedDates(Array.isArray(blockedData.blocked_dates) ? blockedData.blocked_dates : []);
+          setPartiallyBlockedSlots(
+            blockedData.partially_blocked_slots && typeof blockedData.partially_blocked_slots === "object"
+              ? blockedData.partially_blocked_slots
+              : {}
+          );
+        }
       } catch (err) {
-        console.warn("blocked-times unavailable; continuing without availability hints", err);
+        // Non-fatal: the page still works without blocked-times.
+        console.warn("blocked-times unavailable, continuing without it", err);
         setBlockedDates([]);
         setPartiallyBlockedSlots({});
       }
@@ -95,22 +103,32 @@ export default function QuoteCheckout() {
     fetchData();
   }, [quoteId]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     if (!bookingDate || !timeslot || !paymentMethod) {
-      setError("Please select a date, time slot, and payment method.");
+      setError("Please select a date, a time slot, and a payment method.");
       return;
     }
+
     setSubmitting(true);
     setError(null);
-    try {
-      await api.post(`/api/cleaning-bookings/${quoteId}/confirm/`, {
+
+    const payload = {
+      selected_datetime: {
         booking_date: bookingDate,
-        timeslot,
-        payment_method: paymentMethod,
-        address,
-        postcode,
-        phone,
-      });
+        timeslot: timeslot,
+      },
+      payment_method: paymentMethod,
+      property_details: {
+        address: address,
+        postcode: postcode,
+      },
+      phone: phone,
+    };
+
+    try {
+      await api.patch(`/api/cleaning-bookings/${quoteId}/`, payload);
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
@@ -120,28 +138,16 @@ export default function QuoteCheckout() {
     }
   };
 
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    navigate("/");
+  };
+
   if (loading) {
     return (
       <GlassLayout>
-        <div className="flex items-center justify-center p-8">
-          <p>Loading your quote…</p>
-        </div>
-      </GlassLayout>
-    );
-  }
-
-  if (error && !quoteData) {
-    return (
-      <GlassLayout>
-        <div className="flex flex-col items-center justify-center gap-4 p-8">
-          <p className="text-red-600">{error}</p>
-          <button
-            type="button"
-            className="rounded bg-blue-600 px-4 py-2 text-white"
-            onClick={() => navigate("/")}
-          >
-            Back to home
-          </button>
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <p className="text-white/80">Loading your quote…</p>
         </div>
       </GlassLayout>
     );
@@ -149,106 +155,97 @@ export default function QuoteCheckout() {
 
   return (
     <GlassLayout>
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
-        <h1 className="text-2xl font-semibold">Confirm your booking</h1>
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        <h1 className="text-2xl font-semibold text-white">Confirm your booking</h1>
 
         {error && (
-          <div className="rounded bg-red-100 p-3 text-red-700">{error}</div>
+          <div className="rounded-lg bg-red-500/20 border border-red-400/40 px-4 py-3 text-red-100">
+            {error}
+          </div>
         )}
-
-        <BookingDatePicker
-          value={bookingDate}
-          onChange={setBookingDate}
-          blockedDates={blockedDates}
-        />
-
-        <TimeSlotSelector
-          value={timeslot}
-          onChange={setTimeslot}
-          partiallyBlockedSlots={partiallyBlockedSlots}
-        />
-
-        <div className="flex flex-col gap-2">
-          <label className="font-medium" htmlFor="address">
-            Address
-          </label>
-          <input
-            id="address"
-            className="rounded border px-3 py-2"
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <label className="font-medium" htmlFor="postcode">
-            Postcode
-          </label>
-          <input
-            id="postcode"
-            className="rounded border px-3 py-2"
-            type="text"
-            value={postcode}
-            onChange={(e) => setPostcode(e.target.value)}
-          />
-          <label className="font-medium" htmlFor="phone">
-            Phone
-          </label>
-          <input
-            id="phone"
-            className="rounded border px-3 py-2"
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className="font-medium">Payment method</span>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="card"
-              checked={paymentMethod === "card"}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            />
-            Card
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="cash"
-              checked={paymentMethod === "cash"}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            />
-            Cash
-          </label>
-        </div>
 
         {quoteData && (
-          <ReviewSummary
-            quoteData={quoteData}
-            sizedAreas={SIZED_AREAS}
-            bookingDate={bookingDate}
-            timeslot={timeslot}
-            paymentMethod={paymentMethod}
-          />
-        )}
+          <>
+            <ReviewSummary
+              quoteData={quoteData}
+              sizedAreas={SIZED_AREAS}
+            />
 
-        <button
-          type="button"
-          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-          disabled={submitting}
-          onClick={handleSubmit}
-        >
-          {submitting ? "Confirming…" : "Confirm booking"}
-        </button>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <BookingDatePicker
+                value={bookingDate}
+                onChange={setBookingDate}
+                blockedDates={blockedDates}
+              />
+
+              <TimeSlotSelector
+                value={timeslot}
+                onChange={setTimeslot}
+                bookingDate={bookingDate}
+                partiallyBlockedSlots={partiallyBlockedSlots}
+              />
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-white">Payment method</label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
+                >
+                  <option value="">Select a payment method</option>
+                  <option value="card">Card</option>
+                  <option value="cash">Cash</option>
+                  <option value="bank_transfer">Bank transfer</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-white">Address</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
+                  placeholder="123 Example Street"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-white">Postcode</label>
+                <input
+                  type="text"
+                  value={postcode}
+                  onChange={(e) => setPostcode(e.target.value)}
+                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
+                  placeholder="AB1 2CD"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-white">Phone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
+                  placeholder="07123 456789"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 px-4 py-3 font-semibold text-white"
+              >
+                {submitting ? "Confirming…" : "Confirm booking"}
+              </button>
+            </form>
+          </>
+        )}
       </div>
 
       {showSuccess && (
-        <BookingSuccessModal
-          onClose={() => setShowSuccess(false)}
-        />
+        <BookingSuccessModal onClose={handleSuccessClose} />
       )}
     </GlassLayout>
   );
