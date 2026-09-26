@@ -78,23 +78,16 @@ export default function QuoteCheckout() {
         return;
       }
 
-      // 2) Non-authoritative: blocked-times is best-effort. Degrade to empty arrays on failure.
+      // 2) Non-authoritative: availability data. Failures here must not blank the page.
       try {
-        const blockedRes = await api.get("/api/blocked-times/");
-        const blockedData = blockedRes.data;
-        if (blockedData && typeof blockedData === "object") {
-          setBlockedDates(Array.isArray(blockedData.blocked_dates) ? blockedData.blocked_dates : []);
-          setPartiallyBlockedSlots(
-            blockedData.partially_blocked_slots && typeof blockedData.partially_blocked_slots === "object"
-              ? blockedData.partially_blocked_slots
-              : {}
-          );
-        }
+        const [blockedRes, partialRes] = await Promise.all([
+          api.get("/api/cleaning-bookings/blocked-dates/"),
+          api.get("/api/cleaning-bookings/partially-blocked-slots/"),
+        ]);
+        setBlockedDates(blockedRes.data || []);
+        setPartiallyBlockedSlots(partialRes.data || {});
       } catch (err) {
-        // Non-fatal: the page still works without blocked-times.
-        console.warn("blocked-times unavailable, continuing without it", err);
-        setBlockedDates([]);
-        setPartiallyBlockedSlots({});
+        console.warn("Availability data unavailable:", err);
       }
 
       setLoading(false);
@@ -105,30 +98,21 @@ export default function QuoteCheckout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!bookingDate || !timeslot || !paymentMethod) {
-      setError("Please select a date, a time slot, and a payment method.");
+      setError("Please select a date, time slot, and payment method.");
       return;
     }
 
     setSubmitting(true);
     setError(null);
 
-    const payload = {
-      selected_datetime: {
-        booking_date: bookingDate,
-        timeslot: timeslot,
-      },
-      payment_method: paymentMethod,
-      property_details: {
-        address: address,
-        postcode: postcode,
-      },
-      phone: phone,
-    };
-
     try {
-      await api.patch(`/api/cleaning-bookings/${quoteId}/`, payload);
+      await api.post(`/api/cleaning-bookings/${quoteId}/confirm/`, {
+        selected_datetime: { booking_date: bookingDate, timeslot },
+        payment_method: paymentMethod,
+        property_details: { address, postcode },
+        phone,
+      });
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
@@ -143,47 +127,44 @@ export default function QuoteCheckout() {
     navigate("/");
   };
 
-  if (loading) {
-    return (
-      <GlassLayout>
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <p className="text-white/80">Loading your quote…</p>
-        </div>
-      </GlassLayout>
-    );
-  }
-
   return (
     <GlassLayout>
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <div className="mx-auto max-w-2xl space-y-6 py-8">
         <h1 className="text-2xl font-semibold text-white">Confirm your booking</h1>
 
-        {error && (
-          <div className="rounded-lg bg-red-500/20 border border-red-400/40 px-4 py-3 text-red-100">
-            {error}
-          </div>
+        {loading && (
+          <p className="text-white/80">Loading your quote…</p>
         )}
 
-        {quoteData && (
+        {error && !loading && (
+          <p className="rounded-lg bg-red-500/20 border border-red-400/40 px-4 py-3 text-red-100">
+            {error}
+          </p>
+        )}
+
+        {!loading && !error && quoteData && (
           <>
-            <ReviewSummary
-              quoteData={quoteData}
-              sizedAreas={SIZED_AREAS}
-            />
+            <ReviewSummary quote={quoteData} sizedAreas={SIZED_AREAS} />
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <BookingDatePicker
-                value={bookingDate}
-                onChange={setBookingDate}
-                blockedDates={blockedDates}
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-white">Booking date</label>
+                <BookingDatePicker
+                  value={bookingDate}
+                  onChange={setBookingDate}
+                  blockedDates={blockedDates}
+                />
+              </div>
 
-              <TimeSlotSelector
-                value={timeslot}
-                onChange={setTimeslot}
-                bookingDate={bookingDate}
-                partiallyBlockedSlots={partiallyBlockedSlots}
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-white">Time slot</label>
+                <TimeSlotSelector
+                  value={timeslot}
+                  onChange={setTimeslot}
+                  bookingDate={bookingDate}
+                  partiallyBlockedSlots={partiallyBlockedSlots}
+                />
+              </div>
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-white">Payment method</label>
