@@ -20,7 +20,7 @@ export default function QuoteCheckout() {
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [quoteData, setQuoteData] = useState(null);
-  
+
   const [bookingDate, setBookingDate] = useState("");
   const [timeslot, setTimeslot] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -95,4 +95,132 @@ export default function QuoteCheckout() {
     fetchData();
   }, [quoteId]);
 
-  // ... rest of component unchanged ...
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+
+    if (!bookingDate || !timeslot || !paymentMethod) {
+      setError("Please select a date, time slot, and payment method.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
+        selected_datetime: { booking_date: bookingDate, timeslot },
+        payment_method: paymentMethod,
+        property_details: { address, postcode },
+        phone,
+      });
+      setShowSuccess(true);
+    } catch (err) {
+      console.error(err);
+      setError("Could not confirm your booking. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <GlassLayout>
+        <div className="p-6 text-center text-white">Loading your quote…</div>
+      </GlassLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <GlassLayout>
+        <div className="p-6 text-center text-red-300">{error}</div>
+      </GlassLayout>
+    );
+  }
+
+  return (
+    <GlassLayout>
+      <div className="mx-auto max-w-2xl p-6 text-white">
+        <h1 className="mb-6 text-2xl font-semibold">Confirm your booking</h1>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <BookingDatePicker
+            value={bookingDate}
+            onChange={setBookingDate}
+            blockedDates={blockedDates}
+          />
+
+          <TimeSlotSelector
+            value={timeslot}
+            onChange={setTimeslot}
+            partiallyBlockedSlots={partiallyBlockedSlots}
+          />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Payment method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full rounded-md bg-white/10 p-2"
+            >
+              <option value="">Select…</option>
+              <option value="card">Card</option>
+              <option value="bank_transfer">Bank transfer</option>
+              <option value="cash">Cash</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Address</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full rounded-md bg-white/10 p-2"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Postcode</label>
+            <input
+              type="text"
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value)}
+              className="w-full rounded-md bg-white/10 p-2"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Phone</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-md bg-white/10 p-2"
+            />
+          </div>
+
+          {quoteData && <ReviewSummary quote={quoteData} />}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-md bg-emerald-500 p-3 font-semibold disabled:opacity-50"
+          >
+            {submitting ? "Confirming…" : "Confirm booking"}
+          </button>
+        </form>
+      </div>
+
+      {showSuccess && (
+        <BookingSuccessModal
+          onClose={() => {
+            setShowSuccess(false);
+            navigate("/");
+          }}
+        />
+      )}
+    </GlassLayout>
+  );
+}
