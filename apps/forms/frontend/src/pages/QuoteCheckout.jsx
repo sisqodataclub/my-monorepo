@@ -29,6 +29,7 @@ export default function QuoteCheckout() {
   const [address, setAddress] = useState("");
   const [postcode, setPostcode] = useState("");
   const [phone, setPhone] = useState(""); // ✅ Added phone state
+  const [discountCode, setDiscountCode] = useState("");
 
   useEffect(() => {
     if (!quoteId) {
@@ -144,7 +145,17 @@ export default function QuoteCheckout() {
 
         {!loading && !error && quoteData && (
           <>
-            <ReviewSummary quote={quoteData} sizedAreas={SIZED_AREAS} />
+            <ReviewSummary
+              selectedAreas={quoteData.selected_areas || []}
+              quantities={quoteData.quantities || {}}
+              carpets={quoteData.carpets || {}}
+              appliances={quoteData.appliances || {}}
+              furnished_status={quoteData.furnished_status}
+              biohazard={quoteData.biohazard}
+              discountCode={discountCode}
+              setDiscountCode={setDiscountCode}
+              hideDiscountInput
+            />
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
@@ -209,25 +220,23 @@ export default function QuoteCheckout() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
-                  placeholder="07123 456789"
+                  placeholder="+44 7000 000000"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 px-4 py-3 font-semibold text-white"
+                className="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 px-4 py-3 font-semibold text-white"
               >
                 {submitting ? "Confirming…" : "Confirm booking"}
               </button>
             </form>
           </>
         )}
-      </div>
 
-      {showSuccess && (
-        <BookingSuccessModal onClose={handleSuccessClose} />
-      )}
+        <BookingSuccessModal open={showSuccess} onClose={handleSuccessClose} />
+      </div>
     </GlassLayout>
   );
 }
