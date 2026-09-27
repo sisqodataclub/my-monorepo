@@ -20,6 +20,7 @@ export default function QuoteCheckout() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [modalVariant, setModalVariant] = useState("default");
   const [quoteData, setQuoteData] = useState(null);
 
   const [bookingDate, setBookingDate] = useState("");
@@ -97,8 +98,14 @@ export default function QuoteCheckout() {
     setSubmitting(true);
     setError(null);
 
+    // If the booking was already confirmed when the page loaded, the user
+    // is re-pressing Confirm on a confirmed booking. The backend will still
+    // return 200 with status='confirmed', so we detect this client-side and
+    // swap the modal copy instead of showing the standard success message.
+    const alreadyConfirmed = quoteData?.status === "confirmed";
+
     try {
-      await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
+      const res = await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
         status: "confirmed",
         booking_date: bookingDate,
         timeslot,
@@ -108,6 +115,13 @@ export default function QuoteCheckout() {
         phone,
         discount_code: discountCode,
       });
+
+      // Belt-and-braces: also treat a returned status of 'confirmed' on a
+      // booking we already knew was confirmed as the 'already confirmed' case.
+      const returnedStatus = res?.data?.status;
+      const isAlreadyConfirmed = alreadyConfirmed || returnedStatus === "confirmed" && alreadyConfirmed;
+
+      setModalVariant(isAlreadyConfirmed ? "alreadyConfirmed" : "default");
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
@@ -161,72 +175,24 @@ export default function QuoteCheckout() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <BookingDatePicker
             value={bookingDate}
             onChange={setBookingDate}
             blockedDates={blockedDates}
-            partiallyBlockedSlots={partiallyBlockedSlots}
           />
-
-          <TimeSlotSelector value={timeslot} onChange={setTimeslot} />
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Payment method</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            >
-              <option value="">Select…</option>
-              <option value="card">Card</option>
-              <option value="cash">Cash</option>
-              <option value="bank">Bank transfer</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Address</label>
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Postcode</label>
-            <input
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Phone</label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Discount code</label>
-            <input
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            />
-          </div>
-
+          <TimeSlotSelector
+            value={timeslot}
+            onChange={setTimeslot}
+            blockedslots={partiallyBlockedSlots}
+            date={bookingDate}
+          />
           <ReviewSummary
             selectedAreas={quoteData?.selected_areas || []}
             quantities={quoteData?.quantities || {}}
             carpets={quoteData?.carpets || {}}
             appliances={quoteData?.appliances || {}}
-            finalTotal={finalTotal}
+            total={finalTotal}
           />
 
           <button
@@ -239,7 +205,11 @@ export default function QuoteCheckout() {
         </form>
       </div>
 
-      <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} />
+      <BookingSuccessModal
+        show={showSuccess}
+        variant={modalVariant}
+        onClose={() => setShowSuccess(false)}
+      />
     </GlassLayout>
   );
 }
