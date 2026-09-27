@@ -84,17 +84,6 @@ export default function QuoteCheckout() {
         return;
       }
 
-      try {
-        const [blockedRes, partialRes] = await Promise.all([
-          api.get("/api/cleaning-bookings/blocked-dates/"),
-          api.get("/api/cleaning-bookings/partially-blocked-slots/"),
-        ]);
-        setBlockedDates(blockedRes.data || []);
-        setPartiallyBlockedSlots(partialRes.data || {});
-      } catch (err) {
-        console.error("Could not load availability data", err);
-      }
-
       setLoading(false);
     };
 
@@ -250,7 +239,7 @@ export default function QuoteCheckout() {
         </form>
       </div>
 
-      <BookingSuccessModal open={showSuccess} onClose={() => setShowSuccess(false)} />
+      <BookingSuccessModal show={showSuccess} onClose={() => setShowSuccess(false)} />
     </GlassLayout>
   );
 }
