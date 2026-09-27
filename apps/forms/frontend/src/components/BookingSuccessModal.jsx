@@ -1,10 +1,11 @@
 // src/components/BookingSuccessModal.jsx
 import React from "react";
 
-export default function BookingSuccessModal({ show, onClose, type = "booking" }) {
+export default function BookingSuccessModal({ show, onClose, type = "booking", variant = "default" }) {
   if (!show) return null;
 
   const isQuote = type === "quote";
+  const isAlreadyConfirmed = !isQuote && variant === "alreadyConfirmed";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -16,6 +17,15 @@ export default function BookingSuccessModal({ show, onClose, type = "booking" })
             </h2>
             <p className="text-gray-300 text-center mb-6">
               Check your email – your requested quote has been submitted. We'll get back to you shortly.
+            </p>
+          </>
+        ) : isAlreadyConfirmed ? (
+          <>
+            <h2 className="text-2xl font-bold text-white text-center mb-4">
+              Booking Already Confirmed
+            </h2>
+            <p className="text-gray-300 text-center mb-6">
+              This booking is already confirmed. No further action is needed.
             </p>
           </>
         ) : (
