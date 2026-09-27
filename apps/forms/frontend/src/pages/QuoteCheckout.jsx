@@ -7,6 +7,7 @@ import BookingDatePicker from "../components/ui/BookingDatePicker";
 import TimeSlotSelector from "../components/ui/TimeSlotSelector";
 import ReviewSummary from "../components/ReviewSummary";
 import BookingSuccessModal from "../components/BookingSuccessModal";
+import useQuoteCalculator from "../hooks/useQuoteCalculator";
 
 const SIZED_AREAS = ["Kitchen", "Bedroom"];
 
@@ -30,6 +31,18 @@ export default function QuoteCheckout() {
   const [postcode, setPostcode] = useState("");
   const [phone, setPhone] = useState(""); // ✅ Added phone state
   const [discountCode, setDiscountCode] = useState("");
+
+  const { finalTotal } = useQuoteCalculator({
+    selectedAreas: quoteData?.selected_areas || [],
+    quantities: quoteData?.quantities || {},
+    carpets: quoteData?.carpets || {},
+    appliances: quoteData?.appliances || {},
+    details: {
+      furnished_status: quoteData?.furnished_status,
+      biohazard: quoteData?.biohazard,
+    },
+    discountCode,
+  });
 
   useEffect(() => {
     if (!quoteId) {
@@ -229,7 +242,7 @@ export default function QuoteCheckout() {
                 disabled={submitting}
                 className="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 px-4 py-3 font-semibold text-white"
               >
-                {submitting ? "Confirming…" : "Confirm booking"}
+                {submitting ? "Confirming…" : `Confirm booking — £${finalTotal.toFixed(2)}`}
               </button>
             </form>
           </>
