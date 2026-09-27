@@ -180,13 +180,61 @@ export default function QuoteCheckout() {
             value={bookingDate}
             onChange={setBookingDate}
             blockedDates={blockedDates}
+            partiallyBlockedSlots={partiallyBlockedSlots}
           />
-          <TimeSlotSelector
-            value={timeslot}
-            onChange={setTimeslot}
-            blockedslots={partiallyBlockedSlots}
-            date={bookingDate}
-          />
+
+          <TimeSlotSelector value={timeslot} onChange={setTimeslot} />
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Payment method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
+            >
+              <option value="">Select…</option>
+              <option value="card">Card</option>
+              <option value="cash">Cash</option>
+              <option value="bank">Bank transfer</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Address</label>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Postcode</label>
+            <input
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value)}
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Phone</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Discount code</label>
+            <input
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
+            />
+          </div>
+
           <ReviewSummary
             selectedAreas={quoteData?.selected_areas || []}
             quantities={quoteData?.quantities || {}}
