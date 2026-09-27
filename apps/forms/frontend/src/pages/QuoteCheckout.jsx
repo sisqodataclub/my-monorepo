@@ -29,7 +29,7 @@ export default function QuoteCheckout() {
   const [partiallyBlockedSlots, setPartiallyBlockedSlots] = useState({});
   const [address, setAddress] = useState("");
   const [postcode, setPostcode] = useState("");
-  const [phone, setPhone] = useState(""); // ✅ Added phone state
+  const [phone, setPhone] = useState("");
   const [discountCode, setDiscountCode] = useState("");
 
   const { finalTotal } = useQuoteCalculator({
@@ -58,8 +58,6 @@ export default function QuoteCheckout() {
         const quoteRes = await api.get(`/api/cleaning-bookings/${quoteId}/`);
         data = quoteRes.data;
 
-        // Guard: a non-JSON payload (string/HTML) must not propagate into quoteData,
-        // or the page will blank out when it tries to read properties off a string.
         if (!data || typeof data !== "object") {
           setError("Could not load your quote. Please try again.");
           setLoading(false);
@@ -68,7 +66,6 @@ export default function QuoteCheckout() {
 
         setQuoteData(data);
 
-        // Pre-fill if data exists from the initial quote
         setBookingDate(data.selected_datetime?.booking_date || "");
         setTimeslot(data.selected_datetime?.timeslot || "");
         setPaymentMethod(data.payment_method || "");
@@ -78,7 +75,6 @@ export default function QuoteCheckout() {
       } catch (err) {
         console.error(err);
         const status = err.response?.status;
-        // Guard: 404 means the quote id is stale/unknown.
         if (status === 404) {
           setError("This quote could not be found. Please request a new quote.");
         } else {
@@ -88,7 +84,6 @@ export default function QuoteCheckout() {
         return;
       }
 
-      // 2) Non-authoritative: fetch blocked dates and partially blocked slots.
       try {
         const [blockedRes, partialRes] = await Promise.all([
           api.get("/api/cleaning-bookings/blocked-dates/"),
@@ -114,7 +109,8 @@ export default function QuoteCheckout() {
     setError(null);
 
     try {
-      await api.post(`/cleaning-bookings/${quoteId}/confirm/`, {
+      await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
+        status: "confirmed",
         booking_date: bookingDate,
         timeslot,
         payment_method: paymentMethod,
@@ -187,60 +183,62 @@ export default function QuoteCheckout() {
           <TimeSlotSelector value={timeslot} onChange={setTimeslot} />
 
           <div className="flex flex-col gap-2">
-            <label className="font-medium">Payment method</label>
+            <label className="text-sm text-gray-300">Payment method</label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
             >
               <option value="">Select…</option>
               <option value="card">Card</option>
               <option value="cash">Cash</option>
-              <option value="bank_transfer">Bank transfer</option>
+              <option value="bank">Bank transfer</option>
             </select>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-medium">Address</label>
+            <label className="text-sm text-gray-300">Address</label>
             <input
-              type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-medium">Postcode</label>
+            <label className="text-sm text-gray-300">Postcode</label>
             <input
-              type="text"
               value={postcode}
               onChange={(e) => setPostcode(e.target.value)}
-              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-medium">Phone</label>
+            <label className="text-sm text-gray-300">Phone</label>
             <input
-              type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-medium">Discount code (optional)</label>
+            <label className="text-sm text-gray-300">Discount code</label>
             <input
-              type="text"
               value={discountCode}
               onChange={(e) => setDiscountCode(e.target.value)}
-              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+              className="bg-white/10 rounded-lg px-4 py-2 text-white"
             />
           </div>
 
-          <ReviewSummary quoteData={quoteData} finalTotal={finalTotal} />
+          <ReviewSummary
+            selectedAreas={quoteData?.selected_areas || []}
+            quantities={quoteData?.quantities || {}}
+            carpets={quoteData?.carpets || {}}
+            appliances={quoteData?.appliances || {}}
+            finalTotal={finalTotal}
+          />
 
           <button
             type="submit"
@@ -252,11 +250,7 @@ export default function QuoteCheckout() {
         </form>
       </div>
 
-      <BookingSuccessModal
-        open={showSuccess}
-        onClose={() => setShowSuccess(false)}
-        quoteId={quoteId}
-      />
+      <BookingSuccessModal open={showSuccess} onClose={() => setShowSuccess(false)} />
     </GlassLayout>
   );
 }
