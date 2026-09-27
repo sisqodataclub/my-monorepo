@@ -78,13 +78,9 @@ export default function QuoteCheckout() {
       } catch (err) {
         console.error(err);
         const status = err.response?.status;
-        // Guard: coerce any non-object response payload (string/HTML error page) to a generic message.
-        if (!err.response?.data || typeof err.response.data !== "object") {
-          setError("Could not load your quote. Please try again.");
-        } else if (status === 404) {
-          setError("This quote link is no longer valid.");
-        } else if (status === 401 || status === 403) {
-          setError("Please sign in or use the original email link to view this quote.");
+        // Guard: 404 means the quote id is stale/unknown.
+        if (status === 404) {
+          setError("This quote could not be found. Please request a new quote.");
         } else {
           setError("Could not load your quote. Please try again.");
         }
@@ -92,7 +88,7 @@ export default function QuoteCheckout() {
         return;
       }
 
-      // 2) Non-authoritative: availability data. Failures here must not blank the page.
+      // 2) Non-authoritative: fetch blocked dates and partially blocked slots.
       try {
         const [blockedRes, partialRes] = await Promise.all([
           api.get("/api/cleaning-bookings/blocked-dates/"),
@@ -101,7 +97,7 @@ export default function QuoteCheckout() {
         setBlockedDates(blockedRes.data || []);
         setPartiallyBlockedSlots(partialRes.data || {});
       } catch (err) {
-        console.warn("Availability data unavailable:", err);
+        console.error("Could not load availability data", err);
       }
 
       setLoading(false);
@@ -112,144 +108,155 @@ export default function QuoteCheckout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!bookingDate || !timeslot || !paymentMethod) {
-      setError("Please select a date, time slot, and payment method.");
-      return;
-    }
+    if (submitting) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      await api.post(`/api/cleaning-bookings/${quoteId}/confirm/`, {
-        selected_datetime: { booking_date: bookingDate, timeslot },
+      await api.post(`/cleaning-bookings/${quoteId}/confirm/`, {
+        booking_date: bookingDate,
+        timeslot,
         payment_method: paymentMethod,
-        property_details: { address, postcode },
+        address,
+        postcode,
         phone,
+        discount_code: discountCode,
       });
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
-      setError("Could not confirm your booking. Please try again.");
+      const status = err.response?.status;
+      if (status === 404) {
+        setError("Could not confirm your booking. Please try again.");
+      } else if (status === 400) {
+        setError(err.response?.data?.detail || "Please check your booking details and try again.");
+      } else {
+        setError("Could not confirm your booking. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleSuccessClose = () => {
-    setShowSuccess(false);
-    navigate("/");
-  };
+  if (loading) {
+    return (
+      <GlassLayout>
+        <div className="flex items-center justify-center min-h-screen text-white">
+          Loading your quote…
+        </div>
+      </GlassLayout>
+    );
+  }
+
+  if (error && !quoteData) {
+    return (
+      <GlassLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen text-white gap-4 px-6">
+          <p className="text-red-400 text-center">{error}</p>
+          <button
+            onClick={() => navigate("/")}
+            className="bg-[#915EFF] hover:bg-[#7c4dff] transition-colors rounded-lg px-6 py-2"
+          >
+            Back to home
+          </button>
+        </div>
+      </GlassLayout>
+    );
+  }
 
   return (
     <GlassLayout>
-      <div className="mx-auto max-w-2xl space-y-6 py-8">
-        <h1 className="text-2xl font-semibold text-white">Confirm your booking</h1>
+      <div className="max-w-3xl mx-auto px-4 py-10 text-white">
+        <h1 className="text-3xl font-bold mb-6">Confirm your booking</h1>
 
-        {loading && (
-          <p className="text-white/80">Loading your quote…</p>
-        )}
-
-        {error && !loading && (
-          <p className="rounded-lg bg-red-500/20 border border-red-400/40 px-4 py-3 text-red-100">
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6">
             {error}
-          </p>
+          </div>
         )}
 
-        {!loading && !error && quoteData && (
-          <>
-            <ReviewSummary
-              selectedAreas={quoteData.selected_areas || []}
-              quantities={quoteData.quantities || {}}
-              carpets={quoteData.carpets || {}}
-              appliances={quoteData.appliances || {}}
-              furnished_status={quoteData.furnished_status}
-              biohazard={quoteData.biohazard}
-              discountCode={discountCode}
-              setDiscountCode={setDiscountCode}
-              hideDiscountInput
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <BookingDatePicker
+            value={bookingDate}
+            onChange={setBookingDate}
+            blockedDates={blockedDates}
+            partiallyBlockedSlots={partiallyBlockedSlots}
+          />
+
+          <TimeSlotSelector value={timeslot} onChange={setTimeslot} />
+
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Payment method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+            >
+              <option value="">Select…</option>
+              <option value="card">Card</option>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank transfer</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Address</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
             />
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">Booking date</label>
-                <BookingDatePicker
-                  value={bookingDate}
-                  onChange={setBookingDate}
-                  blockedDates={blockedDates}
-                />
-              </div>
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Postcode</label>
+            <input
+              type="text"
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value)}
+              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+            />
+          </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">Time slot</label>
-                <TimeSlotSelector
-                  value={timeslot}
-                  onChange={setTimeslot}
-                  bookingDate={bookingDate}
-                  partiallyBlockedSlots={partiallyBlockedSlots}
-                />
-              </div>
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Phone</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+            />
+          </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">Payment method</label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
-                >
-                  <option value="">Select a payment method</option>
-                  <option value="card">Card</option>
-                  <option value="cash">Cash</option>
-                  <option value="bank_transfer">Bank transfer</option>
-                </select>
-              </div>
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Discount code (optional)</label>
+            <input
+              type="text"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              className="bg-[#1d1836] border border-[#915EFF] rounded-lg px-4 py-2"
+            />
+          </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">Address</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
-                  placeholder="123 Example Street"
-                />
-              </div>
+          <ReviewSummary quoteData={quoteData} finalTotal={finalTotal} />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">Postcode</label>
-                <input
-                  type="text"
-                  value={postcode}
-                  onChange={(e) => setPostcode(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
-                  placeholder="AB1 2CD"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-white">Phone</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white"
-                  placeholder="+44 7000 000000"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 px-4 py-3 font-semibold text-white"
-              >
-                {submitting ? "Confirming…" : `Confirm booking — £${finalTotal.toFixed(2)}`}
-              </button>
-            </form>
-          </>
-        )}
-
-        <BookingSuccessModal open={showSuccess} onClose={handleSuccessClose} />
+          <button
+            type="submit"
+            disabled={submitting}
+            className="bg-[#915EFF] hover:bg-[#7c4dff] transition-colors rounded-lg px-6 py-3 font-semibold disabled:opacity-50"
+          >
+            {submitting ? "Confirming…" : "Confirm booking"}
+          </button>
+        </form>
       </div>
+
+      <BookingSuccessModal
+        open={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        quoteId={quoteId}
+      />
     </GlassLayout>
   );
 }
