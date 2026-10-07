@@ -2,6 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import { calculateQuoteFromApi } from "../lib/api";
 
+// Minimum charge applied to ALL services — any computed total below this is bumped up.
+const MINIMUM_CHARGE = 50;
+
 // Simple in-memory cache to prevent redundant API calls during navigation
 const quoteCache = new Map();
 
@@ -87,11 +90,13 @@ export default function useQuoteCalculator({
     timerRef.current = setTimeout(async () => {
       try {
         const data = await calculateQuoteFromApi(payload);
+        const rawTotal = Number(data.total) || 0;
         const newQuote = {
           subtotal: data.subtotal || 0,
           fees: data.fees || 0,
           discount: data.discount || 0,
-          finalTotal: data.total || 0,
+          // Enforce the £50 minimum on EVERY service, not just one.
+          finalTotal: Math.max(rawTotal, MINIMUM_CHARGE),
           breakdown: data.breakdown || [],
           loading: false,
           error: null,
@@ -108,16 +113,11 @@ export default function useQuoteCalculator({
 
     // Cleanup timer on unmount or dependency change
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     };
-  }, [
-    // ✅ Removed selectedAreas from dependencies – no longer used
-    JSON.stringify(quantities),
-    JSON.stringify(carpets),
-    JSON.stringify(appliances),
-    JSON.stringify(details),
-    discountCode,
-  ]);
+  }, [selectedAreas, quantities, carpets, appliances, details, discountCode]);
 
   return quote;
 }
