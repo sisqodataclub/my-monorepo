@@ -19,7 +19,12 @@ RUN pnpm install --frozen-lockfile
 # 4. Copy the rest of the app source code
 COPY apps/dashboards/ ./apps/dashboards/
 
-# 5. Build the app (ensure the filter matches your package.json name!)
+# 5. Inject the agent API key at build time so Vite can inline it into the bundle.
+#    Vite only exposes env vars prefixed with VITE_ to client code at build time.
+ARG VITE_AGENT_API_KEY
+ENV VITE_AGENT_API_KEY=$VITE_AGENT_API_KEY
+
+# 6. Build the app (ensure the filter matches your package.json name!)
 RUN pnpm --filter dashboards build
 
 # ================= PRODUCTION STAGE =================

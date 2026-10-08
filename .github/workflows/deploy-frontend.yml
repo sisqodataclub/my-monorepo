@@ -27,3 +27,7 @@ jobs:
             cd /opt
             chmod +x deploy_mr.sh
             /opt/deploy-wrapper.sh 6ef34dab-51a1-4ff7-8e36-6cdd92f034c6 forms /opt/deploy_mr.sh
+
+      # NOTE: VITE_AGENT_API_KEY is injected into the dashboards Docker image
+      # via --build-arg at image build time (see apps/dashboards/Dockerfile).
+      # Requires repo secret VITE_AGENT_API_KEY to be set before merge.
