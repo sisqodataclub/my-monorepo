@@ -168,6 +168,7 @@ export default function BookingsPage() {
     return {
       Authorization: `Bearer ${token}`,
       'X-Tenant': TENANT,
+      'X-Agent-Key': import.meta.env.VITE_AGENT_API_KEY || '',
     };
   };
 
