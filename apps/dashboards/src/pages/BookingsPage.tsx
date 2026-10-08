@@ -168,7 +168,6 @@ export default function BookingsPage() {
     return {
       Authorization: `Bearer ${token}`,
       'X-Tenant': TENANT,
-      'X-Agent-Key': import.meta.env.VITE_AGENT_API_KEY || '',
     };
   };
 
@@ -182,14 +181,17 @@ export default function BookingsPage() {
       fetchAnalytics(),
       fetchCleaningBookings(),
       fetchSuperset(),
-      fetchServicesAndProviders(),
+      fetchServices(),
     ]);
   };
 
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
-      const headers = await getHeaders();
+      const headers = {
+        ...(await getHeaders()),
+        'X-Agent-Key': import.meta.env.VITE_AGENT_KEY,
+      };
       const params = new URLSearchParams();
       if (analyticsSearch) params.append('search', analyticsSearch);
       if (analyticsFilters.payment_status) params.append('payment_status', analyticsFilters.payment_status);
@@ -246,8 +248,8 @@ export default function BookingsPage() {
     }
   };
 
-  // ---- Fetch services (required) and providers (optional) ----
-  const fetchServicesAndProviders = async () => {
+  // ---- Fetch services (required) ----
+  const fetchServices = async () => {
     setServicesError(null);
     try {
       const headers = await getHeaders();
@@ -263,7 +265,7 @@ export default function BookingsPage() {
 
       setServices(servicesData);
     } catch (err: any) {
-      console.error('Unexpected error in fetchServicesAndProviders:', err);
+      console.error('Unexpected error in fetchServices:', err);
       setServicesError('Unexpected error loading services');
     }
   };
