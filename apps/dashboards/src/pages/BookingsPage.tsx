@@ -1,1 +1,1 @@
-PLACEHOLDER
+__READ_FROM_FILE__/tmp/BookingsPage_patched.tsx
