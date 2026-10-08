@@ -73,12 +73,6 @@ interface Service {
   price: string;
 }
 
-interface ServiceProvider {
-  id: number;
-  user_email: string;
-  service_name: string;
-}
-
 type SortDirection = 'asc' | 'desc';
 
 // -------------------------------------------------------------------
@@ -113,7 +107,6 @@ export default function BookingsPage() {
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [selectedCleaningId, setSelectedCleaningId] = useState<number | null>(null);
   const [promoteServiceId, setPromoteServiceId] = useState('');
-  const [promoteProviderId, setPromoteProviderId] = useState('');
   const [promoting, setPromoting] = useState(false);
 
   // --- Edit modal state ---
@@ -149,7 +142,6 @@ export default function BookingsPage() {
 
   // --- Services and Providers for dropdowns ---
   const [services, setServices] = useState<Service[]>([]);
-  const [providers, setProviders] = useState<ServiceProvider[]>([]);
   const [servicesError, setServicesError] = useState<string | null>(null);
 
   // --- Superset data (existing) ---
@@ -268,16 +260,7 @@ export default function BookingsPage() {
         setServicesError(err.message || 'Could not load services');
       }
 
-      let providersData: ServiceProvider[] = [];
-      try {
-        const providersRes = await axios.get(`${API_BASE}/api/service-providers/`, { headers });
-        providersData = providersRes.data.results || providersRes.data || [];
-      } catch (err) {
-        console.warn('Could not fetch providers (optional):', err);
-      }
-
       setServices(servicesData);
-      setProviders(providersData);
     } catch (err: any) {
       console.error('Unexpected error in fetchServicesAndProviders:', err);
       setServicesError('Unexpected error loading services');
@@ -291,7 +274,6 @@ export default function BookingsPage() {
     try {
       const headers = await getHeaders();
       const payload: any = { service_id: parseInt(promoteServiceId) };
-      if (promoteProviderId) payload.provider_id = parseInt(promoteProviderId);
 
       await axios.post(
         `${API_BASE}/api/cleaning-bookings/${selectedCleaningId}/promote/`,
@@ -301,7 +283,6 @@ export default function BookingsPage() {
       setShowPromoteModal(false);
       setSelectedCleaningId(null);
       setPromoteServiceId('');
-      setPromoteProviderId('');
       await loadAllData();
       alert('✅ Promoted successfully!');
     } catch (err: any) {
@@ -1125,19 +1106,6 @@ export default function BookingsPage() {
                       <option key={s.id} value={s.id}>{s.name} (${s.price})</option>
                     ))
                   )}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Assign Provider (optional)</label>
-                <select
-                  value={promoteProviderId}
-                  onChange={(e) => setPromoteProviderId(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Unassigned</option>
-                  {providers.map((p) => (
-                    <option key={p.id} value={p.id}>{p.user_email} – {p.service_name}</option>
-                  ))}
                 </select>
               </div>
               <button
