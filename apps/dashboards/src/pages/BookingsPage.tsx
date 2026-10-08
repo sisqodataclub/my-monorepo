@@ -168,7 +168,6 @@ export default function BookingsPage() {
     return {
       Authorization: `Bearer ${token}`,
       'X-Tenant': TENANT,
-      'X-Agent-Key': import.meta.env.VITE_AGENT_API_KEY || '',
     };
   };
 
@@ -199,7 +198,7 @@ export default function BookingsPage() {
 
       const response = await axios.get(
         `${API_BASE}/api/service-bookings/analytics/?${params.toString()}`,
-        { headers }
+        { headers: { ...headers, 'X-Agent-Key': import.meta.env.VITE_AGENT_API_KEY || '' } }
       );
       setAnalyticsData(response.data.results || []);
     } catch (err) {
