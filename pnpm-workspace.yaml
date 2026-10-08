@@ -9,3 +9,4 @@ allowBuilds:
   esbuild: true
   puppeteer: true
   react-vertical-timeline-component: true
+  '@clerk/shared': false
