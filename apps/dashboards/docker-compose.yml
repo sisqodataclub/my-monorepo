@@ -5,6 +5,8 @@ services:
     build:
       context: ../..
       dockerfile: apps/dashboards/Dockerfile
+      args:
+        VITE_AGENT_API_KEY: ${VITE_AGENT_API_KEY}
     container_name: dcs1
     restart: unless-stopped
     expose:
