@@ -42,7 +42,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function CityServiceRoute() {
-  const { serviceData, cityName } = useLoaderData<typeof loader>();
+  const { serviceData, cityName, slug, citySlug } = useLoaderData<typeof loader>();
 
   // Override the service data so the page becomes city‑specific
   const localizedData = {
