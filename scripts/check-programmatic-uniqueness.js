@@ -1,110 +1,105 @@
 #!/usr/bin/env node
 /**
- * Action 6 guardrail: programmatic service x city page uniqueness.
+ * Action 6 guardrail: programmatic service x city page uniqueness check.
  *
- * Fails (non-zero exit) if any two programmatic pages share an identical
- * meta-description, H1, or intro paragraph.
+ * Fails (exit 1) if any two programmatic pages share an identical
+ * meta-description, H1, or intro copy. Prints the offending pairs.
  *
- * Scans the content sources used by the dynamic route
- * apps/ddeep/app/routes/services.$service.in.$city.tsx:
- *   - apps/ddeep/app/data/cityContent.ts
- *   - apps/ddeep/app/data/servicesContent.tsx
- *
- * Usage: node scripts/check-programmatic-uniqueness.js
+ * Run: node scripts/check-programmatic-uniqueness.js
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const SOURCES = [
+
+const CANDIDATE_SOURCES = [
   'apps/ddeep/app/data/cityContent.ts',
   'apps/ddeep/app/data/cityContent.tsx',
-  'apps/ddeep/app/data/servicesContent.ts',
   'apps/ddeep/app/data/servicesContent.tsx',
+  'apps/ddeep/app/data/servicesContent.ts',
+  'apps/ddeep/app/data/servicesContent.jsx',
+  'apps/ddeep/app/data/servicesContent.js',
 ];
 
-function readFirstExisting(paths) {
-  for (const rel of paths) {
-    const abs = path.join(ROOT, rel);
-    if (fs.existsSync(abs)) return { rel, text: fs.readFileSync(abs, 'utf8') };
-  }
-  return null;
+function findSources() {
+  return CANDIDATE_SOURCES
+    .map((rel) => path.join(ROOT, rel))
+    .filter((abs) => fs.existsSync(abs));
 }
 
 /**
- * Very small heuristic extractor: pull string literals assigned to keys we
- * care about. This intentionally avoids a full TS parser so the guardrail
- * stays dependency-free and runs in plain `node`.
+ * Very small, dependency-free extractor: pulls out string literals
+ * associated with metaDescription / description, h1 / h1Text, and
+ * intro / introText keys from TS/TSX/JS source. This is intentionally
+ * conservative — it only needs to catch copy-paste duplication across
+ * programmatic pages.
  */
-function extractField(text, fieldNames) {
-  const results = [];
-  const names = fieldNames.join('|');
-  const re = new RegExp(
-    `(?:${names})\\s*[:=]\\s*(?:\n\\s*)?[\`'"]([^\`'"]+)[\`'"]`,
-    'g'
-  );
+function extractFields(sourceText) {
+  const fields = [];
+  const keyRe = /(metaDescription|meta_description|description|h1|h1Text|headline|intro|introText|introCopy)\s*[:=]\s*(['"`])([\s\S]*?)\2/g;
   let m;
-  while ((m = re.exec(text)) !== null) {
-    results.push(m[1].trim());
+  while ((m = keyRe.exec(sourceText)) !== null) {
+    fields.push({ key: m[1], value: m[3].trim() });
   }
-  return results;
+  return fields;
 }
 
-function findDuplicates(values) {
-  const seen = new Map();
-  const dupes = [];
-  for (const v of values) {
-    if (!v) continue;
-    const key = v.toLowerCase().replace(/\\s+/g, ' ').trim();
-    if (seen.has(key)) {
-      dupes.push([seen.get(key), v]);
-    } else {
-      seen.set(key, v);
-    }
-  }
-  return dupes;
+function normalize(value) {
+  return value.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 function main() {
-  const source = readFirstExisting(SOURCES);
-  if (!source) {
+  const sources = findSources();
+  if (sources.length === 0) {
     console.error(
-      '[uniqueness] Could not locate cityContent.ts or servicesContent.tsx under apps/ddeep/app/data/.'
+      'check-programmatic-uniqueness: no cityContent / servicesContent source files found. ' +
+        'Searched: ' + CANDIDATE_SOURCES.join(', ')
     );
-    process.exit(2);
-  }
-
-  const metaDescriptions = extractField(source.text, ['metaDescription', 'meta_description', 'description']);
-  const h1s = extractField(source.text, ['h1', 'heading', 'title']);
-  const intros = extractField(source.text, ['intro', 'introCopy', 'introText', 'lead']);
-
-  const checks = [
-    ['meta-description', metaDescriptions],
-    ['H1', h1s],
-    ['intro copy', intros],
-  ];
-
-  let failed = false;
-  for (const [label, values] of checks) {
-    const dupes = findDuplicates(values);
-    if (dupes.length > 0) {
-      failed = true;
-      console.error(`\n[uniqueness] Duplicate ${label} detected (${dupes.length} pair(s)):`);
-      for (const [a, b] of dupes) {
-        console.error(`  - "${a}"\n    == "${b}"`);
-      }
-    }
-  }
-
-  if (failed) {
-    console.error('\n[uniqueness] FAIL: programmatic pages share identical copy.');
     process.exit(1);
   }
 
-  console.log(
-    `[uniqueness] PASS: scanned ${source.rel} — no duplicate meta-description, H1, or intro copy.`
+  const buckets = new Map(); // normalizedValue -> [{file, key, raw}]
+
+  for (const file of sources) {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const { key, value } of extractFields(text)) {
+      if (!value || value.length < 20) continue; // skip trivial strings
+      const norm = normalize(value);
+      if (!buckets.has(norm)) buckets.set(norm, []);
+      buckets.get(norm).push({ file: path.relative(ROOT, file), key, raw: value });
+    }
+  }
+
+  const duplicates = [];
+  for (const [norm, entries] of buckets.entries()) {
+    if (entries.length > 1) {
+      duplicates.push({ norm, entries });
+    }
+  }
+
+  if (duplicates.length === 0) {
+    console.log(
+      'check-programmatic-uniqueness: OK — scanned ' +
+        sources.length +
+        ' source file(s), no duplicate meta-description / H1 / intro copy found.'
+    );
+    process.exit(0);
+  }
+
+  console.error(
+    'check-programmatic-uniqueness: FAIL — found ' +
+      duplicates.length +
+      ' duplicated copy block(s) across programmatic pages:\n'
   );
+  for (const dup of duplicates) {
+    console.error('  Duplicate copy (normalized): "' + dup.norm.slice(0, 120) + '"');
+    for (const e of dup.entries) {
+      console.error('    - ' + e.file + '  [' + e.key + ']');
+    }
+    console.error('');
+  }
+  process.exit(1);
 }
 
 main();
