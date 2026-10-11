@@ -8,10 +8,10 @@ export interface FAQItem {
 }
 
 interface HomeFAQProps {
-  faqs: FAQItem[];
+  faqs?: FAQItem[];
 }
 
-export const HomeFAQ: React.FC<HomeFAQProps> = ({ faqs }) => {
+export const HomeFAQ: React.FC<HomeFAQProps> = ({ faqs = [] }) => {
   return (
     <section className="w-full max-w-4xl mx-auto px-6 py-24">
       <div className="text-center mb-12">
