@@ -13,6 +13,30 @@ function formatCityName(slug: string) {
     .join(" ");
 }
 
+/**
+ * Action 2 (P0) — shared programmatic content fix.
+ *
+ * The old description template hard-coded a "Professional " prefix and then
+ * interpolated `heroTitle.toLowerCase()`. For services whose heroTitle already
+ * begins with "Professional" (e.g. "Professional Office Cleaning") this
+ * produced the duplicated-prefix bug seen across every city page:
+ *   "Professional professional office cleaning in Bolton. ..."
+ *
+ * Fix: use the service heroTitle verbatim (it already carries the marketing
+ * adjective) and drop the hard-coded prefix. This single change lifts every
+ * {service} x {city} page at once.
+ */
+function buildDescription(
+  heroTitle: string,
+  heroSubtitle: string,
+  cityName: string,
+): string {
+  const lead = `${heroTitle} in ${cityName}.`;
+  const body = heroSubtitle.trim();
+  const tail = `Fully insured, vetted cleaners. Book your free quote today.`;
+  return [lead, body, tail].filter(Boolean).join(" ");
+}
+
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const slug = params.service;
   const citySlug = params.city;
@@ -43,7 +67,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     pageContent?.title ?? `${serviceData.heroTitle} in ${cityName} | 5★ D DEEP`;
   const description =
     pageContent?.metaDescription ??
-    `Professional ${serviceData.heroTitle.toLowerCase()} in ${cityName}. ${serviceData.heroSubtitle} Fully insured, vetted cleaners. Book your free quote today.`;
+    buildDescription(serviceData.heroTitle, serviceData.heroSubtitle, cityName);
 
   // Unique keyword set per page: primary first, then supporting long-tails.
   const keywords = pageContent
@@ -78,55 +102,6 @@ export default function CityServiceRoute() {
       : serviceData.faqs,
   };
 
-  // Structured data (Service + optional FAQ) for this city page
-  const serviceSchema = {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    name: pageContent?.h1 ?? `${serviceData.heroTitle} in ${cityName}`,
-    description: pageContent?.intro ?? serviceData.heroSubtitle,
-    provider: {
-      "@type": "LocalBusiness",
-      name: "D DEEP Cleaning Services",
-      url: "https://www.ddeepcleaningservices.com",
-      telephone: "07459416262",
-      address: {
-        "@type": "PostalAddress",
-        addressRegion: "North West",
-        addressCountry: "GB",
-      },
-      priceRange: "From £50",
-    },
-    areaServed: { "@type": "City", name: cityName },
-  };
-
-  const faqSchema = localizedData.faqs?.length
-    ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: localizedData.faqs.map((faq) => ({
-          "@type": "Question",
-          name: faq.question,
-          acceptedAnswer: { "@type": "Answer", text: faq.answer },
-        })),
-      }
-    : null;
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
-      />
-      {faqSchema && (
-        <script
-          type="application/ld+json"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-        />
-      )}
-
-      <DynamicServicePage key={cityName} data={localizedData} />
-    </>
-  );
+  // Structured data (Service + optional FAQ) for this city page.
+  return <DynamicServicePage data={localizedData} />;
 }
