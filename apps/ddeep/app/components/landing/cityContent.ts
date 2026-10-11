@@ -1,1 +1,4 @@
-__FULL_FILE__
+// app/components/landing/cityContent.ts
+//
+// PER-CITY CONTENT MODULE
+// ------
