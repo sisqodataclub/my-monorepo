@@ -3,6 +3,7 @@
 
 import { Link } from "react-router";
 import type { ServiceData } from "./servicesContent";
+import type { CityContent } from "./cityContent";
 import { useContactModal } from "../../context/ContactModalContext";
 
 /* ================= HOME SECTIONS ================= */
@@ -48,7 +49,7 @@ function StoryCard({ children, bgImage, className = "", isAboveFold = false }: S
 }
 
 /* ================= HERO SECTION ================= */
-function ServiceHero({ data }: { data: ServiceData & { cityName?: string } }) {
+function ServiceHero({ data }: { data: ServiceData & { cityName?: string; pageContent?: CityContent | null } }) {
   const { openModal } = useContactModal();
   const badges = [
     { icon: <FaShieldAlt />, text: "Fully Insured" },
@@ -63,6 +64,9 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string } }) {
     ? `in ${data.cities.slice(0, 3).join(", ")} & North West`
     : "";
 
+  // Unique per-page H1 comes from cityContent when present.
+  const heading = data.pageContent?.h1 ?? `${data.heroTitle} ${locationText}`;
+
   return (
     <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
       <div className="flex flex-wrap justify-center gap-3 mb-8">
@@ -73,15 +77,17 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string } }) {
         ))}
       </div>
 
-      {/* H1 now includes dynamic location */}
+      {/* H1 now includes dynamic location (or the unique per-city H1) */}
       <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 drop-shadow-md">
-        {data.heroTitle} {locationText}
+        {heading}
         <span className="block text-green-400 text-xl md:text-3xl mt-4 font-bold uppercase tracking-[0.2em]">
           Professional Service
         </span>
       </h1>
 
-      <p className="text-lg md:text-xl text-slate-100 max-w-2xl mb-4 font-medium">{data.heroSubtitle}</p>
+      <p className="text-lg md:text-xl text-slate-100 max-w-2xl mb-4 font-medium">
+        {data.pageContent?.intro ?? data.heroSubtitle}
+      </p>
 
       {/* City availability line - only render on generic pages, hide on hyper-local pages */}
       {!data.cityName && data.cities && data.cities.length > 0 && (
@@ -98,15 +104,15 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string } }) {
               onClick={openModal}
               className="bg-green-600 hover:bg-green-500 text-white px-10 py-4 rounded-full font-bold text-lg shadow-2xl transition-all hover:-translate-y-1 active:scale-95"
             >
-              {btn.label}
+              {btn.text}
             </button>
           ) : (
             <button
               key={i}
               onClick={openModal}
-              className="bg-white/10 backdrop-blur-md border border-white/30 text-white hover:bg-white/20 px-10 py-4 rounded-full font-bold text-lg shadow-2xl transition-all hover:-translate-y-1 active:scale-95"
+              className="bg-white/10 backdrop-blur-md border border-white/30 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all"
             >
-              {btn.label}
+              {btn.text}
             </button>
           )
         )}
@@ -115,99 +121,54 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string } }) {
   );
 }
 
-/* ================= FEATURES SECTION ================= */
-function ServiceFeatures({ data }: { data: ServiceData }) {
+/* ================= UNIQUE PER-CITY CONTENT SECTION ================= */
+function CityContentSection({ content }: { content: CityContent }) {
   return (
-    <div className="flex flex-col items-center text-center w-full">
-      <div className="mb-16">
-        <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">What’s Included</h2>
-        <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mb-6" />
-        <p className="text-slate-500 text-lg md:text-xl max-w-3xl mx-auto">{data.ctaPrimaryText}</p>
-      </div>
+    <section className="w-full max-w-4xl mx-auto px-6 lg:px-8 py-16 text-left">
+      <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-4">
+        {content.primaryKeyword.replace(/\b\w/g, (c) => c.toUpperCase())}
+      </h2>
+      <p className="text-slate-700 leading-relaxed mb-6">{content.serviceDetail}</p>
+      <p className="text-slate-700 leading-relaxed mb-6">{content.localProof}</p>
 
-      {/* Unique "Why Choose Us" Section */}
-      {data.whyChooseUs && data.whyChooseUs.length > 0 && (
-        <div className="mb-16 max-w-4xl mx-auto bg-white border border-slate-100 rounded-3xl p-8 shadow-sm w-full text-left">
-          <h3 className="text-2xl font-black text-slate-900 mb-6 text-center">Why Choose Our Service</h3>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.whyChooseUs.map((point, index) => (
-              <li key={index} className="flex items-start gap-3 text-slate-700 text-sm font-medium">
-                <span className="w-2 h-2 bg-green-600 rounded-full mt-2 shrink-0" />
-                {point}
-              </li>
+      {content.faqs?.length > 0 && (
+        <div className="mt-10">
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4">FAQs</h3>
+          <dl className="space-y-4">
+            {content.faqs.map((f, i) => (
+              <div key={i}>
+                <dt className="font-semibold text-slate-900">{f.q}</dt>
+                <dd className="text-slate-700">{f.a}</dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         </div>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
-        {data.featureCards.map((card, idx) => (
-          <div key={idx} className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all">
-            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
-              <FaCheckCircle className="text-green-600 text-xl" />
-            </div>
-
-            <h3 className="text-xl font-bold text-slate-900 mb-4">{card.title}</h3>
-
-            <ul className="space-y-3">
-              {card.items.map((item, i) => (
-                <li key={i} className="flex gap-3 text-slate-600 text-sm">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2" /> {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-16 text-green-700 font-bold bg-green-50 px-8 py-3 rounded-full border">{data.ctaSecondaryText}</p>
-    </div>
+    </section>
   );
 }
 
 /* ================= MAIN DYNAMIC PAGE ================= */
-export default function DynamicServicePage({ data }: { data: ServiceData & { cityName?: string } }) {
+export default function DynamicServicePage({
+  data,
+}: {
+  data: ServiceData & { cityName?: string; pageContent?: CityContent | null };
+}) {
   return (
-    <div className="w-full">
-      {/* 1. Hero */}
+    <main className="w-full">
       <StoryCard bgImage={HeroImage} isAboveFold>
         <ServiceHero data={data} />
       </StoryCard>
 
-      {/* 2. What’s Included & Why Choose Us */}
-      <StoryCard className="bg-slate-50">
-        <ServiceFeatures data={data} />
-      </StoryCard>
+      {/* Unique per-city body copy — only rendered when cityContent exists. */}
+      {data.pageContent && <CityContentSection content={data.pageContent} />}
 
-      {/* 3. ✅ Visual Gallery (Filtered dynamically by service title if desired, or showing all) */}
-      <StoryCard>
-        <HomeGallery filterCategory={data.title} />
-      </StoryCard>
-
-      {/* 4. Social Proof */}
-      <StoryCard className="bg-slate-50">
-        <HomeReviews />
-      </StoryCard>
-
-      {/* 5. Why Choose Us (Process) */}
-      <StoryCard>
-        <HomeProcess />
-      </StoryCard>
-
-      {/* 6. Areas Served */}
-      <StoryCard className="bg-slate-50">
-        <HomeAreas />
-      </StoryCard>
-
-      {/* 7. FAQ */}
-      <StoryCard>
-        <HomeFAQ faqs={data.faqs} />
-      </StoryCard>
-
-      {/* 8. Final Call-to-Action */}
-      <StoryCard className="bg-green-950 text-white">
-        <HomeCTA />
-      </StoryCard>
-    </div>
+      <HomeProcess />
+      <HomeAreas />
+      <HomeReviews />
+      <HomeGallery />
+      <HomeFAQ />
+      <HomeCTA />
+    </main>
   );
 }
