@@ -1,6 +1,1 @@
-// app/components/landing/cityContent.ts
-//
-// PER-CITY CONTENT MODULE
-// -----------------------
-
-// chunk 2 content placeholder
+PLACEHOLDER_FULL_CONTENT
