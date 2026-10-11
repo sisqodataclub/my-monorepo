@@ -2,8 +2,7 @@ name: SEO Guardrails
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   programmatic-uniqueness:
@@ -18,5 +17,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run programmatic uniqueness checker
-        run: node scripts/check-programmatic-uniqueness.mjs
+      - name: Run uniqueness guardrail
+        run: node scripts/check-programmatic-uniqueness.js
