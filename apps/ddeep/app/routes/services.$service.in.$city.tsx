@@ -44,14 +44,16 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 export default function CityServiceRoute() {
   const { serviceData, cityName } = useLoaderData<typeof loader>();
 
+  // Override the service data so the page becomes city‑specific
   const localizedData = {
     ...serviceData,
     heroTitle: `${serviceData.heroTitle} in ${cityName}`,
     heroSubtitle: `${serviceData.heroSubtitle} Professional local cleaners serving ${cityName}.`,
     ctaSecondaryText: `Trusted by homes and businesses across ${cityName}.`,
-    cities: [],
+    cities: [],   // ← removes the generic “Available in…” line
   };
 
+  // Structured data (Service + optional FAQ) for this city page
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -100,12 +102,7 @@ export default function CityServiceRoute() {
       )}
 
       <DynamicServicePage key={cityName} data={localizedData} />
-
-      <InternalLinks
-        serviceSlug={slug}
-        citySlug={citySlug}
-        cityName={cityName}
-      />
+      <InternalLinks serviceSlug={slug} citySlug={citySlug} cityName={cityName} />
     </>
   );
 }
