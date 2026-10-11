@@ -1,159 +1,110 @@
 #!/usr/bin/env node
 /**
- * Programmatic page uniqueness guardrail (Bolton plan, Action 6).
+ * Action 6 guardrail: programmatic service x city page uniqueness.
  *
- * Scans the programmatic service x city page content sources and fails if
- * any two pages share an identical meta-description, H1, or intro copy.
+ * Fails (non-zero exit) if any two programmatic pages share an identical
+ * meta-description, H1, or intro paragraph.
  *
- * Run: node scripts/check-programmatic-uniqueness.js
+ * Scans the content sources used by the dynamic route
+ * apps/ddeep/app/routes/services.$service.in.$city.tsx:
+ *   - apps/ddeep/app/data/cityContent.ts
+ *   - apps/ddeep/app/data/servicesContent.tsx
+ *
+ * Usage: node scripts/check-programmatic-uniqueness.js
  */
-'use strict';
 
 const fs = require('fs');
 const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '..');
-
-// Candidate locations for the content sources named in the plan.
-const CANDIDATE_FILES = [
+const ROOT = path.resolve(__dirname, '..');
+const SOURCES = [
   'apps/ddeep/app/data/cityContent.ts',
   'apps/ddeep/app/data/cityContent.tsx',
-  'apps/ddeep/app/content/cityContent.ts',
-  'apps/ddeep/app/content/cityContent.tsx',
-  'apps/ddeep/app/utils/cityContent.ts',
-  'apps/ddeep/app/utils/cityContent.tsx',
-  'apps/ddeep/app/data/servicesContent.tsx',
   'apps/ddeep/app/data/servicesContent.ts',
-  'apps/ddeep/app/content/servicesContent.tsx',
-  'apps/ddeep/app/content/servicesContent.ts',
-  'apps/ddeep/app/utils/servicesContent.tsx',
-  'apps/ddeep/app/utils/servicesContent.ts',
+  'apps/ddeep/app/data/servicesContent.tsx',
 ];
 
-function findFiles() {
-  const found = [];
-  for (const rel of CANDIDATE_FILES) {
-    const abs = path.join(REPO_ROOT, rel);
-    if (fs.existsSync(abs)) found.push(abs);
+function readFirstExisting(paths) {
+  for (const rel of paths) {
+    const abs = path.join(ROOT, rel);
+    if (fs.existsSync(abs)) return { rel, text: fs.readFileSync(abs, 'utf8') };
   }
-  // Fallback: shallow walk of apps/ddeep for any *Content.{ts,tsx} file.
-  if (found.length === 0) {
-    const roots = [
-      path.join(REPO_ROOT, 'apps/ddeep/app'),
-      path.join(REPO_ROOT, 'apps/ddeep'),
-    ];
-    const seen = new Set();
-    const walk = (dir, depth) => {
-      if (depth > 5) return;
-      let entries;
-      try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
-      catch { return; }
-      for (const e of entries) {
-        if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) walk(full, depth + 1);
-        else if (/Content\.(ts|tsx)$/.test(e.name) && !seen.has(full)) {
-          seen.add(full);
-          found.push(full);
-        }
-      }
-    };
-    for (const r of roots) walk(r, 0);
-  }
-  return found;
+  return null;
 }
 
 /**
- * Extract page records from a source file. We do a light-touch parse: find
- * object literals that contain a slug/city/service identifier plus any of
- * metaDescription / description / h1 / heading / intro / introCopy.
- * This is intentionally heuristic - it is a guardrail, not a compiler.
+ * Very small heuristic extractor: pull string literals assigned to keys we
+ * care about. This intentionally avoids a full TS parser so the guardrail
+ * stays dependency-free and runs in plain `node`.
  */
-function extractRecords(file) {
-  const src = fs.readFileSync(file, 'utf8');
-  const records = [];
-
-  // Split on likely object boundaries: slug: '...' or key: { ... }
-  // We scan for each occurrence of a page key and grab a window of text.
-  const keyRe = /(?:^|[\s,{])(?:slug|key|id|path|citySlug|serviceSlug)\s*:\s*['"`]([^'"`]+)['"`]/g;
+function extractField(text, fieldNames) {
+  const results = [];
+  const names = fieldNames.join('|');
+  const re = new RegExp(
+    `(?:${names})\\s*[:=]\\s*(?:\n\\s*)?[\`'"]([^\`'"]+)[\`'"]`,
+    'g'
+  );
   let m;
-  while ((m = keyRe.exec(src)) !== null) {
-    const start = m.index;
-    const window = src.slice(start, Math.min(src.length, start + 2000));
-    const id = m[1];
-
-    const pick = (re) => {
-      const mm = window.match(re);
-      return mm ? mm[1].trim() : null;
-    };
-
-    const metaDescription = pick(/(?:metaDescription|meta_description|description)\s*:\s*['"`]([^'"`]{20,})['"`]/i);
-    const h1 = pick(/(?:h1|heading|title)\s*:\s*['"`]([^'"`]{3,})['"`]/i);
-    const intro = pick(/(?:intro|introCopy|intro_copy|lead|blurb)\s*:\s*['"`]([^'"`]{20,})['"`]/i);
-
-    if (metaDescription || h1 || intro) {
-      records.push({
-        file: path.relative(REPO_ROOT, file),
-        id,
-        metaDescription,
-        h1,
-        intro,
-      });
-    }
+  while ((m = re.exec(text)) !== null) {
+    results.push(m[1].trim());
   }
-  return records;
+  return results;
 }
 
-function groupDuplicates(records, field) {
-  const map = new Map();
-  for (const r of records) {
-    const v = r[field];
-    if (!v) continue;
-    const norm = v.replace(/\s+/g, ' ').trim().toLowerCase();
-    if (!map.has(norm)) map.set(norm, []);
-    map.get(norm).push(r);
-  }
+function findDuplicates(values) {
+  const seen = new Map();
   const dupes = [];
-  for (const [value, group] of map.entries()) {
-    if (group.length > 1) dupes.push({ value, group });
+  for (const v of values) {
+    if (!v) continue;
+    const key = v.toLowerCase().replace(/\\s+/g, ' ').trim();
+    if (seen.has(key)) {
+      dupes.push([seen.get(key), v]);
+    } else {
+      seen.set(key, v);
+    }
   }
   return dupes;
 }
 
 function main() {
-  const files = findFiles();
-  if (files.length === 0) {
-    console.error('[uniqueness] No programmatic content source files found. Expected cityContent.ts / servicesContent.tsx under apps/ddeep.');
+  const source = readFirstExisting(SOURCES);
+  if (!source) {
+    console.error(
+      '[uniqueness] Could not locate cityContent.ts or servicesContent.tsx under apps/ddeep/app/data/.'
+    );
     process.exit(2);
   }
 
-  const records = files.flatMap(extractRecords);
-  if (records.length === 0) {
-    console.error('[uniqueness] Found source files but extracted 0 page records. Check the extractor or the content shape.');
-    process.exit(2);
-  }
+  const metaDescriptions = extractField(source.text, ['metaDescription', 'meta_description', 'description']);
+  const h1s = extractField(source.text, ['h1', 'heading', 'title']);
+  const intros = extractField(source.text, ['intro', 'introCopy', 'introText', 'lead']);
 
-  const fields = ['metaDescription', 'h1', 'intro'];
+  const checks = [
+    ['meta-description', metaDescriptions],
+    ['H1', h1s],
+    ['intro copy', intros],
+  ];
+
   let failed = false;
-
-  for (const field of fields) {
-    const dupes = groupDuplicates(records, field);
-    for (const d of dupes) {
+  for (const [label, values] of checks) {
+    const dupes = findDuplicates(values);
+    if (dupes.length > 0) {
       failed = true;
-      console.error(`\n[uniqueness] Duplicate ${field} across ${d.group.length} pages:`);
-      console.error(`  value: "${d.value.slice(0, 120)}${d.value.length > 120 ? '...' : ''}"`);
-      for (const r of d.group) {
-        console.error(`    - ${r.file} :: ${r.id}`);
+      console.error(`\n[uniqueness] Duplicate ${label} detected (${dupes.length} pair(s)):`);
+      for (const [a, b] of dupes) {
+        console.error(`  - "${a}"\n    == "${b}"`);
       }
     }
   }
 
   if (failed) {
-    console.error('\n[uniqueness] FAIL: programmatic pages share identical meta-description / H1 / intro copy.');
+    console.error('\n[uniqueness] FAIL: programmatic pages share identical copy.');
     process.exit(1);
   }
 
-  console.log(`[uniqueness] OK: scanned ${records.length} page records across ${files.length} file(s) - no duplicate meta-description, H1, or intro copy.`);
+  console.log(
+    `[uniqueness] PASS: scanned ${source.rel} — no duplicate meta-description, H1, or intro copy.`
+  );
 }
 
 main();

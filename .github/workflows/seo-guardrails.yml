@@ -1,4 +1,4 @@
-name: SEO Guardrails
+name: SEO guardrails
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
 
 jobs:
   programmatic-uniqueness:
+    name: Programmatic page uniqueness
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,5 +17,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Check programmatic page uniqueness
-        run: node scripts/check-programmatic-uniqueness.mjs
+      - name: Run uniqueness guardrail
+        run: node scripts/check-programmatic-uniqueness.js
