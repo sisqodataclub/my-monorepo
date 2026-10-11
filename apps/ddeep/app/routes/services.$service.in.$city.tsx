@@ -2,6 +2,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { servicesContent } from "../components/landing/servicesContent";
+import { cityContent } from "../components/landing/cityContent";
 import DynamicServicePage from "../components/landing/dynamic";
 import { getSeoMeta } from "../utils/seo";
 
@@ -20,44 +21,69 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     throw new Response("Not Found", { status: 404 });
   }
 
+  // Per-page (service x city) unique content. Missing entries fall back to
+  // service-level defaults so the route never 404s on un-authored cities.
+  const pageContent = cityContent[`${slug}:${citySlug}`] ?? null;
+
   return {
     slug,
     citySlug,
     cityName: formatCityName(citySlug),
     serviceData: servicesContent[slug],
+    pageContent,
   };
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) return [{ title: "Not Found | D DEEP Cleaning" }];
 
-  const { slug, citySlug, cityName, serviceData } = data;
+  const { slug, citySlug, cityName, serviceData, pageContent } = data;
+
+  const title =
+    pageContent?.title ?? `${serviceData.heroTitle} in ${cityName} | 5★ D DEEP`;
+  const description =
+    pageContent?.metaDescription ??
+    `Professional ${serviceData.heroTitle.toLowerCase()} in ${cityName}. ${serviceData.heroSubtitle} Fully insured, vetted cleaners. Book your free quote today.`;
+
+  // Unique keyword set per page: primary first, then supporting long-tails.
+  const keywords = pageContent
+    ? [pageContent.primaryKeyword, ...pageContent.secondaryKeywords].join(", ")
+    : undefined;
 
   return getSeoMeta({
-    title: `${serviceData.heroTitle} in ${cityName} | 5★ D DEEP`,
-    description: `Professional ${serviceData.heroTitle.toLowerCase()} in ${cityName}. ${serviceData.heroSubtitle} Fully insured, vetted cleaners. Book your free quote today.`,
+    title,
+    description,
+    keywords,
     url: `https://www.ddeepcleaningservices.com/services/${slug}/in/${citySlug}/`,
   });
 };
 
 export default function CityServiceRoute() {
-  const { serviceData, cityName } = useLoaderData<typeof loader>();
+  const { serviceData, cityName, pageContent } = useLoaderData<typeof loader>();
 
-  // Override the service data so the page becomes city‑specific
+  // Override the service data so the page becomes city-specific. When a
+  // per-city content entry exists it supplies the unique H1 / intro / proof /
+  // FAQs; otherwise we fall back to the generic city-name interpolation.
   const localizedData = {
     ...serviceData,
-    heroTitle: `${serviceData.heroTitle} in ${cityName}`,
-    heroSubtitle: `${serviceData.heroSubtitle} Professional local cleaners serving ${cityName}.`,
+    heroTitle: pageContent?.h1 ?? `${serviceData.heroTitle} in ${cityName}`,
+    heroSubtitle: pageContent?.intro ?? `${serviceData.heroSubtitle} Professional local cleaners serving ${cityName}.`,
     ctaSecondaryText: `Trusted by homes and businesses across ${cityName}.`,
-    cities: [],   // ← removes the generic “Available in…” line
+    cities: [],   // removes the generic “Available in…” line
+    cityName,
+    // Extra per-page fields consumed by dynamic.tsx when present.
+    pageContent,
+    faqs: pageContent?.faqs?.length
+      ? pageContent.faqs.map((f) => ({ question: f.q, answer: f.a }))
+      : serviceData.faqs,
   };
 
   // Structured data (Service + optional FAQ) for this city page
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: `${serviceData.heroTitle} in ${cityName}`,
-    description: serviceData.heroSubtitle,
+    name: pageContent?.h1 ?? `${serviceData.heroTitle} in ${cityName}`,
+    description: pageContent?.intro ?? serviceData.heroSubtitle,
     provider: {
       "@type": "LocalBusiness",
       name: "D DEEP Cleaning Services",
@@ -73,11 +99,11 @@ export default function CityServiceRoute() {
     areaServed: { "@type": "City", name: cityName },
   };
 
-  const faqSchema = serviceData.faqs?.length
+  const faqSchema = localizedData.faqs?.length
     ? {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: serviceData.faqs.map((faq) => ({
+        mainEntity: localizedData.faqs.map((faq) => ({
           "@type": "Question",
           name: faq.question,
           acceptedAnswer: { "@type": "Answer", text: faq.answer },
