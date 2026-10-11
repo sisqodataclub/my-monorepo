@@ -6,7 +6,6 @@ on:
 
 jobs:
   programmatic-uniqueness:
-    name: Programmatic page uniqueness
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,5 +16,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run uniqueness guardrail
-        run: node scripts/check-programmatic-uniqueness.js
+      - name: Check programmatic page uniqueness
+        run: node scripts/check-programmatic-uniqueness.mjs

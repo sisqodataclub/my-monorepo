@@ -1,121 +1,95 @@
 #!/usr/bin/env node
 /**
- * check-programmatic-uniqueness.mjs
+ * Action 6 guardrail: programmatic service x city page uniqueness checker.
  *
- * Action 6 guardrail (Bolton implementation plan).
+ * Fails (non-zero exit) if any two programmatic pages share an identical
+ * meta description, H1, or intro copy.
  *
- * Scans the programmatic service x city content sources and fails (non-zero
- * exit) if any two pages share an identical meta-description, H1, or intro
- * copy. Prints the offending pairs so the regression is obvious in CI logs.
- *
- * Sources scanned (best-effort, both optional):
- *   - apps/ddeep/app/data/cityContent.ts
- *   - apps/ddeep/app/data/servicesContent.tsx
- *   - apps/ddeep/app/components/landing/servicesContent.tsx
- *   - apps/ddeep/app/components/landing/cityContent.ts
- *
- * The parser is intentionally regex-based so it does not require a build step
- * or a TS loader in CI. It looks for object literals that contain a city key
- * plus one or more of: metaDescription, h1, intro.
+ * Run: node scripts/check-programmatic-uniqueness.mjs
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import url from 'node:url';
 
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, '..');
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, '..');
-
-const CANDIDATE_SOURCES = [
+const CANDIDATE_FILES = [
   'apps/ddeep/app/data/cityContent.ts',
   'apps/ddeep/app/data/cityContent.tsx',
   'apps/ddeep/app/data/servicesContent.tsx',
   'apps/ddeep/app/data/servicesContent.ts',
-  'apps/ddeep/app/components/landing/cityContent.ts',
-  'apps/ddeep/app/components/landing/servicesContent.tsx',
-  'apps/ddeep/app/utils/cityContent.ts',
+  'apps/ddeep/app/content/cityContent.ts',
+  'apps/ddeep/app/content/servicesContent.tsx',
 ];
 
-const FIELDS = ['metaDescription', 'h1', 'intro'];
+function findExisting() {
+  return CANDIDATE_FILES
+    .map((p) => path.join(repoRoot, p))
+    .filter((p) => fs.existsSync(p));
+}
 
-/** Extract `key: "..."` style string fields from a text blob. */
-function extractField(text, field) {
-  // Matches:  field: "..."  or  field: '...'  or  field: `...`
+function extractStringField(src, field) {
+  // Very small regex-based extractor: captures `field: "..."` or `field: '...'`
+  // and `field: `...`` template literals (single-line only).
   const re = new RegExp(
-    `${field}\\s*:\\s*(?:\"((?:[^\"\\\\]|\\\\.)*)\"|'((?:[^'\\\\]|\\\\.)*)'|` + '`((?:[^`\\\\]|\\\\.)*)`)',
+    field + '\\s*:\\s*(?:"([^"]*)"|\'([^\']*)\'|`([^`]*)`)',
     'g'
   );
   const out = [];
   let m;
-  while ((m = re.exec(text)) !== null) {
-    const val = (m[1] ?? m[2] ?? m[3] ?? '').trim();
-    if (val) out.push(val);
+  while ((m = re.exec(src)) !== null) {
+    out.push(m[1] ?? m[2] ?? m[3] ?? '');
   }
   return out;
 }
 
-function normalise(s) {
-  return s.replace(/\s+/g, ' ').trim().toLowerCase();
+function normalize(s) {
+  return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-const files = CANDIDATE_SOURCES
-  .map((p) => resolve(repoRoot, p))
-  .filter((p) => existsSync(p));
-
+const files = findExisting();
 if (files.length === 0) {
-  console.error(
-    '[uniqueness] No programmatic content sources found. Checked:\n  ' +
-      CANDIDATE_SOURCES.join('\n  ')
+  console.warn(
+    '[uniqueness] No cityContent/servicesContent source files found in expected locations; skipping check.'
   );
-  // Do not fail the build if the sources simply moved — warn loudly instead.
   process.exit(0);
 }
 
-/** field -> Map(normalisedValue -> [{file, raw}]) */
-const buckets = Object.fromEntries(FIELDS.map((f) => [f, new Map()]));
+const fields = ['metaDescription', 'description', 'h1', 'title', 'intro', 'introCopy'];
+const seen = new Map(); // normalizedValue -> {field, file, index}
+const duplicates = [];
 
 for (const file of files) {
-  const text = readFileSync(file, 'utf8');
-  for (const field of FIELDS) {
-    for (const raw of extractField(text, field)) {
-      const key = normalise(raw);
-      if (!key) continue;
-      if (!buckets[field].has(key)) buckets[field].set(key, []);
-      buckets[field].get(key).push({ file, raw });
-    }
+  const src = fs.readFileSync(file, 'utf8');
+  for (const field of fields) {
+    const values = extractStringField(src, field);
+    values.forEach((v, i) => {
+      const n = normalize(v);
+      if (!n || n.length < 8) return;
+      const key = field + '::' + n;
+      if (seen.has(key)) {
+        duplicates.push({
+          field,
+          value: v,
+          first: seen.get(key),
+          second: { file: path.relative(repoRoot, file), index: i },
+        });
+      } else {
+        seen.set(key, { file: path.relative(repoRoot, file), index: i });
+      }
+    });
   }
 }
 
-const problems = [];
-for (const field of FIELDS) {
-  for (const [key, hits] of buckets[field].entries()) {
-    if (hits.length > 1) {
-      problems.push({ field, key, hits });
-    }
+if (duplicates.length > 0) {
+  console.error('[uniqueness] FAIL: duplicate programmatic page copy detected:');
+  for (const d of duplicates) {
+    console.error(
+      `  - field=${d.field} value="${d.value.slice(0, 80)}"\n      first:  ${d.first.file}#${d.first.index}\n      second: ${d.second.file}#${d.second.index}`
+    );
   }
+  process.exit(1);
 }
 
-if (problems.length === 0) {
-  console.log(
-    `[uniqueness] OK — scanned ${files.length} source file(s); no duplicate ${FIELDS.join(
-      '/'
-    )} values found.`
-  );
-  process.exit(0);
-}
-
-console.error(
-  `[uniqueness] FAIL — ${problems.length} duplicated field group(s) across programmatic pages:\n`
-);
-for (const { field, hits } of problems) {
-  console.error(`  • ${field} shared by ${hits.length} entries:`);
-  for (const h of hits) {
-    const rel = h.file.replace(repoRoot + '/', '');
-    console.error(`      - ${rel}: "${h.raw.slice(0, 120)}"`);
-  }
-  console.error('');
-}
-console.error(
-  'Each service x city page must have a unique metaDescription, H1, and intro copy.'
-);
-process.exit(1);
+console.log('[uniqueness] OK: no duplicate meta/H1/intro copy across programmatic pages.');
