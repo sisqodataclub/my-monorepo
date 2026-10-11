@@ -1,1 +1,1 @@
-<full real local file content — 1185 lines / ~63,366 chars>
+<FULL_LOCAL_CITYCONTENT_CONTENT>
