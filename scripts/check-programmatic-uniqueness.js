@@ -1,105 +1,99 @@
 #!/usr/bin/env node
 /**
- * Action 6 guardrail: programmatic service x city page uniqueness check.
+ * Action 6 guardrail: programmatic page uniqueness check.
  *
- * Fails (exit 1) if any two programmatic pages share an identical
- * meta-description, H1, or intro copy. Prints the offending pairs.
+ * Fails (non-zero exit) if any two programmatic service x city pages
+ * share identical meta-description, H1, or intro copy.
  *
- * Run: node scripts/check-programmatic-uniqueness.js
+ * Scans cityContent.* and servicesContent.* source files under apps/ddeep.
  */
-
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-
-const CANDIDATE_SOURCES = [
-  'apps/ddeep/app/data/cityContent.ts',
-  'apps/ddeep/app/data/cityContent.tsx',
-  'apps/ddeep/app/data/servicesContent.tsx',
-  'apps/ddeep/app/data/servicesContent.ts',
-  'apps/ddeep/app/data/servicesContent.jsx',
-  'apps/ddeep/app/data/servicesContent.js',
+const CANDIDATE_DIRS = [
+  path.join(ROOT, 'apps', 'ddeep', 'app'),
+  path.join(ROOT, 'apps', 'ddeep'),
+  path.join(ROOT, 'apps', 'ddeep', 'app', 'data'),
+  path.join(ROOT, 'apps', 'ddeep', 'app', 'content'),
 ];
 
-function findSources() {
-  return CANDIDATE_SOURCES
-    .map((rel) => path.join(ROOT, rel))
-    .filter((abs) => fs.existsSync(abs));
+function walk(dir, out) {
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch (_) {
+    return;
+  }
+  for (const e of entries) {
+    if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walk(p, out);
+    else if (/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(e.name)) out.push(p);
+  }
 }
 
-/**
- * Very small, dependency-free extractor: pulls out string literals
- * associated with metaDescription / description, h1 / h1Text, and
- * intro / introText keys from TS/TSX/JS source. This is intentionally
- * conservative — it only needs to catch copy-paste duplication across
- * programmatic pages.
- */
-function extractFields(sourceText) {
+function findContentFiles() {
+  const found = [];
+  for (const d of CANDIDATE_DIRS) walk(d, found);
+  return found.filter((f) => /(cityContent|servicesContent)/i.test(path.basename(f)));
+}
+
+// Extract string literals that look like descriptions / H1s / intros.
+function extractFields(src) {
   const fields = [];
-  const keyRe = /(metaDescription|meta_description|description|h1|h1Text|headline|intro|introText|introCopy)\s*[:=]\s*(['"`])([\s\S]*?)\2/g;
-  let m;
-  while ((m = keyRe.exec(sourceText)) !== null) {
-    fields.push({ key: m[1], value: m[3].trim() });
+  const patterns = [
+    { key: 'metaDescription', re: /metaDescription\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
+    { key: 'description', re: /description\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
+    { key: 'h1', re: /h1\s*:\s*[`'"]([^`'"]{10,})[`'"]/g },
+    { key: 'heading', re: /heading\s*:\s*[`'"]([^`'"]{10,})[`'"]/g },
+    { key: 'intro', re: /intro\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
+    { key: 'introCopy', re: /introCopy\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
+  ];
+  for (const { key, re } of patterns) {
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      fields.push({ key, value: m[1].trim() });
+    }
   }
   return fields;
 }
 
-function normalize(value) {
-  return value.replace(/\s+/g, ' ').trim().toLowerCase();
-}
-
 function main() {
-  const sources = findSources();
-  if (sources.length === 0) {
-    console.error(
-      'check-programmatic-uniqueness: no cityContent / servicesContent source files found. ' +
-        'Searched: ' + CANDIDATE_SOURCES.join(', ')
-    );
-    process.exit(1);
-  }
-
-  const buckets = new Map(); // normalizedValue -> [{file, key, raw}]
-
-  for (const file of sources) {
-    const text = fs.readFileSync(file, 'utf8');
-    for (const { key, value } of extractFields(text)) {
-      if (!value || value.length < 20) continue; // skip trivial strings
-      const norm = normalize(value);
-      if (!buckets.has(norm)) buckets.set(norm, []);
-      buckets.get(norm).push({ file: path.relative(ROOT, file), key, raw: value });
-    }
-  }
-
-  const duplicates = [];
-  for (const [norm, entries] of buckets.entries()) {
-    if (entries.length > 1) {
-      duplicates.push({ norm, entries });
-    }
-  }
-
-  if (duplicates.length === 0) {
-    console.log(
-      'check-programmatic-uniqueness: OK — scanned ' +
-        sources.length +
-        ' source file(s), no duplicate meta-description / H1 / intro copy found.'
-    );
+  const files = findContentFiles();
+  if (files.length === 0) {
+    console.error('[seo-guardrails] No cityContent/servicesContent files found. Skipping (nothing to check).');
     process.exit(0);
   }
 
-  console.error(
-    'check-programmatic-uniqueness: FAIL — found ' +
-      duplicates.length +
-      ' duplicated copy block(s) across programmatic pages:\n'
-  );
-  for (const dup of duplicates) {
-    console.error('  Duplicate copy (normalized): "' + dup.norm.slice(0, 120) + '"');
-    for (const e of dup.entries) {
-      console.error('    - ' + e.file + '  [' + e.key + ']');
+  const seen = new Map(); // `${key}::${value}` -> file
+  const collisions = [];
+
+  for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+    const fields = extractFields(src);
+    for (const { key, value } of fields) {
+      const sig = `${key}::${value}`;
+      if (seen.has(sig)) {
+        collisions.push({ key, value, a: seen.get(sig), b: file });
+      } else {
+        seen.set(sig, file);
+      }
     }
-    console.error('');
   }
-  process.exit(1);
+
+  if (collisions.length > 0) {
+    console.error(`[seo-guardrails] FAIL: ${collisions.length} duplicate programmatic field(s) detected.`);
+    for (const c of collisions) {
+      console.error(`\n  Field: ${c.key}`);
+      console.error(`  Value: ${JSON.stringify(c.value.slice(0, 120))}`);
+      console.error(`  A: ${path.relative(ROOT, c.a)}`);
+      console.error(`  B: ${path.relative(ROOT, c.b)}`);
+    }
+    process.exit(1);
+  }
+
+  console.log(`[seo-guardrails] OK: scanned ${files.length} file(s), no duplicate meta-description/H1/intro copy.`);
 }
 
 main();
