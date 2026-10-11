@@ -17,5 +17,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Check programmatic page uniqueness
+      - name: Run uniqueness guardrail
         run: node scripts/check-programmatic-uniqueness.js
