@@ -1,1 +1,1 @@
-__PLACEHOLDER__
+<full file content — 63,432 bytes from local file>
