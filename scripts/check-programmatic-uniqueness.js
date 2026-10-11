@@ -1,148 +1,181 @@
 #!/usr/bin/env node
 /**
- * check-programmatic-uniqueness.js
+ * Action 6 guardrail: programmatic service x city page uniqueness check.
  *
- * Action 6 guardrail: fails if any two programmatic service x city pages
- * share identical meta-description, H1, or intro copy.
+ * Scans the programmatic page content sources (cityContent.ts / servicesContent.tsx)
+ * and FAILS (non-zero exit) if any two pages share an identical:
+ *   - meta description
+ *   - H1
+ *   - intro copy
  *
- * Scans:
- *   apps/ddeep/app/data/cityContent.ts
- *   apps/ddeep/app/data/servicesContent.tsx
- * (falls back to any file matching cityContent.ts / servicesContent.tsx under apps/)
+ * Prints offending pairs to stdout.
  *
- * Exit 0 = unique. Exit 1 = duplicates found (prints offending pairs).
+ * Usage: node scripts/check-programmatic-uniqueness.js
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '..');
+const ROOT = process.cwd();
 
-function findFile(names) {
-  const roots = [
-    path.join(REPO_ROOT, 'apps/ddeep/app'),
-    path.join(REPO_ROOT, 'apps/ddeep/app/data'),
-    path.join(REPO_ROOT, 'apps/ddeep'),
-    path.join(REPO_ROOT, 'apps'),
-  ];
-  for (const name of names) {
+// Candidate source files for programmatic service x city content.
+const CANDIDATE_FILES = [
+  'apps/ddeep/app/data/cityContent.ts',
+  'apps/ddeep/app/data/servicesContent.tsx',
+  'apps/ddeep/app/content/cityContent.ts',
+  'apps/ddeep/app/content/servicesContent.tsx',
+  'apps/ddeep/app/utils/cityContent.ts',
+  'apps/ddeep/app/utils/servicesContent.tsx',
+  'apps/ddeep/app/cityContent.ts',
+  'apps/ddeep/app/servicesContent.tsx',
+  'cityContent.ts',
+  'servicesContent.tsx',
+];
+
+function findSourceFiles() {
+  const found = [];
+  for (const rel of CANDIDATE_FILES) {
+    const abs = path.join(ROOT, rel);
+    if (fs.existsSync(abs)) found.push(abs);
+  }
+  // Fallback: shallow walk of apps/ddeep for matching filenames.
+  if (found.length === 0) {
+    const roots = [path.join(ROOT, 'apps'), path.join(ROOT, 'src')];
     for (const r of roots) {
-      const p = path.join(r, name);
-      if (fs.existsSync(p)) return p;
+      if (!fs.existsSync(r)) continue;
+      walk(r, (abs) => {
+        const base = path.basename(abs);
+        if (base === 'cityContent.ts' || base === 'servicesContent.tsx') {
+          found.push(abs);
+        }
+      });
     }
   }
-  // recursive fallback
-  const stack = [REPO_ROOT];
-  while (stack.length) {
-    const dir = stack.pop();
-    let entries = [];
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
-    for (const e of entries) {
-      if (e.name === 'node_modules' || e.name === '.git') continue;
-      const full = path.join(dir, e.name);
-      if (e.isDirectory()) stack.push(full);
-      else if (names.includes(e.name)) return full;
-    }
-  }
-  return null;
+  return found;
 }
 
-function parseContent(file) {
-  if (!file) return [];
-  const src = fs.readFileSync(file, 'utf8');
-  const records = [];
+function walk(dir, cb, depth = 0) {
+  if (depth > 6) return;
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch (_) {
+    return;
+  }
+  for (const e of entries) {
+    if (e.name === 'node_modules' || e.name === '.git' || e.name === 'dist' || e.name === 'build') continue;
+    const abs = path.join(dir, e.name);
+    if (e.isDirectory()) walk(abs, cb, depth + 1);
+    else cb(abs);
+  }
+}
 
-  // Look for keyed object entries: slug: { meta, h1, intro, ... }
-  // We use a light scan: find all `metaDescription`, `meta_description`, `description`,
-  // `h1`, `heading`, `intro`, `introCopy` string literals alongside the nearest key.
-  const keyRe = /(?:^|\n)\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z0-9_\-]+))\s*:\s*\{/g;
+/**
+ * Heuristically extract page records from a source file.
+ * Looks for object literals that contain a slug/city/service identifier plus
+ * a metaDescription / description, an h1 / title, and an intro / introCopy.
+ * This is intentionally tolerant: it does not require a specific schema.
+ */
+function extractPages(source, filePath) {
+  const pages = [];
+
+  // Split on top-level object-ish boundaries. We look for blocks between { ... }
+  // that contain at least one of our target keys.
+  const keyPatterns = {
+    meta: /(metaDescription|meta_description|metaDesc|description)\s*:\s*(['"`])([\s\S]*?)\2/g,
+    h1: /(h1|heading|title)\s*:\s*(['"`])([\s\S]*?)\2/g,
+    intro: /(intro|introCopy|introText|lead|subhead)\s*:\s*(['"`])([\s\S]*?)\2/g,
+    id: /(slug|city|citySlug|service|serviceSlug|key|id)\s*:\s*(['"`])([\s\S]*?)\2/g,
+  };
+
+  // Find candidate object blocks by scanning for each occurrence of an id key.
+  // We use a coarse approach: for each id match, capture a window of the source
+  // around it and pull the nearest meta/h1/intro within that window.
+  const idRe = new RegExp(keyPatterns.id.source, 'g');
   let m;
-  while ((m = keyRe.exec(src)) !== null) {
-    const key = m[1] || m[2] || m[3];
-    const start = m.index + m[0].length;
-    // find matching closing brace (naive but adequate)
-    let depth = 1, i = start;
-    while (i < src.length && depth > 0) {
-      const ch = src[i];
-      if (ch === '{') depth++;
-      else if (ch === '}') depth--;
-      i++;
-    }
-    const body = src.slice(start, i);
-    const pick = (names) => {
-      for (const n of names) {
-        const re = new RegExp(n + "\\s*:\\s*(?:'((?:[^'\\\\]|\\\\.)*)'|\"((?:[^\"\\\\]|\\\\.)*)\"|`([^`]*)`)");
-        const mm = body.match(re);
-        if (mm) return (mm[1] || mm[2] || mm[3] || '').trim();
-      }
-      return '';
-    };
-    records.push({
-      file,
-      key,
-      meta: pick(['metaDescription', 'meta_description', 'meta', 'description']),
-      h1: pick(['h1', 'heading', 'title']),
-      intro: pick(['intro', 'introCopy', 'intro_copy', 'introText', 'body']),
+  while ((m = idRe.exec(source)) !== null) {
+    const start = m.index;
+    const end = Math.min(source.length, start + 2000);
+    const window = source.slice(start, end);
+
+    const metaMatch = new RegExp(keyPatterns.meta.source).exec(window);
+    const h1Match = new RegExp(keyPatterns.h1.source).exec(window);
+    const introMatch = new RegExp(keyPatterns.intro.source).exec(window);
+
+    if (!metaMatch && !h1Match && !introMatch) continue;
+
+    pages.push({
+      file: filePath,
+      id: m[3] ? m[3].trim() : `#${start}`,
+      meta: metaMatch ? metaMatch[3].trim() : null,
+      h1: h1Match ? h1Match[3].trim() : null,
+      intro: introMatch ? introMatch[3].trim() : null,
     });
   }
-  return records;
-}
 
-function findDuplicates(records, field) {
-  const map = new Map();
-  for (const r of records) {
-    const v = (r[field] || '').trim();
-    if (!v) continue;
-    if (!map.has(v)) map.set(v, []);
-    map.get(v).push(r);
-  }
-  const dups = [];
-  for (const [value, list] of map.entries()) {
-    if (list.length > 1) dups.push({ value, list });
-  }
-  return dups;
+  return pages;
 }
 
 function main() {
-  const cityFile = findFile(['cityContent.ts', 'cityContent.tsx', 'cityContent.js']);
-  const svcFile = findFile(['servicesContent.tsx', 'servicesContent.ts', 'servicesContent.js']);
+  const files = findSourceFiles();
+  if (files.length === 0) {
+    console.error('[uniqueness] No programmatic content source files found.');
+    console.error('[uniqueness] Looked for cityContent.ts / servicesContent.tsx under apps/ and src/.');
+    // Do not fail the build if sources are absent — but warn loudly.
+    process.exit(0);
+  }
 
-  const records = [
-    ...parseContent(cityFile),
-    ...parseContent(svcFile),
-  ];
+  const allPages = [];
+  for (const f of files) {
+    let src;
+    try {
+      src = fs.readFileSync(f, 'utf8');
+    } catch (_) {
+      continue;
+    }
+    const pages = extractPages(src, f);
+    allPages.push(...pages);
+  }
 
-  if (records.length === 0) {
-    console.log('[uniqueness] No content records parsed — nothing to check.');
+  if (allPages.length === 0) {
+    console.error('[uniqueness] Found source files but extracted 0 pages.');
+    console.error('[uniqueness] Check that meta/h1/intro fields are present as string literals.');
     process.exit(0);
   }
 
   const fields = [
-    ['meta', 'meta-description'],
-    ['h1', 'H1'],
-    ['intro', 'intro copy'],
+    { name: 'meta description', key: 'meta' },
+    { name: 'H1', key: 'h1' },
+    { name: 'intro copy', key: 'intro' },
   ];
 
-  let failed = false;
-  for (const [field, label] of fields) {
-    const dups = findDuplicates(records, field);
-    if (dups.length === 0) continue;
-    failed = true;
-    console.error('\n[uniqueness] Duplicate ' + label + ' detected:');
-    for (const d of dups) {
-      console.error('  value: ' + JSON.stringify(d.value.slice(0, 120)) + (d.value.length > 120 ? '…' : ''));
-      for (const r of d.list) {
-        console.error('    - ' + path.relative(REPO_ROOT, r.file) + ' :: ' + r.key);
+  let violations = 0;
+
+  for (const field of fields) {
+    const seen = new Map(); // value -> first page
+    for (const page of allPages) {
+      const val = page[field.key];
+      if (!val || val.length < 8) continue; // ignore trivially short/empty values
+      const norm = val.replace(/\s+/g, ' ').trim().toLowerCase();
+      if (seen.has(norm)) {
+        const first = seen.get(norm);
+        violations++;
+        console.error(`\n[uniqueness] DUPLICATE ${field.name} detected:`);
+        console.error(`  - ${first.file} :: ${first.id}`);
+        console.error(`  - ${page.file} :: ${page.id}`);
+        console.error(`  value: "${val.slice(0, 160)}${val.length > 160 ? '...' : ''}"`);
+      } else {
+        seen.set(norm, page);
       }
     }
   }
 
-  if (failed) {
-    console.error('\n[uniqueness] FAIL — programmatic pages share identical copy. Make meta-description, H1, and intro unique per service x city.');
+  if (violations > 0) {
+    console.error(`\n[uniqueness] FAILED: ${violations} duplicate(s) found across ${allPages.length} programmatic pages.`);
     process.exit(1);
   }
 
-  console.log('[uniqueness] OK — ' + records.length + ' records scanned, no duplicate meta/H1/intro.');
+  console.log(`[uniqueness] OK: ${allPages.length} programmatic pages checked, no duplicate meta/H1/intro.`);
   process.exit(0);
 }
 
