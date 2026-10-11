@@ -1,197 +1,182 @@
 #!/usr/bin/env node
-/**
- * Action 6 guardrail: programmatic service x city page uniqueness checker.
+/*
+ * Action 6 guardrail: programmatic service x city uniqueness check.
  *
- * Scans the programmatic page content sources and FAILS (exit 1) if any two
- * pages share an identical meta-description, H1, or intro copy.
+ * Scans the programmatic page content sources and FAILS (exit 1) if any
+ * two service x city pages share an identical:
+ *   - meta description
+ *   - H1
+ *   - intro paragraph
  *
- * Targets (searched under the repo, first match wins per role):
- *   - cityContent.ts / cityContent.tsx / cityContent.js
- *   - servicesContent.tsx / servicesContent.ts / servicesContent.js
- *
- * Usage: node scripts/check-programmatic-uniqueness.js
+ * Prints the offending pairs so the failure is actionable.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const REPO_ROOT = path.resolve(__dirname, '..');
-
-const CANDIDATE_FILES = [
+const ROOT = path.resolve(__dirname, '..');
+const CANDIDATE_SOURCES = [
   'apps/ddeep/app/data/cityContent.ts',
   'apps/ddeep/app/data/cityContent.tsx',
-  'apps/ddeep/app/data/cityContent.js',
-  'apps/ddeep/app/content/cityContent.ts',
-  'apps/ddeep/app/content/cityContent.tsx',
   'apps/ddeep/app/data/servicesContent.tsx',
   'apps/ddeep/app/data/servicesContent.ts',
+  'apps/ddeep/app/content/cityContent.ts',
   'apps/ddeep/app/content/servicesContent.tsx',
-  'apps/ddeep/app/content/servicesContent.ts',
 ];
 
-function findContentFiles() {
+function findSources() {
   const found = [];
-  for (const rel of CANDIDATE_FILES) {
-    const abs = path.join(REPO_ROOT, rel);
-    if (fs.existsSync(abs)) found.push(abs);
+  for (const rel of CANDIDATE_SOURCES) {
+    const abs = path.join(ROOT, rel);
+    if (fs.existsSync(abs)) found.push({ rel, abs });
   }
   if (found.length === 0) {
-    // Fallback: shallow walk for any file named cityContent.* or servicesContent.*
-    const stack = [REPO_ROOT];
-    const skip = new Set(['node_modules', '.git', 'dist', 'build', '.next', '.turbo']);
-    while (stack.length) {
-      const dir = stack.pop();
-      let entries;
-      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
-      for (const e of entries) {
-        if (skip.has(e.name)) continue;
-        const p = path.join(dir, e.name);
-        if (e.isDirectory()) stack.push(p);
-        else if (/^(cityContent|servicesContent)\.[cm]?[jt]sx?$/.test(e.name)) found.push(p);
+    // Fall back to a shallow recursive search under apps/ddeep.
+    const base = path.join(ROOT, 'apps/ddeep');
+    if (fs.existsSync(base)) {
+      const stack = [base];
+      while (stack.length) {
+        const dir = stack.pop();
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, entry.name);
+          if (entry.isDirectory()) stack.push(p);
+          else if (/cityContent\.(ts|tsx)$/.test(entry.name) || /servicesContent\.(ts|tsx)$/.test(entry.name)) {
+            found.push({ rel: path.relative(ROOT, p), abs: p });
+          }
+        }
       }
     }
   }
   return found;
 }
 
-/**
- * Extract candidate page records from a source file using a light regex pass.
- * We intentionally avoid executing TS/TSX. We look for object-literal-ish
- * blocks keyed by city/service and pull out metaDescription, h1/title, intro.
+function stripQuotes(s) {
+  return s.replace(/^[`'"]|[`'"]$/g, '').trim();
+}
+
+/*
+ * Extract page records from a source file. We deliberately avoid executing
+ * the module (it may import TS/React). Instead we parse the source text for
+ * repeated object literals that contain metaDescription / h1 / intro fields,
+ * keyed by a nearby slug or city identifier.
  */
-function extractRecords(filePath, source) {
+function extractRecords(rel, text) {
   const records = [];
-
   // Normalise line endings.
-  const text = source.replace(/\r\n/g, '\n');
+  text = text.replace(/\r\n/g, '\n');
 
-  // Find object literals that contain at least one of our target keys.
-  // We scan for `{ ... }` blocks that mention metaDescription|h1|intro|title.
-  const keyRe = /(metaDescription|meta_description|h1|H1|intro|introCopy|intro_copy|title|heading)\s*:\s*([`'"])/g;
+  // Split into candidate object blocks: from a `{` that contains one of our
+  // target keys, to the matching `}` (naive brace matching is fine here).
+  const keyRe = /(metaDescription|meta_description|description|h1|headline|intro|introCopy|intro_copy)\s*:/g;
   let m;
+  const starts = [];
   while ((m = keyRe.exec(text)) !== null) {
-    // Find the enclosing object start by walking back to the nearest '{' at depth 0.
+    // Walk backwards to the nearest `{`.
     let i = m.index;
-    let depth = 0;
-    let start = -1;
-    for (let j = i; j >= 0; j--) {
-      const ch = text[j];
-      if (ch === '}') depth++;
-      else if (ch === '{') {
-        if (depth === 0) { start = j; break; }
-        depth--;
-      }
-    }
-    if (start < 0) continue;
-
-    // Walk forward to matching '}'.
-    depth = 0;
-    let end = -1;
-    for (let j = start; j < text.length; j++) {
-      const ch = text[j];
-      if (ch === '{') depth++;
-      else if (ch === '}') {
-        depth--;
-        if (depth === 0) { end = j; break; }
-      }
-    }
-    if (end < 0) continue;
-
-    const block = text.slice(start, end + 1);
-
-    // Extract a slug/key for reporting.
-    const slugMatch =
-      block.match(/slug\s*:\s*([`'"])[^`'"]+\1/) ||
-      block.match(/citySlug\s*:\s*([`'"])[^`'"]+\1/) ||
-      block.match(/serviceSlug\s*:\s*([`'"])[^`'"]+\1/);
-
-    const meta = pick(block, ['metaDescription', 'meta_description']);
-    const h1 = pick(block, ['h1', 'H1', 'heading', 'title']);
-    const intro = pick(block, ['intro', 'introCopy', 'intro_copy']);
-
-    if (!meta && !h1 && !intro) continue;
-
-    records.push({
-      file: path.relative(REPO_ROOT, filePath),
-      slug: slugMatch ? slugMatch[0].split(':').slice(1).join(':').trim().replace(/^[`'"]|[`'"]$/g, '') : `@${start}`,
-      metaDescription: meta,
-      h1,
-      intro,
-    });
-
-    keyRe.lastIndex = end;
+    while (i > 0 && text[i] !== '{') i--;
+    if (text[i] === '{') starts.push(i);
   }
 
+  const seen = new Set();
+  for (const start of starts) {
+    if (seen.has(start)) continue;
+    seen.add(start);
+    // Find matching close brace.
+    let depth = 0, end = -1;
+    for (let i = start; i < text.length; i++) {
+      if (text[i] === '{') depth++;
+      else if (text[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+    }
+    if (end === -1) continue;
+    const block = text.slice(start, end + 1);
+
+    const pick = (keys) => {
+      for (const k of keys) {
+        const re = new RegExp(k + "\\s*:\\s*([`'\"])([\\s\\S]*?)\\1");
+        const mm = block.match(re);
+        if (mm) return mm[2].trim();
+      }
+      return null;
+    };
+
+    const metaDescription = pick(['metaDescription', 'meta_description', 'description']);
+    const h1 = pick(['h1', 'headline']);
+    const intro = pick(['intro', 'introCopy', 'intro_copy']);
+
+    if (!metaDescription && !h1 && !intro) continue;
+
+    // Try to find an identifier for the record (slug / city / key).
+    let id = null;
+    const idMatch = block.match(/(?:slug|citySlug|city_slug|city|serviceSlug|service|key|id)\s*:\s*([`'"])([^`'"]+)\1/);
+    if (idMatch) id = idMatch[2];
+    if (!id) {
+      // Look just before the block for a property key assignment.
+      const before = text.slice(Math.max(0, start - 200), start);
+      const km = before.match(/([A-Za-z0-9_"'-]+)\s*:\s*\{\s*$/);
+      if (km) id = km[1];
+    }
+    if (!id) id = `${rel}:${start}`;
+
+    records.push({ id, metaDescription, h1, intro });
+  }
   return records;
 }
 
-function pick(block, keys) {
-  for (const k of keys) {
-    const re = new RegExp(k + '\\s*:\\s*([`\'"])([\\s\\S]*?)\\1');
-    const m = block.match(re);
-    if (m) return normalise(m[2]);
-  }
-  return null;
-}
-
-function normalise(s) {
-  return String(s).replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
-}
-
 function main() {
-  const files = findContentFiles();
-  if (files.length === 0) {
-    console.error('[uniqueness] No programmatic content files found. Checked candidates:');
-    for (const c of CANDIDATE_FILES) console.error('  - ' + c);
+  const sources = findSources();
+  if (sources.length === 0) {
+    console.error('[uniqueness] No programmatic content sources found. Expected cityContent.ts / servicesContent.tsx under apps/ddeep.');
     process.exit(1);
   }
 
-  const records = [];
-  for (const f of files) {
-    const src = fs.readFileSync(f, 'utf8');
-    for (const r of extractRecords(f, src)) records.push(r);
+  const all = [];
+  for (const { rel, abs } of sources) {
+    const text = fs.readFileSync(abs, 'utf8');
+    const recs = extractRecords(rel, text);
+    for (const r of recs) all.push({ ...r, source: rel });
   }
 
-  if (records.length < 2) {
-    console.error(`[uniqueness] Only ${records.length} page record(s) extracted from ${files.length} file(s). Nothing to compare.`);
+  if (all.length === 0) {
+    console.error('[uniqueness] Parsed 0 programmatic page records from sources: ' + sources.map(s => s.rel).join(', '));
     process.exit(1);
   }
 
   const fields = ['metaDescription', 'h1', 'intro'];
-  const violations = [];
+  const failures = [];
 
   for (const field of fields) {
-    const buckets = new Map();
-    for (const r of records) {
-      const v = r[field];
-      if (!v || v.length < 8) continue; // ignore trivially-short values
-      if (!buckets.has(v)) buckets.set(v, []);
-      buckets.get(v).push(r);
+    const byValue = new Map();
+    for (const rec of all) {
+      const v = rec[field];
+      if (!v) continue;
+      const key = v.replace(/\s+/g, ' ').trim().toLowerCase();
+      if (!key) continue;
+      if (!byValue.has(key)) byValue.set(key, []);
+      byValue.get(key).push(rec);
     }
-    for (const [value, group] of buckets) {
-      if (group.length > 1) {
-        violations.push({ field, value, group });
+    for (const [value, recs] of byValue.entries()) {
+      if (recs.length > 1) {
+        failures.push({ field, value, recs });
       }
     }
   }
 
-  if (violations.length === 0) {
-    console.log(`[uniqueness] OK — ${records.length} page records across ${files.length} file(s); no duplicate meta-description, H1, or intro copy.`);
+  if (failures.length === 0) {
+    console.log(`[uniqueness] OK — ${all.length} programmatic page records scanned, no duplicate meta-description / H1 / intro copy.`);
     process.exit(0);
   }
 
-  console.error(`[uniqueness] FAIL — ${violations.length} duplicate group(s) found:`);
-  for (const v of violations) {
-    console.error('');
-    console.error(`  Field: ${v.field}`);
-    console.error(`  Value: "${v.value.slice(0, 120)}${v.value.length > 120 ? '…' : ''}"`);
-    console.error('  Offending pages:');
-    for (const r of v.group) {
-      console.error(`    - ${r.file}  [${r.slug}]`);
+  console.error(`[uniqueness] FAIL — ${failures.length} duplicate field group(s) detected across ${all.length} programmatic page records.\n`);
+  for (const f of failures) {
+    console.error(`  Field: ${f.field}`);
+    console.error(`  Duplicate value: ${JSON.stringify(f.value.slice(0, 160))}${f.value.length > 160 ? '...' : ''}`);
+    console.error(`  Offending pages (${f.recs.length}):`);
+    for (const r of f.recs) {
+      console.error(`    - ${r.source} :: ${r.id}`);
     }
+    console.error('');
   }
-  console.error('');
-  console.error('[uniqueness] Each programmatic service x city page must have a unique meta-description, H1, and intro.');
+  console.error('[uniqueness] Every programmatic service x city page must have a unique meta description, H1, and intro copy.');
   process.exit(1);
 }
 

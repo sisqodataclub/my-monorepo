@@ -3,7 +3,6 @@ name: SEO Guardrails
 on:
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
   programmatic-uniqueness:
