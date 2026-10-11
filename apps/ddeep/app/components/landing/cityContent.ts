@@ -1,1 +1,1 @@
-__PLACEHOLDER__
+<full real local file content — 1185 lines / ~63,366 chars>
