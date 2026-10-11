@@ -17,7 +17,5 @@ export const targetCities = [
   "wigan", 
   "chorley",
   "liverpool", 
-  "st-helens", 
-  "bootle", 
-  "birkenhead"
+  "st-helens"
 ];
