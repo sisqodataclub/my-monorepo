@@ -1,99 +1,132 @@
 #!/usr/bin/env node
 /**
- * Action 6 guardrail: programmatic page uniqueness check.
+ * Programmatic page uniqueness guardrail (Bolton plan, Action 6).
  *
- * Fails (non-zero exit) if any two programmatic service x city pages
- * share identical meta-description, H1, or intro copy.
+ * Scans the programmatic service x city page content sources and fails
+ * (non-zero exit) if any two pages share an identical:
+ *   - meta description
+ *   - H1
+ *   - intro / hero copy
  *
- * Scans cityContent.* and servicesContent.* source files under apps/ddeep.
+ * The goal is to prevent regressions where the shared template collapses
+ * every service x city page onto the same head content, which is exactly
+ * the problem the Bolton plan calls out.
+ *
+ * Usage: node scripts/check-programmatic-uniqueness.js
  */
+
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const CANDIDATE_DIRS = [
-  path.join(ROOT, 'apps', 'ddeep', 'app'),
-  path.join(ROOT, 'apps', 'ddeep'),
-  path.join(ROOT, 'apps', 'ddeep', 'app', 'data'),
-  path.join(ROOT, 'apps', 'ddeep', 'app', 'content'),
+
+// Candidate source files that may hold programmatic page content.
+// We scan whichever exist; the script is defensive so it does not fail
+// in repos where the layout differs.
+const CANDIDATE_SOURCES = [
+  'apps/ddeep/app/data/cityContent.ts',
+  'apps/ddeep/app/data/servicesContent.tsx',
+  'apps/ddeep/app/data/servicesContent.ts',
+  'apps/ddeep/app/data/cityContent.tsx',
+  'apps/ddeep/app/content/cityContent.ts',
+  'apps/ddeep/app/content/servicesContent.tsx',
 ];
 
-function walk(dir, out) {
-  let entries;
+function readIfExists(rel) {
+  const abs = path.join(ROOT, rel);
   try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
+    return fs.readFileSync(abs, 'utf8');
   } catch (_) {
-    return;
-  }
-  for (const e of entries) {
-    if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) walk(p, out);
-    else if (/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(e.name)) out.push(p);
+    return null;
   }
 }
 
-function findContentFiles() {
-  const found = [];
-  for (const d of CANDIDATE_DIRS) walk(d, found);
-  return found.filter((f) => /(cityContent|servicesContent)/i.test(path.basename(f)));
+/**
+ * Extract candidate string literals from a TS/TSX source file.
+ * We do NOT try to fully parse the file — we look for template-literal and
+ * quoted strings that look like page copy (meta descriptions, H1s, intros).
+ * This is intentionally conservative: it flags exact duplicates only.
+ */
+function extractStrings(source) {
+  const out = [];
+  // Backtick template literals
+  const bt = /`([^`]{20,400})`/g;
+  let m;
+  while ((m = bt.exec(source)) !== null) {
+    out.push(m[1].trim());
+  }
+  // Single / double quoted strings of reasonable length
+  const q = /(['"])([^'"\n]{20,400})\1/g;
+  while ((m = q.exec(source)) !== null) {
+    out.push(m[2].trim());
+  }
+  return out;
 }
 
-// Extract string literals that look like descriptions / H1s / intros.
-function extractFields(src) {
-  const fields = [];
-  const patterns = [
-    { key: 'metaDescription', re: /metaDescription\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
-    { key: 'description', re: /description\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
-    { key: 'h1', re: /h1\s*:\s*[`'"]([^`'"]{10,})[`'"]/g },
-    { key: 'heading', re: /heading\s*:\s*[`'"]([^`'"]{10,})[`'"]/g },
-    { key: 'intro', re: /intro\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
-    { key: 'introCopy', re: /introCopy\s*:\s*[`'"]([^`'"]{20,})[`'"]/g },
-  ];
-  for (const { key, re } of patterns) {
-    let m;
-    while ((m = re.exec(src)) !== null) {
-      fields.push({ key, value: m[1].trim() });
-    }
-  }
-  return fields;
+function normalize(s) {
+  return s.replace(/\s+/g, ' ').trim();
 }
 
 function main() {
-  const files = findContentFiles();
-  if (files.length === 0) {
-    console.error('[seo-guardrails] No cityContent/servicesContent files found. Skipping (nothing to check).');
-    process.exit(0);
-  }
+  const seen = new Map(); // normalized string -> array of {file, raw}
+  const sources = [];
 
-  const seen = new Map(); // `${key}::${value}` -> file
-  const collisions = [];
-
-  for (const file of files) {
-    const src = fs.readFileSync(file, 'utf8');
-    const fields = extractFields(src);
-    for (const { key, value } of fields) {
-      const sig = `${key}::${value}`;
-      if (seen.has(sig)) {
-        collisions.push({ key, value, a: seen.get(sig), b: file });
-      } else {
-        seen.set(sig, file);
+  for (const rel of CANDIDATE_SOURCES) {
+    const src = readIfExists(rel);
+    if (src !== null) {
+      sources.push(rel);
+      for (const raw of extractStrings(src)) {
+        const key = normalize(raw);
+        if (key.length < 20) continue;
+        if (!seen.has(key)) seen.set(key, []);
+        seen.get(key).push({ file: rel, raw });
       }
     }
   }
 
-  if (collisions.length > 0) {
-    console.error(`[seo-guardrails] FAIL: ${collisions.length} duplicate programmatic field(s) detected.`);
-    for (const c of collisions) {
-      console.error(`\n  Field: ${c.key}`);
-      console.error(`  Value: ${JSON.stringify(c.value.slice(0, 120))}`);
-      console.error(`  A: ${path.relative(ROOT, c.a)}`);
-      console.error(`  B: ${path.relative(ROOT, c.b)}`);
-    }
-    process.exit(1);
+  if (sources.length === 0) {
+    console.error(
+      '[uniqueness] No programmatic content source files found. ' +
+        'Checked: ' + CANDIDATE_SOURCES.join(', ')
+    );
+    // Do not fail the build if the repo layout has changed; warn only.
+    process.exit(0);
   }
 
-  console.log(`[seo-guardrails] OK: scanned ${files.length} file(s), no duplicate meta-description/H1/intro copy.`);
+  console.log('[uniqueness] Scanned sources:');
+  for (const s of sources) console.log('  - ' + s);
+
+  const duplicates = [];
+  for (const [key, hits] of seen.entries()) {
+    if (hits.length > 1) {
+      duplicates.push({ text: key, hits });
+    }
+  }
+
+  if (duplicates.length === 0) {
+    console.log('[uniqueness] OK — no duplicate meta/H1/intro strings detected.');
+    process.exit(0);
+  }
+
+  console.error(
+    `[uniqueness] FAIL — ${duplicates.length} duplicate copy string(s) found across programmatic pages.`
+  );
+  for (const d of duplicates) {
+    console.error('');
+    console.error('  Duplicate copy:');
+    console.error('    "' + d.text.slice(0, 160) + (d.text.length > 160 ? '…' : '') + '"');
+    console.error('  Appears in:');
+    for (const h of d.hits) {
+      console.error('    - ' + h.file);
+    }
+  }
+  console.error('');
+  console.error(
+    'Each service x city page must have a unique meta description, H1, and intro copy.'
+  );
+  process.exit(1);
 }
 
 main();
