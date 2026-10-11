@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   FaPhoneAlt,
   FaWhatsapp,
@@ -90,168 +90,90 @@ export function Navbar() {
             <ul className="flex gap-6 text-[12px] font-black uppercase tracking-widest text-slate-500 border-r border-slate-200 pr-8">
               {links.map((link) => (
                 <li key={link.label}>
-                  {link.action ? (
-                    <button
-                      onClick={link.action}
-                      className="hover:text-green-600 transition-colors relative group"
-                    >
+                  {link.href ? (
+                    <Link to={link.href} className="hover:text-green-600 transition-colors">
                       {link.label}
-                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all group-hover:w-full" />
-                    </button>
-                  ) : (
-                    <Link
-                      to={link.href!}
-                      className="hover:text-green-600 transition-colors relative group"
-                    >
-                      {link.label}
-                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all group-hover:w-full" />
                     </Link>
+                  ) : (
+                    <button onClick={link.action || undefined} className="hover:text-green-600 transition-colors">
+                      {link.label}
+                    </button>
                   )}
                 </li>
               ))}
             </ul>
-
-            <div className="flex items-center gap-6">
-              <a
-                href={`tel:${CONTACT_PHONE}`}
-                className="flex flex-col items-end group"
-              >
-                <span className="text-[9px] font-bold text-green-600 uppercase tracking-tighter">
-                  Call Now
-                </span>
-                <span className="text-sm font-black text-slate-900 group-hover:text-green-600 transition-colors">
-                  {CONTACT_PHONE}
-                </span>
-              </a>
-
-              <a
-                href={`https://wa.me/${CONTACT_WHATSAPP.replace(/\D/g, "")}`}
-                className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center hover:bg-green-600 hover:text-white transition-all shadow-sm"
-              >
-                <FaWhatsapp size={18} />
-              </a>
-
-              {/* Get Free Quote → opens modal */}
-              <button
-                onClick={handleContactClick}
-                className="bg-slate-900 hover:bg-green-600 text-white px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all hover:shadow-xl active:scale-95"
-              >
-                Get Free Quote
-              </button>
-            </div>
+            <a
+              href={`tel:${CONTACT_PHONE}`}
+              className="flex items-center gap-2 text-sm font-black text-slate-900 hover:text-green-600 transition-colors"
+            >
+              <FaPhoneAlt className="text-green-600" />
+              <span>{CONTACT_PHONE}</span>
+            </a>
+            <button
+              onClick={handleContactClick}
+              className="bg-green-600 hover:bg-green-700 text-white text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-green-200 transition-all hover:scale-105"
+            >
+              Get a Quote
+            </button>
           </div>
 
-          {/* Mobile hamburger */}
+          {/* Mobile menu button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="lg:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5"
+            className="lg:hidden text-slate-900 p-2"
+            aria-label="Toggle menu"
           >
-            <div
-              className={`w-6 h-0.5 bg-slate-900 transition-all ${
-                menuOpen ? "rotate-45 translate-y-2" : ""
-              }`}
-            />
-            <div
-              className={`w-6 h-0.5 bg-slate-900 transition-all ${
-                menuOpen ? "opacity-0" : ""
-              }`}
-            />
-            <div
-              className={`w-6 h-0.5 bg-slate-900 transition-all ${
-                menuOpen ? "-rotate-45 -translate-y-2" : ""
-              }`}
-            />
+            <div className="w-6 h-5 flex flex-col justify-between">
+              <span className={`block h-0.5 w-full bg-slate-900 transition-all ${menuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+              <span className={`block h-0.5 w-full bg-slate-900 transition-all ${menuOpen ? 'opacity-0' : ''}`}></span>
+              <span className={`block h-0.5 w-full bg-slate-900 transition-all ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+            </div>
           </button>
         </nav>
 
-        {/* Mobile dropdown */}
-        <div
-          className={`lg:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-2xl transition-all duration-300 overflow-hidden ${
-            menuOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <div className="p-6 flex flex-col gap-2">
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div className="lg:hidden bg-white border-t border-slate-100 px-6 py-6 space-y-4">
             {links.map((link) => (
-              <div
-                key={link.label}
-                className="border-b border-slate-50 last:border-0"
-              >
-                {link.action ? (
-                  <button
-                    onClick={link.action}
-                    className="flex items-center justify-between w-full py-4 text-left font-black text-slate-900 uppercase tracking-widest text-sm"
-                  >
-                    {link.label}{" "}
-                    <FaChevronRight className="text-green-500 text-xs" />
-                  </button>
-                ) : (
-                  <Link
-                    to={link.href!}
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center justify-between w-full py-4 font-black text-slate-900 uppercase tracking-widest text-sm"
-                  >
-                    {link.label}{" "}
-                    <FaChevronRight className="text-green-500 text-xs" />
-                  </Link>
-                )}
-              </div>
+              link.href ? (
+                <Link
+                  key={link.label}
+                  to={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-sm font-black uppercase tracking-wider text-slate-700 hover:text-green-600"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <button
+                  key={link.label}
+                  onClick={link.action || undefined}
+                  className="block text-sm font-black uppercase tracking-wider text-slate-700 hover:text-green-600"
+                >
+                  {link.label}
+                </button>
+              )
             ))}
+            <div className="pt-4 border-t border-slate-100 space-y-3">
+              <a href={`tel:${CONTACT_PHONE}`} className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                <FaPhoneAlt className="text-green-600" /> {CONTACT_PHONE}
+              </a>
+              <a href={`https://wa.me/${CONTACT_WHATSAPP}`} className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                <FaWhatsapp className="text-green-600" /> WhatsApp
+              </a>
+              <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                <FaEnvelope className="text-green-600" /> {CONTACT_EMAIL}
+              </a>
+              <button
+                onClick={handleContactClick}
+                className="w-full bg-green-600 text-white text-sm font-black uppercase tracking-wider py-3 rounded-xl flex items-center justify-center gap-2"
+              >
+                <FaClipboardList /> Get a Quote
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </header>
-
-      {/* The modal is now rendered globally by ContactModalProvider in root.tsx */}
-
-      {/* MOBILE QUICK-ACTION TAB BAR (unchanged) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[1001] bg-slate-900 border-t border-white/10">
-        <div className="flex items-center justify-between shadow-2xl">
-          <a
-            href="https://api.ddeepcleaningservices.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex flex-col items-center py-2.5 bg-green-600 text-white active:bg-green-700 transition-colors"
-          >
-            <FaClipboardList className="mb-0.5 text-sm" />
-            <span className="text-[9px] font-black uppercase tracking-widest">
-              Quote
-            </span>
-          </a>
-
-          <a
-            href={`tel:${CONTACT_PHONE}`}
-            className="flex-1 flex flex-col items-center py-2.5 border-r border-white/5 text-white active:bg-slate-800 transition-colors"
-          >
-            <FaPhoneAlt className="text-green-500 mb-0.5 text-sm" />
-            <span className="text-[9px] font-black uppercase tracking-widest">
-              Call
-            </span>
-          </a>
-
-          <a
-            href={`https://wa.me/${CONTACT_WHATSAPP.replace(/\D/g, "")}`}
-            className="flex-1 flex flex-col items-center py-2.5 border-r border-white/5 text-white active:bg-slate-800 transition-colors"
-          >
-            <FaWhatsapp className="text-green-500 mb-0.5 text-sm" />
-            <span className="text-[9px] font-black uppercase tracking-widest">
-              Chat
-            </span>
-          </a>
-
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            className="flex-1 flex flex-col items-center py-2.5 text-white active:bg-slate-800 transition-colors"
-          >
-            <FaEnvelope className="text-green-500 mb-0.5 text-sm" />
-            <span className="text-[9px] font-black uppercase tracking-widest">
-              Email
-            </span>
-          </a>
-        </div>
-      </div>
-
-      {/* Spacers to prevent content overlap */}
-      <div className="h-20 md:h-24" /> {/* Top Spacer */}
-      <div className="lg:hidden h-12" /> {/* Bottom Spacer for mobile bar */}
     </>
   );
 }
