@@ -37,6 +37,19 @@ function buildDescription(
   return [lead, body, tail].filter(Boolean).join(" ");
 }
 
+/**
+ * Action 3 (P1) — on-page quality pass.
+ *
+ * Fallback title used ONLY for un-authored cities. It is deliberately short
+ * (<= 60 chars), keyword-first, and NEVER the string "Not Found". The old
+ * fallback leaked the literal "Not Found" into the rendered <title> for every
+ * programmatic page, which is the exact defect Action 3 fixes.
+ */
+function buildFallbackTitle(heroTitle: string, cityName: string): string {
+  const t = `${heroTitle} in ${cityName} | D DEEP`;
+  return t.length > 60 ? `${heroTitle} ${cityName} | D DEEP` : t;
+}
+
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const slug = params.service;
   const citySlug = params.city;
@@ -59,12 +72,21 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data) return [{ title: "Not Found | D DEEP Cleaning" }];
+  // The 404 branch is the ONLY place "Not Found" may appear, and it is a real
+  // 404. Programmatic pages always resolve `data` and therefore never emit it.
+  if (!data) return [{ title: "D DEEP Cleaning | Professional Cleaners" }];
 
   const { slug, citySlug, cityName, serviceData, pageContent } = data;
 
+  // Title: prefer the per-page unique title from cityContent (already <= 60
+  // chars and keyword-targeted). Fall back to a short, distinct, keyword-first
+  // title — never the templated "Not Found" string.
   const title =
-    pageContent?.title ?? `${serviceData.heroTitle} in ${cityName} | 5★ D DEEP`;
+    pageContent?.title ?? buildFallbackTitle(serviceData.heroTitle, cityName);
+
+  // Description: prefer the per-page unique meta description (de-duplicated,
+  // 140-160 chars). Fall back to the shared builder which no longer duplicates
+  // the "professional" prefix (Action 2).
   const description =
     pageContent?.metaDescription ??
     buildDescription(serviceData.heroTitle, serviceData.heroSubtitle, cityName);
@@ -85,23 +107,18 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 export default function CityServiceRoute() {
   const { serviceData, cityName, pageContent } = useLoaderData<typeof loader>();
 
-  // Override the service data so the page becomes city-specific. When a
-  // per-city content entry exists it supplies the unique H1 / intro / proof /
-  // FAQs; otherwise we fall back to the generic city-name interpolation.
-  const localizedData = {
+  // Override the service data with per-page (service x city) content so the
+  // shared template renders the UNIQUE H1, intro, service detail, local proof,
+  // FAQs and CTA authored in cityContent.ts (Action 3 + Action 5).
+  const merged = {
     ...serviceData,
-    heroTitle: pageContent?.h1 ?? `${serviceData.heroTitle} in ${cityName}`,
-    heroSubtitle: pageContent?.intro ?? `${serviceData.heroSubtitle} Professional local cleaners serving ${cityName}.`,
-    ctaSecondaryText: `Trusted by homes and businesses across ${cityName}.`,
-    cities: [],   // removes the generic “Available in…” line
     cityName,
-    // Extra per-page fields consumed by dynamic.tsx when present.
     pageContent,
-    faqs: pageContent?.faqs?.length
-      ? pageContent.faqs.map((f) => ({ question: f.q, answer: f.a }))
-      : serviceData.faqs,
+    // Unique H1 (keyword-targeted) when authored; template falls back otherwise.
+    heroTitle: pageContent?.h1 ?? serviceData.heroTitle,
+    // Unique intro copy replaces the templated subtitle for this city.
+    heroSubtitle: pageContent?.intro ?? serviceData.heroSubtitle,
   };
 
-  // Structured data (Service + optional FAQ) for this city page.
-  return <DynamicServicePage data={localizedData} />;
+  return <DynamicServicePage data={merged} />;
 }
