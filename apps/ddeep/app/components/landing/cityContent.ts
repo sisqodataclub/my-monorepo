@@ -1,1 +1,1 @@
-__CHUNK2_CONTENT_PLACEHOLDER__
+<chunk2 content — 7929 bytes>
