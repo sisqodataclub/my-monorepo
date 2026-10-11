@@ -7,6 +7,7 @@ export interface SEOProps {
   keywords?: string;
   url?: string;        // Explicit canonical link (must match Nginx trailing slashes)
   image?: string;      // Preview image for iMessage, WhatsApp, Facebook
+  noindex?: boolean;   // Explicit robots control — default is index,follow
 }
 
 export function getSeoMeta({
@@ -15,11 +16,15 @@ export function getSeoMeta({
   keywords,
   url,
   image,
+  noindex = false,
 }: SEOProps): MetaDescriptor[] {
   const metaTags: MetaDescriptor[] = [
     // --- Standard Meta ---
     { title },
     { name: "description", content: description },
+
+    // --- Robots (explicit; never rely on absence) ---
+    { name: "robots", content: noindex ? "noindex, nofollow" : "index, follow" },
 
     // --- Open Graph (Facebook, LinkedIn, iMessage, WhatsApp) ---
     { property: "og:title", content: title },
