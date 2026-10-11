@@ -2,6 +2,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import type { LinksFunction, MetaFunction } from "react-router";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
+import { ContactModalProvider } from "./context/ContactModalContext";
 import "./app.css";
 
 export const links: LinksFunction = () => [
@@ -45,9 +46,11 @@ export default function App() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
       <body>
-        <Navbar />
-        <Outlet />
-        <Footer />
+        <ContactModalProvider>
+          <Navbar />
+          <Outlet />
+          <Footer />
+        </ContactModalProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
