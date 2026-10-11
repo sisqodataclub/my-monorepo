@@ -1,1 +1,1 @@
-<full file content — 63,432 bytes from local file>
+__READ_FROM_LOCAL__
