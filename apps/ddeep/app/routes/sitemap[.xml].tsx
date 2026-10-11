@@ -2,20 +2,28 @@ import type { Route } from "./+types/sitemap[.xml]";
 import { servicesContent } from "../components/landing/servicesContent";
 import { cityContent } from "../components/landing/cityContent";
 
-// Cities enumerated from the same source the programmatic route uses.
-// Keep this list in sync with servicesContent.tsx `cities` arrays.
-const CITIES = [
-    "manchester",
-    "liverpool",
-    "salford",
-    "warrington",
-    "bolton",
-    "stockport",
-    "oldham",
-];
-
+// Action 1 (P0 indexation fix): the city list is now DERIVED from the same
+// source of truth the programmatic route uses (servicesContent `cities`
+// arrays) instead of a hardcoded array that could silently drift. This
+// guarantees every service x city page the route can serve is also emitted
+// in the sitemap, in the exact trailing-slash canonical form.
 function slugifyCity(city: string) {
     return city.toLowerCase().replace(/\s+/g, "-");
+}
+
+function allCities(): string[] {
+    const set = new Set<string>();
+    for (const service of Object.values(servicesContent)) {
+        for (const city of service.cities ?? []) {
+            set.add(slugifyCity(city));
+        }
+    }
+    // Any city that has authored per-city content must also be present.
+    for (const key of Object.keys(cityContent)) {
+        const citySlug = key.split(":")[1];
+        if (citySlug) set.add(citySlug);
+    }
+    return Array.from(set).sort();
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -38,10 +46,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     // Only emit pairs that have an authored per-city entry OR are services that
     // declare city coverage, so we never submit thin/duplicate URLs.
     const programmaticUrls: string[] = [];
+    const cities = allCities();
     for (const serviceSlug of Object.keys(servicesContent)) {
         const service = servicesContent[serviceSlug];
         const declaredCities = new Set((service.cities ?? []).map(slugifyCity));
-        for (const citySlug of CITIES) {
+        for (const citySlug of cities) {
             const authored = Boolean(cityContent[`${serviceSlug}:${citySlug}`]);
             const declared = declaredCities.has(citySlug);
             if (authored || declared) {
