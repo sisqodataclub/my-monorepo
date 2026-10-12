@@ -2,6 +2,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { servicesContent } from "../components/landing/servicesContent";
+import { cityContent } from "../components/landing/cityContent";
 import DynamicServicePage from "../components/landing/dynamic";
 import InternalLinks from "../components/landing/InternalLinks";
 import { getSeoMeta } from "../utils/seo";
@@ -21,11 +22,14 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     throw new Response("Not Found", { status: 404 });
   }
 
+  const pageContent = cityContent[citySlug] ?? null;
+
   return {
     slug,
     citySlug,
     cityName: formatCityName(citySlug),
     serviceData: servicesContent[slug],
+    pageContent,
   };
 };
 
@@ -42,7 +46,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function CityServiceRoute() {
-  const { serviceData, cityName, slug, citySlug } = useLoaderData<typeof loader>();
+  const { serviceData, cityName, slug, citySlug, pageContent } = useLoaderData<typeof loader>();
 
   // Override the service data so the page becomes city‑specific
   const localizedData = {
@@ -100,9 +104,8 @@ export default function CityServiceRoute() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
       )}
-
-      <DynamicServicePage key={cityName} data={localizedData} />
-      <InternalLinks serviceSlug={slug} citySlug={citySlug} cityName={cityName} />
+      <DynamicServicePage serviceData={localizedData} pageContent={pageContent} />
+      <InternalLinks />
     </>
   );
 }
