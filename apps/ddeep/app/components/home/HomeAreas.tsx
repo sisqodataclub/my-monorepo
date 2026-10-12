@@ -15,7 +15,17 @@ const formatCityName = (slug: string) =>
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-const marqueeList = [...targetCities.map(formatCityName), ...targetCities.map(formatCityName)];
+// Display-only overrides for slugs whose rendered label should differ from the slug.
+// Slugs, URLs, and utils/locations.ts remain unchanged.
+const CITY_LABEL_OVERRIDES: Record<string, string> = {
+  "salford-quays": "Salford",
+  "trafford-park": "Trafford",
+};
+
+const formatCityLabel = (slug: string) =>
+  CITY_LABEL_OVERRIDES[slug] ?? formatCityName(slug);
+
+const marqueeList = [...targetCities.map(formatCityLabel), ...targetCities.map(formatCityLabel)];
 
 export default function HomeAreas() {
   return (
@@ -74,11 +84,11 @@ export default function HomeAreas() {
                 key={citySlug}
                 to={`/locations/${citySlug}/`}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/60 backdrop-blur-sm border border-slate-100 hover:bg-green-50 hover:border-green-200 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50"
-                title={`Cleaning Services in ${formatCityName(citySlug)}`}
+                title={`Cleaning Services in ${formatCityLabel(citySlug)}`}
               >
                 <FaCheck className="text-green-500 text-[10px]" aria-hidden="true" />
                 <span className="text-slate-600 text-sm font-semibold group-hover:text-green-700 group-hover:underline transition-all">
-                  {formatCityName(citySlug)}
+                  {formatCityLabel(citySlug)}
                 </span>
               </Link>
             ))}
