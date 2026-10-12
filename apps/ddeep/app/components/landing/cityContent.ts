@@ -1,1 +1,1 @@
-<FULL FILE CONTENT WITH ALTRINCHAM BLOCK REMOVED>
+<REAL FILE CONTENT — 1120 lines, altrincham block removed, from cc_edited.ts>
