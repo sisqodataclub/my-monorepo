@@ -104,8 +104,8 @@ export default function CityServiceRoute() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
       )}
-      <DynamicServicePage serviceData={localizedData} pageContent={pageContent} />
-      <InternalLinks />
+      <DynamicServicePage data={{ ...localizedData, cityName, pageContent }} />
+      <InternalLinks serviceSlug={slug} citySlug={citySlug} cityName={cityName} />
     </>
   );
 }
