@@ -227,69 +227,6 @@ export const cityContent: Record<string, CityContent> = {
     ],
   },
 
-  altrincham: {
-    name: "Altrincham",
-    intro:
-      "Altrincham's market town centre, its leafy residential streets and the fast tram link into Manchester make it a busy commuter town — and a place where homes need looking after properly. We clean across Altrincham, Hale, Timperley and Bowdon, from modern apartments to large detached family homes.",
-    areas: [
-      "Altrincham Town Centre",
-      "Hale",
-      "Hale Barns",
-      "Timperley",
-      "Bowdon",
-      "Broadheath",
-      "Navigation Road",
-      "Dunham Massey",
-      "Ashton upon Mersey",
-      "Sale",
-    ],
-    landmarks: [
-      "Altrincham Market and its food hall",
-      "the Metrolink tram line into Manchester",
-      "Dunham Massey and its deer park",
-      "the Bridgewater Canal through Broadheath",
-      "Hale and Bowdon's large detached homes",
-    ],
-    coverageNote:
-      "Covering WA14 and WA15, including Altrincham, Hale, Hale Barns, Timperley, Bowdon and Broadheath.",
-    serviceBlurbs: {
-      "regular-cleaning":
-        "Regular cleaning for Altrincham homes, from town-centre apartments to large family houses in Hale and Bowdon.",
-      "deep-cleaning":
-        "Deep cleans for Altrincham's larger homes — big kitchens, multiple bathrooms and the hard-water limescale that builds up across WA14 and WA15.",
-      "end-of-tenancy-cleaning":
-        "End-of-tenancy cleans for Altrincham's rental market around the town centre and Timperley, with landlord-ready checklists.",
-      "office-cleaning":
-        "Office cleaning for Altrincham town-centre firms and Broadheath business units, scheduled around your working day.",
-      "student-accommodation":
-        "Student accommodation cleaning for the shared houses used by students commuting to Manchester from the Altrincham area.",
-      "appliances-cleaning":
-        "Oven and appliance cleaning for Altrincham kitchens, including the large range cookers common in Hale and Bowdon homes.",
-      "carpet-cleaning":
-        "Carpet and upholstery cleaning for Altrincham homes, from town-centre flats to large detached houses in Hale Barns.",
-      "bars-restaurants":
-        "Out-of-hours deep cleans for Altrincham Market traders, town-centre bars and Hale restaurants, keeping kitchens compliant.",
-      "post-construction":
-        "After-builders cleans for Altrincham's new-build developments and home extensions around Timperley and Broadheath.",
-    },
-    faqs: [
-      {
-        question: "Do you clean large detached homes in Hale and Bowdon?",
-        answer:
-          "Yes. Larger homes are a big part of our Altrincham work — multiple bathrooms, big kitchens and range cookers all get the same detailed treatment.",
-      },
-      {
-        question: "How does hard water affect cleaning in Altrincham?",
-        answer:
-          "WA14 and WA15 have hard water, so limescale builds up quickly on taps, shower screens and kettles. Our deep clean includes proper descaling rather than just a wipe-down.",
-      },
-      {
-        question: "Do you cover Timperley and Broadheath as well as Altrincham town centre?",
-        answer:
-          "We cover the whole WA14 and WA15 area, including Timperley, Broadheath, Hale, Hale Barns and Bowdon.",
-      },
-    ],
-  },
 
   stockport: {
     name: "Stockport",
