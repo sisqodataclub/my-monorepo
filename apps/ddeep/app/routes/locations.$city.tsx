@@ -2,6 +2,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, Link } from "react-router";
 import { servicesContent } from "../components/landing/servicesContent";
+import { cityContent } from "../components/landing/cityContent";
 import { getSeoMeta } from "../utils/seo";
 import HomeCTA from "../components/home/HomeCTA";
 import HomeReviews from "../components/home/HomeReviews";
@@ -18,13 +19,15 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   if (!citySlug) throw new Response("Not Found", { status: 404 });
   const cityName = formatCityName(citySlug);
 
+  const pageContent = cityContent[citySlug] ?? null;
+
   const availableServices = Object.entries(servicesContent).map(([slug, data]) => ({
     slug,
     title: data.heroTitle,
     description: data.heroSubtitle,
   }));
 
-  return { citySlug, cityName, availableServices };
+  return { citySlug, cityName, availableServices, pageContent };
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -37,7 +40,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function LocationHub() {
-  const { cityName, citySlug, availableServices } = useLoaderData<typeof loader>();
+  const { cityName, citySlug, availableServices, pageContent } = useLoaderData<typeof loader>();
 
   const locationSchema = {
     "@context": "https://schema.org",
@@ -96,10 +99,45 @@ export default function LocationHub() {
           </h1>
 
           <p className="text-lg md:text-xl text-slate-100 max-w-2xl font-medium">
-            Choose from our 5-star rated domestic and commercial cleaning solutions across {cityName}. Fully vetted professionals delivering exceptional results.
+            {pageContent?.intro ?? `Choose from our 5-star rated domestic and commercial cleaning solutions across ${cityName}. Fully vetted professionals delivering exceptional results.`}
           </p>
         </div>
       </section>
+
+      {/* Local Coverage Details (per-city content) */}
+      {pageContent && (
+        <section className="py-16 px-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {pageContent.areas?.length ? (
+              <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                <h2 className="text-2xl font-black text-slate-900 mb-4">Areas We Cover in {cityName}</h2>
+                <ul className="flex flex-wrap gap-2">
+                  {pageContent.areas.map((area, idx) => (
+                    <li key={idx} className="px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-semibold">
+                      {area}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {pageContent.landmarks?.length ? (
+              <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                <h2 className="text-2xl font-black text-slate-900 mb-4">Local Landmarks We Serve</h2>
+                <ul className="flex flex-wrap gap-2">
+                  {pageContent.landmarks.map((landmark, idx) => (
+                    <li key={idx} className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold">
+                      {landmark}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+          {pageContent.coverageNote ? (
+            <p className="mt-8 text-slate-600 text-lg max-w-3xl">{pageContent.coverageNote}</p>
+          ) : null}
+        </section>
+      )}
 
       {/* Services Listing Section with Header */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
@@ -127,35 +165,17 @@ export default function LocationHub() {
                 {service.title}
               </h3>
               <p className="text-slate-500 mb-8 flex-grow">{service.description}</p>
-              <div className="flex items-center gap-2 text-green-600 font-bold uppercase tracking-wider text-sm mt-auto">
-                View Service <FaArrowRight className="group-hover:translate-x-2 transition-transform" />
+              <div className="inline-flex items-center gap-2 text-green-600 font-bold">
+                View Service <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* ✅ 2. Visual Gallery Section for this City Hub */}
-      <section className="bg-white py-12">
-        <div className="max-w-7xl mx-auto px-6 text-center mb-4">
-          <h2 className="text-2xl md:text-4xl font-black text-slate-900">
-            Recent Work in <span className="text-green-600">{cityName}</span> & Surrounding Areas
-          </h2>
-        </div>
-        <HomeGallery />
-      </section>
-
-      {/* Customer Reviews Section */}
-      <section className="py-12 bg-slate-50">
-        <HomeReviews />
-      </section>
-
-      {/* Final Call to Action */}
-      <section className="bg-green-950 text-white py-24 px-6 text-center">
-        <div className="max-w-4xl mx-auto">
-          <HomeCTA />
-        </div>
-      </section>
+      <HomeReviews />
+      <HomeGallery />
+      <HomeCTA />
     </main>
   );
 }
