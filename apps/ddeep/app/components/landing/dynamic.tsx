@@ -123,13 +123,25 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string; pageCo
 
 /* ================= UNIQUE PER-CITY CONTENT SECTION ================= */
 function CityContentSection({ content }: { content: CityContent }) {
+  // Some CityContent entries (e.g. manchester) do not define primaryKeyword /
+  // serviceDetail / localProof. Guard against undefined so the service-in-city
+  // prerender does not crash. Fall back to city name for the heading.
+  const keyword = content.primaryKeyword ?? content.name ?? "";
+  const heading = keyword ? keyword.replace(/\b\w/g, (c) => c.toUpperCase()) : "";
+
   return (
     <section className="w-full max-w-4xl mx-auto px-6 lg:px-8 py-16 text-left">
-      <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-4">
-        {content.primaryKeyword.replace(/\b\w/g, (c) => c.toUpperCase())}
-      </h2>
-      <p className="text-slate-700 leading-relaxed mb-6">{content.serviceDetail}</p>
-      <p className="text-slate-700 leading-relaxed mb-6">{content.localProof}</p>
+      {heading && (
+        <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-4">
+          {heading}
+        </h2>
+      )}
+      {content.serviceDetail && (
+        <p className="text-slate-700 leading-relaxed mb-6">{content.serviceDetail}</p>
+      )}
+      {content.localProof && (
+        <p className="text-slate-700 leading-relaxed mb-6">{content.localProof}</p>
+      )}
 
       {content.faqs?.length > 0 && (
         <div className="mt-10">
@@ -137,8 +149,8 @@ function CityContentSection({ content }: { content: CityContent }) {
           <dl className="space-y-4">
             {content.faqs.map((f, i) => (
               <div key={i}>
-                <dt className="font-semibold text-slate-900">{f.q}</dt>
-                <dd className="text-slate-700">{f.a}</dd>
+                <dt className="font-semibold text-slate-900">{f.q ?? f.question}</dt>
+                <dd className="text-slate-700">{f.a ?? f.answer}</dd>
               </div>
             ))}
           </dl>
