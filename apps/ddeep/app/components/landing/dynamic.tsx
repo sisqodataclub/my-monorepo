@@ -234,7 +234,10 @@ export default function DynamicServicePage({
       <HomeAreas />
       <HomeReviews />
       <HomeGallery />
-      <HomeFAQ />
+
+      {/* Dynamic city FAQs — rendered AFTER the Recent Transactions (reviews/gallery) block. */}
+      <HomeFAQ faqs={data.pageContent?.faqs ?? data.faqs} />
+
       <HomeCTA />
     </main>
   );
