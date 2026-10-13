@@ -121,6 +121,56 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string; pageCo
   );
 }
 
+/* ================= FEATURES SECTION ================= */
+function ServiceFeatures({ data }: { data: ServiceData }) {
+  return (
+    <div className="flex flex-col items-center text-center w-full">
+      <div className="mb-16">
+        <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">What’s Included</h2>
+        <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mb-6" />
+        <p className="text-slate-500 text-lg md:text-xl max-w-3xl mx-auto">{data.ctaPrimaryText}</p>
+      </div>
+
+      {/* Unique "Why Choose Us" Section */}
+      {data.whyChooseUs && data.whyChooseUs.length > 0 && (
+        <div className="mb-16 max-w-4xl mx-auto bg-white border border-slate-100 rounded-3xl p-8 shadow-sm w-full text-left">
+          <h3 className="text-2xl font-black text-slate-900 mb-6 text-center">Why Choose Our Service</h3>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data.whyChooseUs.map((point, index) => (
+              <li key={index} className="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                <span className="w-2 h-2 bg-green-600 rounded-full mt-2 shrink-0" />
+                {point}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+        {data.featureCards.map((card, idx) => (
+          <div key={idx} className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all">
+            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+              <FaCheckCircle className="text-green-600 text-xl" />
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-900 mb-4">{card.title}</h3>
+
+            <ul className="space-y-3">
+              {card.items.map((item, i) => (
+                <li key={i} className="flex gap-3 text-slate-600 text-sm">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2" /> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-16 text-green-700 font-bold bg-green-50 px-8 py-3 rounded-full border">{data.ctaSecondaryText}</p>
+    </div>
+  );
+}
+
 /* ================= UNIQUE PER-CITY CONTENT SECTION ================= */
 function CityContentSection({ content }: { content: CityContent }) {
   // Some CityContent entries (e.g. manchester) do not define primaryKeyword /
@@ -174,6 +224,11 @@ export default function DynamicServicePage({
 
       {/* Unique per-city body copy — only rendered when cityContent exists. */}
       {data.pageContent && <CityContentSection content={data.pageContent} />}
+
+      {/* What’s Included & Why Choose Us */}
+      <StoryCard className="bg-slate-50">
+        <ServiceFeatures data={data} />
+      </StoryCard>
 
       <HomeProcess />
       <HomeAreas />
