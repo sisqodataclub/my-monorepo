@@ -65,11 +65,7 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string; pageCo
     : "";
 
   // Unique per-page H1 comes from cityContent when present.
-  // On hyper-local pages the route already appends " in {city}" to heroTitle,
-  // so only append locationText on generic (non-city) pages to avoid duplication.
-  const heading =
-    data.pageContent?.h1 ??
-    (data.cityName ? data.heroTitle : `${data.heroTitle} ${locationText}`);
+  const heading = data.pageContent?.h1 ?? `${data.heroTitle} ${locationText}`;
 
   return (
     <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
@@ -99,3 +95,137 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string; pageCo
           Available in {data.cities.join(", ")}
         </p>
       )}
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        {data.heroButtons.map((btn, i) =>
+          btn.primary ? (
+            <button
+              key={i}
+              onClick={openModal}
+              className="bg-green-600 hover:bg-green-500 text-white px-10 py-4 rounded-full font-bold text-lg shadow-2xl transition-all hover:-translate-y-1 active:scale-95"
+            >
+              {btn.text}
+            </button>
+          ) : (
+            <button
+              key={i}
+              onClick={openModal}
+              className="bg-white/10 backdrop-blur-md border border-white/30 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all"
+            >
+              {btn.text}
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ================= FEATURES SECTION ================= */
+function ServiceFeatures({ data }: { data: ServiceData }) {
+  return (
+    <div className="flex flex-col items-center text-center w-full">
+      <div className="mb-16">
+        <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">What’s Included</h2>
+        <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mb-6" />
+        <p className="text-slate-500 text-lg md:text-xl max-w-3xl mx-auto">{data.ctaPrimaryText}</p>
+      </div>
+
+      {/* Unique "Why Choose Us" Section */}
+      {data.whyChooseUs && data.whyChooseUs.length > 0 && (
+        <div className="mb-16 max-w-4xl mx-auto bg-white border border-slate-100 rounded-3xl p-8 shadow-sm w-full text-left">
+          <h3 className="text-2xl font-black text-slate-900 mb-6 text-center">Why Choose Our Service</h3>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data.whyChooseUs.map((point, index) => (
+              <li key={index} className="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                <span className="w-2 h-2 bg-green-600 rounded-full mt-2 shrink-0" />
+                {point}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+        {data.featureCards.map((card, idx) => (
+          <div key={idx} className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all">
+            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+              <FaCheckCircle className="text-green-600 text-xl" />
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-900 mb-4">{card.title}</h3>
+
+            <ul className="space-y-3">
+              {card.items.map((item, i) => (
+                <li key={i} className="flex gap-3 text-slate-600 text-sm">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2" /> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-16 text-green-700 font-bold bg-green-50 px-8 py-3 rounded-full border">{data.ctaSecondaryText}</p>
+    </div>
+  );
+}
+
+/* ================= UNIQUE PER-CITY CONTENT SECTION ================= */
+function CityContentSection({ content }: { content: CityContent }) {
+  // Some CityContent entries (e.g. manchester) do not define primaryKeyword /
+  // serviceDetail / localProof. Guard against undefined so the service-in-city
+  // prerender does not crash. Fall back to city name for the heading.
+  const keyword = content.primaryKeyword ?? content.name ?? "";
+  const heading = keyword ? keyword.replace(/\b\w/g, (c) => c.toUpperCase()) : "";
+
+  return (
+    <section className="w-full max-w-4xl mx-auto px-6 lg:px-8 py-16 text-left">
+      {heading && (
+        <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-4">
+          {heading}
+        </h2>
+      )}
+      {content.serviceDetail && (
+        <p className="text-slate-700 leading-relaxed mb-6">{content.serviceDetail}</p>
+      )}
+      {content.localProof && (
+        <p className="text-slate-700 leading-relaxed mb-6">{content.localProof}</p>
+      )}
+
+    </section>
+  );
+}
+
+/* ================= MAIN DYNAMIC PAGE ================= */
+export default function DynamicServicePage({
+  data,
+}: {
+  data: ServiceData & { cityName?: string; pageContent?: CityContent | null };
+}) {
+  return (
+    <main className="w-full">
+      <StoryCard bgImage={HeroImage} isAboveFold>
+        <ServiceHero data={data} />
+      </StoryCard>
+
+      {/* Unique per-city body copy — only rendered when cityContent exists. */}
+      {data.pageContent && <CityContentSection content={data.pageContent} />}
+
+      {/* What’s Included & Why Choose Us */}
+      <StoryCard className="bg-slate-50">
+        <ServiceFeatures data={data} />
+      </StoryCard>
+
+      <HomeProcess />
+      <HomeAreas />
+      <HomeReviews />
+      <HomeGallery />
+
+      {/* Dynamic city FAQs — rendered AFTER the Recent Transactions (reviews/gallery) block. */}
+      <HomeFAQ faqs={data.pageContent?.faqs ?? data.faqs} />
+
+      <HomeCTA />
+    </main>
+  );
+}
