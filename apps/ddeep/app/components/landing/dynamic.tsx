@@ -193,6 +193,19 @@ function CityContentSection({ content }: { content: CityContent }) {
         <p className="text-slate-700 leading-relaxed mb-6">{content.localProof}</p>
       )}
 
+      {content.faqs?.length > 0 && (
+        <div className="mt-10">
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4">FAQs</h3>
+          <dl className="space-y-4">
+            {content.faqs.map((f, i) => (
+              <div key={i}>
+                <dt className="font-semibold text-slate-900">{f.q ?? f.question}</dt>
+                <dd className="text-slate-700">{f.a ?? f.answer}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
     </section>
   );
 }
