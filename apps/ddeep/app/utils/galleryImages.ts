@@ -101,82 +101,11 @@ function inferCategory(filename: string): string {
   if (lower.includes("tenan")) return "End of Tenancy";
   if (lower.includes("office") || lower.includes("commercial")) return "Office Cleaning";
   if (lower.includes("oven") || lower.includes("appliance")) return "Appliance Cleaning";
-  return "Deep Cleaning";
+  if (lower.includes("bath") || lower.includes("kitchen")) return "Deep Cleaning";
+  return "Gallery";
 }
 
-interface ManifestItem {
-  key?: string;
-  src?: string;
-  alt?: string;
-  title?: string;
-  caption?: string;
-  category?: string;
-}
-
-interface Manifest {
-  items?: ManifestItem[];
-}
-
-function buildImage(item: ManifestItem, index: number, baseUrl: string): GalleryImage | null {
-  const key = item.key ?? item.src;
-  if (!key) return null;
-  const filename = key.split("/").pop() || key;
-  const src = /^https?:\/\//i.test(key) ? key : `${baseUrl}/${key.replace(/^\/+/, "")}`;
-  const derived = titleCaseFromFilename(filename);
-  const alt = item.alt || `${derived} — DDeep Cleaning Services`;
-  const title = item.title || derived;
-  const category = item.category || inferCategory(filename);
-  const out: GalleryImage = {
-    id: index + 1,
-    src,
-    alt,
-    title,
-    category,
-  };
-  if (item.caption) out.caption = item.caption;
-  return out;
-}
-
-async function loadFromBucket(): Promise<GalleryImage[]> {
-  const cfg = getR2Config();
-  if (cfg.missing.length > 0) {
-    // Single warning, never throw, never break the build.
-    // eslint-disable-next-line no-console
-    console.warn(
-      `[galleryImages] R2 not configured (missing: ${cfg.missing.join(
-        ", "
-      )}). Falling back to static gallery. Add R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_BASE_URL as secrets to enable bucket listing.`
-    );
-    return [];
-  }
-
-  const manifestUrl = `${cfg.publicBaseUrl}/gallery.json`;
-  try {
-    const res = await fetch(manifestUrl, { cache: "no-store" });
-    if (!res.ok) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[galleryImages] Bucket manifest not found at ${manifestUrl} (status ${res.status}). Falling back to static gallery.`
-      );
-      return [];
-    }
-    const json = (await res.json()) as Manifest;
-    const items = Array.isArray(json?.items) ? json.items : [];
-    const mapped = items
-      .map((it, i) => buildImage(it, i, cfg.publicBaseUrl))
-      .filter((x): x is GalleryImage => x !== null);
-    return mapped;
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      `[galleryImages] Failed to load bucket manifest (${(err as Error)?.message ??
-        "unknown error"}). Falling back to static gallery.`
-    );
-    return [];
-  }
-}
-
-// Static fallback — used when R2 is unconfigured or the bucket manifest is empty.
+// Static fallback: used when the bucket is empty or unconfigured.
 export const FALLBACK_IMAGES: GalleryImage[] = [
   {
     id: 1,
@@ -215,17 +144,92 @@ export const FALLBACK_IMAGES: GalleryImage[] = [
   },
 ];
 
-// Backwards-compatible named export used by HomeGallery.tsx and other callers.
-// Resolves synchronously to the static fallback so existing imports keep working;
-// call `loadGalleryImages()` from a client component / loader when you want the
-// bucket-backed list.
-export const galleryImages: GalleryImage[] = FALLBACK_IMAGES;
+export interface GalleryManifestItem {
+  key: string;
+  caption?: string;
+  alt?: string;
+  title?: string;
+  category?: string;
+}
+
+export interface GalleryManifest {
+  items: GalleryManifestItem[];
+}
+
+function buildImageFromItem(
+  item: GalleryManifestItem,
+  baseUrl: string,
+  index: number
+): GalleryImage {
+  const filename = item.key.split("/").pop() || item.key;
+  const derived = titleCaseFromFilename(filename);
+  const src = `${baseUrl}/${item.key.replace(/^\/+/, "")}`;
+  return {
+    id: item.key || index + 1,
+    src,
+    alt: item.alt || `${derived} — professional cleaning by D Deep Cleaning Services`,
+    title: item.title || derived,
+    category: item.category || inferCategory(filename),
+    ...(item.caption ? { caption: item.caption } : {}),
+  };
+}
 
 /**
- * Load the gallery from the R2 bucket manifest, falling back to the static list
- * when the bucket is unconfigured or empty. Never throws.
+ * Fetch the gallery manifest from the R2 bucket.
+ * Returns [] on any failure (missing creds, network error, empty bucket).
+ * Never throws.
+ */
+export async function fetchGalleryFromBucket(): Promise<GalleryImage[]> {
+  const cfg = getR2Config();
+  if (cfg.missing.length > 0) {
+    // Single warning, never throws.
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[galleryImages] R2 not configured (missing: ${cfg.missing.join(
+        ", "
+      )}). Using static fallback images.`
+    );
+    return [];
+  }
+
+  try {
+    const manifestUrl = `${cfg.publicBaseUrl}/gallery.json`;
+    const res = await fetch(manifestUrl, { cache: "no-store" });
+    if (!res.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[galleryImages] Bucket manifest unavailable (${res.status}). Using static fallback images.`
+      );
+      return [];
+    }
+    const data = (await res.json()) as GalleryManifest;
+    if (!data || !Array.isArray(data.items) || data.items.length === 0) {
+      return [];
+    }
+    return data.items
+      .filter((it) => it && typeof it.key === "string" && it.key.length > 0)
+      .map((it, i) => buildImageFromItem(it, cfg.publicBaseUrl, i));
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[galleryImages] Failed to load bucket manifest. Using static fallback images."
+    );
+    return [];
+  }
+}
+
+/**
+ * Resolve gallery images: bucket manifest first, static fallback otherwise.
+ * HomeGallery.tsx can keep importing `galleryImages` synchronously; this
+ * helper is provided for callers that can await.
  */
 export async function loadGalleryImages(): Promise<GalleryImage[]> {
-  const remote = await loadFromBucket();
-  return remote.length > 0 ? remote : FALLBACK_IMAGES;
+  const fromBucket = await fetchGalleryFromBucket();
+  return fromBucket.length > 0 ? fromBucket : FALLBACK_IMAGES;
 }
+
+// Backwards-compatible synchronous export: existing HomeGallery.tsx imports
+// `galleryImages` directly. Keep it pointing at the static fallback so the
+// component renders unchanged; bucket-driven loading is opt-in via
+// loadGalleryImages() for callers that can await.
+export const galleryImages: GalleryImage[] = FALLBACK_IMAGES;
