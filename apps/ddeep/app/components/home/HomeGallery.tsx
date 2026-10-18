@@ -12,6 +12,7 @@ interface HomeGalleryProps {
 }
 
 export default function HomeGallery({ filterCategory, hideHeader = false }: HomeGalleryProps) {
+  // 🚀 UPDATED: Track active index instead of just the image object
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +36,7 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
     }
   };
 
+  // 🚀 Modal navigation handlers with wrap-around support
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeIndex !== null) {
@@ -52,6 +54,8 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
   return (
     <section id="gallery" className="relative w-full py-16 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Header & Navigation Arrows */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-10">
           {!hideHeader && (
             <div className="text-left mb-4 md:mb-0">
@@ -66,6 +70,24 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
               </p>
             </div>
           )}
+
+          {/* Desktop Only Carousel Arrows */}
+          <div className="hidden md:flex gap-3">
+            <button
+              onClick={() => scroll("left")}
+              className="w-12 h-12 rounded-full bg-slate-100 hover:bg-green-600 hover:text-white text-slate-700 flex items-center justify-center transition-all shadow-sm"
+              aria-label="Scroll left"
+            >
+              <FaChevronLeft />
+            </button>
+            <button
+              onClick={() => scroll("right")}
+              className="w-12 h-12 rounded-full bg-slate-100 hover:bg-green-600 hover:text-white text-slate-700 flex items-center justify-center transition-all shadow-sm"
+              aria-label="Scroll right"
+            >
+              <FaChevronRight />
+            </button>
+          </div>
         </div>
       </div>
     </section>
