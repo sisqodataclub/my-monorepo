@@ -1,0 +1,5 @@
+export const galleryImagesProbe = [
+  // real chars: quotes braces url slashes colons
+  { id: "img-1", src: "https://cdn.example.com/gallery/image-1.jpg", alt: "Image One" },
+  { id: "img-2", src: "https://cdn.example.com/gallery/image-2.jpg", alt: "Image Two" },
+];
