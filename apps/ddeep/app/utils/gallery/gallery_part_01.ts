@@ -1,4 +1,4 @@
-// gallery_part_01.ts — slice 1 of galleryImages (bucket-driven)
+// gallery_part_01.ts
 export interface GalleryImage {
   id: number | string;
   src: string;
