@@ -1,1 +1,22 @@
-Ly8gYXBwL3V0aWxzL2dhbGxlcnlJbWFnZXMudHMKLy8KLy8gVGhpbiByZS1leHBvcnQgc28gSG9tZUdhbGxlcnkudHN4IGltcG9ydCBwYXRoIHN0YXlzIGlkZW50aWNhbC4KLy8gR2FsbGVyeSBkYXRhIGlzIHNwbGl0IGFjcm9zcyBhcHAvdXRpbHMvZ2FsbGVyeS9nYWxsZXJ5X3BhcnRfMHsxLDIsM30udHMKCmltcG9ydCB7IEdBTExFUllfUEFSVF8wMSB9IGZyb20gIi4vZ2FsbGVyeS9nYWxsZXJ5X3BhcnRfMDEiOwppbXBvcnQgeyBHQUxMRVJZX1BBUlRfMDIgfSBmcm9tICIuL2dhbGxlcnkvZ2FsbGVyeV9wYXJ0XzAyIjsKaW1wb3J0IHsgR0FMTEVSWV9QQVJUXzAzIH0gZnJvbSAiLi9nYWxsZXJ5L2dhbGxlcnlfcGFydF8wMyI7CgpleHBvcnQgaW50ZXJmYWNlIEdhbGxlcnlJbWFnZSB7CiAgaWQ6IG51bWJlciB8IHN0cmluZzsKICBzcmM6IHN0cmluZzsKICBhbHQ6IHN0cmluZzsKICB0aXRsZTogc3RyaW5nOwogIGNhdGVnb3J5OiBzdHJpbmc7Cn0KCmV4cG9ydCBjb25zdCBnYWxsZXJ5SW1hZ2VzOiBHYWxsZXJ5SW1hZ2VbXSA9IFsKICAuLi5HQUxMRVJZX1BBUlRfMDEsCiAgLi4uR0FMTEVSWV9QQVJUXzAyLAogIC4uLkdBTExFUllfUEFSVF8wMywKXTsK
+// app/utils/galleryImages.ts
+//
+// Thin re-export so HomeGallery.tsx import path stays identical.
+// Gallery data is split across app/utils/gallery/gallery_part_0{1,2,3}.ts
+
+import { GALLERY_PART_01 } from "./gallery/gallery_part_01";
+import { GALLERY_PART_02 } from "./gallery/gallery_part_02";
+import { GALLERY_PART_03 } from "./gallery/gallery_part_03";
+
+export interface GalleryImage {
+  id: number | string;
+  src: string;
+  alt: string;
+  title: string;
+  category: string;
+}
+
+export const galleryImages: GalleryImage[] = [
+  ...GALLERY_PART_01,
+  ...GALLERY_PART_02,
+  ...GALLERY_PART_03,
+];
