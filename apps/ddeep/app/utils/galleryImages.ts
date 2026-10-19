@@ -1,36 +1,16 @@
-// app/utils/galleryImages.ts
-//
-// Bucket-driven gallery loader for ddeep.
-//
-// R2 / Cloudflare env vars (add these as GitHub/Cloudflare secrets — never hardcode):
-//   R2_ACCOUNT_ID
-//   R2_ACCESS_KEY_ID
-//   R2_SECRET_ACCESS_KEY
-//   R2_BUCKET_NAME
-//   R2_PUBLIC_BASE_URL   (e.g. https://ddeepcleaningservices.franciscodes.com/)
-//
-// At build time Vite exposes them as import.meta.env.VITE_R2_* ; at runtime
-// (SSR-off / prerender) we also read process.env.R2_* . If any are missing the
-// loader returns [] (empty array) and logs ONE warning — it never throws and
-// never breaks the build. HomeGallery falls back to the static FALLBACK_IMAGES.
-//
-// Expected bucket layout: a JSON manifest at `<bucket>/gallery.json` shaped as
-//   { "items": [ { "key": "bathroom-deep-clean.jpg", "caption": "..." }, ... ] }
-// with optional sidecar metadata. If no manifest exists we derive alt/title
-// from the filename (kebab/snake -> Title Case).
+// galleryImages.ts — thin re-export combining the gallery part modules.
+// Static fallback gallery data is split across gallery_part_01/02/03.
+import type { GalleryImage } from "./gallery_part_01";
+import { GALLERY_PART_01 } from "./gallery_part_01";
+import { GALLERY_PART_02 } from "./gallery_part_02";
+import { GALLERY_PART_03 } from "./gallery_part_03";
 
-export interface GalleryImage {
-  id: number | string;
-  src: string;
-  alt: string;
-  title: string;
-  category: string;
-  caption?: string;
-}
+export type { GalleryImage };
 
-const PUBLIC_BASE_URL_DEFAULT = "https://ddeepcleaningservices.franciscodes.com/";
+export const galleryImages: GalleryImage[] = [
+  ...GALLERY_PART_01,
+  ...GALLERY_PART_02,
+  ...GALLERY_PART_03,
+];
 
-function normaliseBaseUrl(raw: string | undefined | null): string {
-  const base = (raw && raw.trim()) || PUBLIC_BASE_URL_DEFAULT;
-  return base.replace(/\/+$/, "");
-}
+export default galleryImages;
