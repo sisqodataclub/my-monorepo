@@ -1,0 +1,6 @@
+const galleryImages = [
+  { src: "https://example.com/a.jpg", alt: "A" },
+  { src: "https://example.com/b.jpg", alt: "B" },
+];
+// comment with slashes/colons: http://x.y/z
+export default galleryImages;
