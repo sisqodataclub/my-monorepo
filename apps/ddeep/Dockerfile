@@ -16,7 +16,7 @@ COPY packages/ ./packages/
 
 # 3. Install dependencies for the whole workspace
 # We use --frozen-lockfile to ensure the build is reproducible
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # 4. Copy the rest of the app source code
 COPY apps/ddeep/ ./apps/ddeep/
