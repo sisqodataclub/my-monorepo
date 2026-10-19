@@ -47,6 +47,17 @@ function altFromKey(key: string): string {
 }
 
 /**
+ * Synchronous gallery array consumed by HomeGallery.tsx and any other
+ * component that expects a static list. Populated at module load from
+ * the R2 bucket when credentials are present; empty otherwise.
+ *
+ * NOTE: This is intentionally a plain array (not a promise) so existing
+ * client components can keep using `galleryImages` directly. Components
+ * that need to await the bucket listing should call loadGalleryImages().
+ */
+export const galleryImages: GalleryImage[] = [];
+
+/**
  * List every image object in the configured R2 bucket and map it to a
  * GalleryImage. Returns an empty array if credentials are missing or the
  * listing call fails (e.g. local dev without .env), so the build never
@@ -97,11 +108,10 @@ export async function loadGalleryImages(): Promise<GalleryImage[]> {
       src: `${publicBaseUrl}/${key}`,
       alt: altFromKey(key),
       title: titleFromKey(key),
-      category: "Recent Work",
+      category: "General",
     }));
   } catch (err) {
-    // Network / auth failure — fail soft so the site still renders.
-    console.warn("galleryImages: R2 listing failed, returning empty list", err);
+    console.warn("[galleryImages] R2 listing failed, returning empty list", err);
     return [];
   }
 }
