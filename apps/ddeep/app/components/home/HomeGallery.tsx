@@ -83,19 +83,18 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
             </div>
           )}
 
-          {/* Desktop Only Carousel Arrows */}
-          <div className="hidden md:flex gap-3">
+          <div className="hidden md:flex items-center gap-2">
             <button
               onClick={() => scroll("left")}
-              className="w-12 h-12 rounded-full bg-slate-100 hover:bg-green-600 hover:text-white text-slate-700 flex items-center justify-center transition-all shadow-sm"
-              aria-label="Scroll left"
+              aria-label="Scroll gallery left"
+              className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-green-50 hover:border-green-300 text-green-950 flex items-center justify-center shadow-sm transition-colors"
             >
               <FaChevronLeft />
             </button>
             <button
               onClick={() => scroll("right")}
-              className="w-12 h-12 rounded-full bg-slate-100 hover:bg-green-600 hover:text-white text-slate-700 flex items-center justify-center transition-all shadow-sm"
-              aria-label="Scroll right"
+              aria-label="Scroll gallery right"
+              className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-green-50 hover:border-green-300 text-green-950 flex items-center justify-center shadow-sm transition-colors"
             >
               <FaChevronRight />
             </button>
@@ -117,7 +116,7 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
             <div
               key={img.id || idx}
               onClick={() => setActiveIndex(idx)}
-              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md h-[340px] sm:h-[380px] shrink-0 flex items-center justify-center p-2"
+              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md aspect-[4/3] shrink-0"
             >
               <img
                 src={img.src}
@@ -148,82 +147,55 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
                   )}
                 </div>
               </div>
+
+              {/* Lightbox */}
+              <AnimatePresence>
+                {activeImage && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => setActiveIndex(null)}
+                  >
+                    <button
+                      onClick={() => setActiveIndex(null)}
+                      aria-label="Close"
+                      className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white text-green-950 hover:bg-green-50 flex items-center justify-center shadow-lg transition-colors"
+                    >
+                      <FaTimes />
+                    </button>
+                    <button
+                      onClick={handlePrev}
+                      aria-label="Previous image"
+                      className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 flex items-center justify-center transition-colors"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      aria-label="Next image"
+                      className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 flex items-center justify-center transition-colors"
+                    >
+                      <FaChevronRight />
+                    </button>
+                    <motion.img
+                      key={activeImage.src}
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      src={activeImage.src}
+                      alt={activeImage.alt}
+                      className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
-
       </div>
-
-      {/* Lightbox Modal with Carousel Navigation */}
-      <AnimatePresence>
-        {activeImage && activeIndex !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setActiveIndex(null)}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
-          >
-            {/* Top Close Button & Counter */}
-            <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-50">
-              <span className="text-white/80 font-bold bg-white/10 px-4 py-1.5 rounded-full text-sm backdrop-blur-sm">
-                {activeIndex + 1} / {displayedImages.length}
-              </span>
-              <button
-                onClick={() => setActiveIndex(null)}
-                className="w-14 h-14 flex items-center justify-center rounded-full bg-white text-slate-900 shadow-xl hover:bg-slate-100 hover:scale-110 active:scale-95 transition-all"
-                aria-label="Close"
-              >
-                <FaTimes className="text-2xl" />
-              </button>
-            </div>
-
-            {/* Left / Right Modal Navigation Arrows */}
-            {displayedImages.length > 1 && (
-              <>
-                <button
-                  onClick={handlePrev}
-                  className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-50 bg-white/10 hover:bg-green-600 text-white p-3 sm:p-4 rounded-full backdrop-blur-md transition-all hover:scale-110 shadow-lg"
-                  aria-label="Previous image"
-                >
-                  <FaChevronLeft className="text-lg sm:text-xl" />
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-50 bg-white/10 hover:bg-green-600 text-white p-3 sm:p-4 rounded-full backdrop-blur-md transition-all hover:scale-110 shadow-lg"
-                  aria-label="Next image"
-                >
-                  <FaChevronRight className="text-lg sm:text-xl" />
-                </button>
-              </>
-            )}
-
-            {/* Active Modal Image Card */}
-            <motion.div
-              key={activeIndex}
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl max-h-[80vh] w-full overflow-hidden rounded-2xl bg-black flex flex-col items-center justify-center border border-white/10 shadow-2xl"
-            >
-              <img 
-                src={activeImage.src} 
-                alt={activeImage.alt} 
-                decoding="async" 
-                className="w-full h-full max-h-[70vh] object-contain mx-auto p-2" 
-              />
-              {(activeImage.title || activeImage.category) && (
-                <div className="w-full p-4 bg-slate-950 text-white text-center border-t border-white/10">
-                  {activeImage.category && <span className="text-xs text-green-400 uppercase font-semibold block mb-1">{activeImage.category}</span>}
-                  {activeImage.title && <p className="font-bold text-base">{activeImage.title}</p>}
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
