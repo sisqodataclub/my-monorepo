@@ -83,19 +83,18 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
             </div>
           )}
 
-          {/* Navigation Arrows (Desktop) */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             <button
               onClick={() => scroll("left")}
-              aria-label="Scroll left"
-              className="w-11 h-11 rounded-full bg-green-50 hover:bg-green-100 text-green-700 flex items-center justify-center transition-colors"
+              aria-label="Scroll gallery left"
+              className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-green-50 hover:border-green-300 text-green-950 flex items-center justify-center shadow-sm transition-colors"
             >
               <FaChevronLeft />
             </button>
             <button
               onClick={() => scroll("right")}
-              aria-label="Scroll right"
-              className="w-11 h-11 rounded-full bg-green-50 hover:bg-green-100 text-green-700 flex items-center justify-center transition-colors"
+              aria-label="Scroll gallery right"
+              className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-green-50 hover:border-green-300 text-green-950 flex items-center justify-center shadow-sm transition-colors"
             >
               <FaChevronRight />
             </button>
@@ -148,78 +147,55 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
                   )}
                 </div>
               </div>
+
+              {/* Lightbox */}
+              <AnimatePresence>
+                {activeImage && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => setActiveIndex(null)}
+                  >
+                    <button
+                      onClick={() => setActiveIndex(null)}
+                      aria-label="Close"
+                      className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white text-green-950 hover:bg-green-50 flex items-center justify-center shadow-lg transition-colors"
+                    >
+                      <FaTimes />
+                    </button>
+                    <button
+                      onClick={handlePrev}
+                      aria-label="Previous image"
+                      className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 flex items-center justify-center transition-colors"
+                    >
+                      <FaChevronLeft />
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      aria-label="Next image"
+                      className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 flex items-center justify-center transition-colors"
+                    >
+                      <FaChevronRight />
+                    </button>
+                    <motion.img
+                      key={activeImage.src}
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      src={activeImage.src}
+                      alt={activeImage.alt}
+                      className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Lightbox Modal */}
-      <AnimatePresence>
-        {activeImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setActiveIndex(null)}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setActiveIndex(null)}
-              aria-label="Close"
-              className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white text-slate-900 hover:bg-slate-200 flex items-center justify-center shadow-lg transition-colors z-10"
-            >
-              <FaTimes />
-            </button>
-
-            {/* Prev / Next */}
-            <button
-              onClick={handlePrev}
-              aria-label="Previous image"
-              className="absolute left-4 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white flex items-center justify-center transition-colors z-10"
-            >
-              <FaChevronLeft />
-            </button>
-            <button
-              onClick={handleNext}
-              aria-label="Next image"
-              className="absolute right-4 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white flex items-center justify-center transition-colors z-10"
-            >
-              <FaChevronRight />
-            </button>
-
-            {/* Image */}
-            <motion.img
-              key={activeImage.src}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              src={activeImage.src}
-              alt={activeImage.alt}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-
-            {/* Caption */}
-            {(activeImage.title || activeImage.category) && (
-              <div className="absolute bottom-6 left-0 right-0 text-center px-4">
-                {activeImage.category && (
-                  <span className="inline-block text-xs font-bold uppercase tracking-wider text-green-400 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full mb-2">
-                    {activeImage.category}
-                  </span>
-                )}
-                {activeImage.title && (
-                  <h3 className="text-white font-bold text-lg md:text-xl drop-shadow-sm">
-                    {activeImage.title}
-                  </h3>
-                )}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
