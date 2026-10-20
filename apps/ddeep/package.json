@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/generate-gallery.mjs",
+    "predev": "node scripts/generate-gallery.mjs",
+    "pretypecheck": "node scripts/generate-gallery.mjs",
     "build": "cross-env NODE_ENV=production react-router build",
     "dev": "react-router dev",
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
