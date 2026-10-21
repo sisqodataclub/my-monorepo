@@ -116,7 +116,7 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
             <div
               key={img.id || idx}
               onClick={() => setActiveIndex(idx)}
-              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md aspect-[4/3] shrink-0"
+              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md h-[340px] sm:h-[380px] shrink-0"
             >
               <img
                 src={img.src}
