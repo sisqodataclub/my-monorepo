@@ -1,0 +1,22 @@
+name: patch-gallery-tile
+on:
+  push:
+    branches:
+      - fix/gallery-tile-sizing-v5
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/gallery-tile-sizing-v5
+      - name: Apply tile sizing patch
+        run: |
+          sed -i 's/aspect-\[4\/3\]/h-[340px] sm:h-[380px]/g' apps/ddeep/app/components/home/HomeGallery.tsx
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@users.noreply.github.com'
+          git add apps/ddeep/app/components/home/HomeGallery.tsx
+          git commit -m 'fix: restore PR #62 uniform tile sizing'
+          git push
