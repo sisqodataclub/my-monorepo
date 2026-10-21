@@ -101,100 +101,84 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
           </div>
         </div>
 
-        {/* Mobile Swipe Indicator Text */}
-        <div className="flex md:hidden items-center gap-2 text-xs font-semibold uppercase tracking-wider text-green-600 mb-4 bg-green-50 px-3 py-1.5 rounded-full w-fit">
-          <span>👈 Swipe to see more</span>
-        </div>
-
-        {/* Sideway Scrolling Container */}
+        {/* Horizontal Scroll Track */}
         <div
           ref={scrollRef}
-          className="flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 pt-2 px-1 focus:outline-none [-webkit-overflow-scrolling:touch]"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide"
         >
           {displayedImages.map((img, idx) => (
             <div
-              key={img.id || idx}
+              key={idx}
               onClick={() => setActiveIndex(idx)}
-              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md aspect-[4/3] shrink-0"
+              className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md h-[340px] sm:h-[380px] shrink-0"
             >
               <img
                 src={img.src}
                 alt={img.alt}
-                loading={idx < 2 ? "eager" : "lazy"}
-                fetchPriority={idx < 2 ? "high" : "auto"}
-                decoding="async"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-6 text-left">
-                <div className="flex justify-end">
-                  <span className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center text-sm shadow-sm">
-                    <FaExpand />
-                  </span>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
                 <div>
+                  <p className="text-white font-semibold text-sm drop-shadow">{img.alt}</p>
                   {img.category && (
-                    <span className="inline-block text-xs font-bold uppercase tracking-wider text-green-400 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full mb-2">
+                    <span className="inline-block mt-1 text-[10px] uppercase tracking-wider text-green-300 font-bold">
                       {img.category}
                     </span>
                   )}
-                  {img.title && (
-                    <h3 className="text-white font-bold text-lg leading-snug drop-shadow-sm">
-                      {img.title}
-                    </h3>
-                  )}
                 </div>
+                <span className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xs group-hover:bg-green-500 transition-colors">
+                  <FaExpand />
+                </span>
               </div>
-
-              {/* Lightbox */}
-              <AnimatePresence>
-                {activeImage && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-                    onClick={() => setActiveIndex(null)}
-                  >
-                    <button
-                      onClick={() => setActiveIndex(null)}
-                      aria-label="Close"
-                      className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white text-green-950 hover:bg-green-50 flex items-center justify-center shadow-lg transition-colors"
-                    >
-                      <FaTimes />
-                    </button>
-                    <button
-                      onClick={handlePrev}
-                      aria-label="Previous image"
-                      className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 flex items-center justify-center transition-colors"
-                    >
-                      <FaChevronLeft />
-                    </button>
-                    <button
-                      onClick={handleNext}
-                      aria-label="Next image"
-                      className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 flex items-center justify-center transition-colors"
-                    >
-                      <FaChevronRight />
-                    </button>
-                    <motion.img
-                      key={activeImage.src}
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.95, opacity: 0 }}
-                      src={activeImage.src}
-                      alt={activeImage.alt}
-                      className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           ))}
         </div>
+
+        {/* Lightbox Modal */}
+        <AnimatePresence>
+          {activeImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setActiveIndex(null)}
+            >
+              <button
+                onClick={() => setActiveIndex(null)}
+                aria-label="Close lightbox"
+                className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+              >
+                <FaTimes />
+              </button>
+              <button
+                onClick={handlePrev}
+                aria-label="Previous image"
+                className="absolute left-3 md:left-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+              >
+                <FaChevronLeft />
+              </button>
+              <motion.img
+                key={activeImage.src}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                src={activeImage.src}
+                alt={activeImage.alt}
+                className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                onClick={handleNext}
+                aria-label="Next image"
+                className="absolute right-3 md:right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+              >
+                <FaChevronRight />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );
