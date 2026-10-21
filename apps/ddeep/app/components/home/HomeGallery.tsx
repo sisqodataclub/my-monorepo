@@ -1,1 +1,1 @@
-GIT_CONTENT_PLACEHOLDER
+__FROM_TMP__/tmp/hg_edit.tsx
