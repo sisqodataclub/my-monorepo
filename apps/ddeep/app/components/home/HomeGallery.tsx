@@ -101,58 +101,43 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
           </div>
         </div>
 
-        {/* Scrollable Gallery Track */}
+        {/* Mobile Swipe Indicator Text */}
+        <div className="flex md:hidden items-center gap-2 text-xs font-semibold uppercase tracking-wider text-green-600 mb-4 bg-green-50 px-3 py-1.5 rounded-full w-fit">
+          <span>👈 Swipe to see more</span>
+        </div>
+
+        {/* Sideway Scrolling Container */}
         <div
           ref={scrollRef}
-          className="flex overflow-x-auto snap-x snap-mandatory gap-4 sm:gap-6 pb-6 scrollbar-hide"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 pt-2 px-1 focus:outline-none [-webkit-overflow-scrolling:touch]"
         >
-          {displayedImages.map((image, index) => (
-            <motion.div
-              key={image.id || index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.05 }}
-              onClick={() => setActiveIndex(index)}
+          {displayedImages.map((img, idx) => (
+            <div
+              key={img.id || idx}
+              onClick={() => setActiveIndex(idx)}
               className="min-w-[88%] sm:min-w-[45%] lg:min-w-[32%] snap-start group relative cursor-pointer overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 shadow-md h-[340px] sm:h-[380px] shrink-0"
             >
               <img
-                src={image.src}
-                alt={image.alt}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                loading="lazy"
+                src={img.src}
+                alt={img.alt}
+                loading={idx < 2 ? "eager" : "lazy"}
+                fetchPriority={idx < 2 ? "high" : "auto"}
                 decoding="async"
-                fetchPriority="low"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-              {/* Expand Icon */}
-              <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <FaExpand className="text-sm" />
-              </div>
-
-              {/* Category Badge */}
-              {image.category && (
-                <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-green-600/90 text-white text-xs font-semibold">
-                  {image.category}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-green-300 bg-green-950/60 px-2 py-0.5 rounded-full">
+                    {img.category}
+                  </span>
+                  <FaExpand className="text-white text-sm" />
                 </div>
-              )}
-
-              {/* Title */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
-                <h3 className="text-white font-bold text-base sm:text-lg">{image.title}</h3>
+                <p className="text-white text-sm font-semibold leading-tight">{img.title}</p>
               </div>
-            </motion.div>
+            </div>
           ))}
-        </div>
-
-        {/* Mobile Swipe Indicator */}
-        <div className="flex md:hidden items-center justify-center gap-2 mt-2">
-          <span className="text-xs text-slate-400">Swipe to explore</span>
-          <FaChevronRight className="text-xs text-slate-400" />
         </div>
       </div>
 
@@ -163,60 +148,43 @@ export default function HomeGallery({ filterCategory, hideHeader = false }: Home
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setActiveIndex(null)}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            {/* Close Button */}
             <button
               onClick={() => setActiveIndex(null)}
               aria-label="Close lightbox"
-              className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-10"
+              className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
             >
               <FaTimes />
             </button>
 
-            {/* Prev Button */}
             <button
               onClick={handlePrev}
               aria-label="Previous image"
-              className="absolute left-2 sm:left-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-10"
+              className="absolute left-3 md:left-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
             >
               <FaChevronLeft />
             </button>
 
-            {/* Next Button */}
+            <motion.img
+              key={activeImage.id}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              src={activeImage.src}
+              alt={activeImage.alt}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl"
+            />
+
             <button
               onClick={handleNext}
               aria-label="Next image"
-              className="absolute right-2 sm:right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-10"
+              className="absolute right-3 md:right-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
             >
               <FaChevronRight />
             </button>
-
-            {/* Image */}
-            <motion.div
-              key={activeIndex}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="relative max-w-5xl w-full max-h-[85vh]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={activeImage.src}
-                alt={activeImage.alt}
-                className="w-full h-full object-contain rounded-2xl"
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent rounded-b-2xl">
-                <h3 className="text-white font-bold text-lg sm:text-xl">{activeImage.title}</h3>
-                {activeImage.category && (
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-green-600 text-white text-xs font-semibold">
-                    {activeImage.category}
-                  </span>
-                )}
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
