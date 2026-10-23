@@ -1,53 +1,71 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-export function useQuoteCalculator({ formData, enabled = true, onQuote }) {
-  const lastPayload = useRef(null);
-  const inflight = useRef(false);
+/**
+ * useQuoteCalculator
+ *
+ * Fixes the booking-summary first-load bug:
+ *  - Fires the quote request immediately on mount when a service is
+ *    already selected (previously waited for a user interaction).
+ *  - Exposes explicit loading / error / empty states so the summary
+ *    component can gate its render instead of flashing stale data.
+ *  - Guards against out-of-order responses with a request id.
+ */
+export default function useQuoteCalculator({ serviceId, answers, enabled = true }) {
+  const [quote, setQuote] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const requestIdRef = useRef(0);
 
-  const runQuote = useCallback(async (payload) => {
-    if (!payload || inflight.current) return;
-    inflight.current = true;
+  const fetchQuote = useCallback(async () => {
+    if (!enabled || !serviceId) {
+      setQuote(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+    setError(null);
+
     try {
-      const res = await fetch('/api/quote/calculate', {
+      const res = await fetch('/api/forms/quote/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ service: serviceId, answers: answers || {} }),
       });
-      if (!res.ok) throw new Error('Quote request failed');
-      const data = await res.json();
-      onQuote?.({ status: 'success', data });
-    } catch (err) {
-      onQuote?.({ status: 'error', error: err });
-    } finally {
-      inflight.current = false;
-    }
-  }, [onQuote]);
 
-  useEffect(() => {
-    if (!enabled) return;
-    if (!formData) return;
-    const serialized = JSON.stringify(formData);
-    if (serialized === lastPayload.current) return;
-    lastPayload.current = serialized;
-    runQuote(formData);
-  }, [formData, enabled, runQuote]);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const refire = () => {
-      if (lastPayload.current) {
-        lastPayload.current = null;
-        runQuote(formData);
+      if (!res.ok) {
+        throw new Error(`Quote request failed (${res.status})`);
       }
-    };
-    const onVis = () => { if (document.visibilityState === 'visible') refire(); };
-    document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('focus', refire);
-    return () => {
-      document.removeEventListener('visibilitychange', onVis);
-      window.removeEventListener('focus', refire);
-    };
-  }, [enabled, formData, runQuote]);
 
-  return { refire: () => runQuote(formData) };
+      const data = await res.json();
+
+      // Ignore stale responses.
+      if (requestId !== requestIdRef.current) return;
+
+      setQuote(data);
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+      setError(err instanceof Error ? err.message : 'Unable to calculate quote');
+      setQuote(null);
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [serviceId, answers, enabled]);
+
+  // Immediate fire on mount / when inputs change — no user interaction needed.
+  useEffect(() => {
+    fetchQuote();
+  }, [fetchQuote]);
+
+  return {
+    quote,
+    loading,
+    error,
+    isEmpty: !loading && !error && !quote,
+    refetch: fetchQuote,
+  };
 }
