@@ -1,0 +1,27 @@
+name: decode-quotecheckout
+on:
+  push:
+    paths:
+      - 'qcmod_parts/**'
+      - '.github/workflows/decode-quotecheckout.yml'
+permissions:
+  contents: write
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode and write QuoteCheckout.jsx
+        run: |
+          cat qcmod_parts/qcmod_part_00 qcmod_parts/qcmod_part_01 qcmod_parts/qcmod_part_02 qcmod_parts/qcmod_part_03 qcmod_parts/qcmod_part_04 > /tmp/qc_mod.b64
+          mkdir -p apps/forms/frontend/src/pages
+          base64 -d /tmp/qc_mod.b64 > apps/forms/frontend/src/pages/QuoteCheckout.jsx
+          wc -c apps/forms/frontend/src/pages/QuoteCheckout.jsx
+          head -n 1 apps/forms/frontend/src/pages/QuoteCheckout.jsx
+      - name: Commit
+        run: |
+          git config user.name 'sisqodataclub'
+          git config user.email '103331558+sisqodataclub@users.noreply.github.com'
+          git add apps/forms/frontend/src/pages/QuoteCheckout.jsx
+          git commit -m 'fix(booking): decode QuoteCheckout.jsx from base64 parts' || echo 'no changes'
+          git push
