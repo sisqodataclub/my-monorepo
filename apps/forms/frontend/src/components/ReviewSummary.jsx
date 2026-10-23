@@ -1,124 +1,56 @@
-// src/components/ReviewSummary.jsx
-import React from "react";
-import useQuoteCalculator from "../hooks/useQuoteCalculator";
+import { useMemo } from 'react';
 
-export default function ReviewSummary({
-  selectedAreas,
-  quantities,
-  carpets,
-  appliances,
-  furnished_status,
-  biohazard,
-  discountCode,
-  setDiscountCode,
-  hideDiscountInput = false,
-}) {
-  // Pulling the new structured data from our hook
-  const { subtotal, fees, discount, finalTotal, breakdown, loading, error } =
-    useQuoteCalculator({
-      selectedAreas,
-      quantities,
-      carpets,
-      appliances,
-      details: {
-        furnished_status,
-        biohazard,
-      },
-      discountCode,
-    });
+export default function ReviewSummary({ quote, loading, error }) {
+  const summary = useMemo(() => {
+    if (!quote) return null;
+    return {
+      total: quote.total ?? quote.amount ?? 0,
+      currency: quote.currency ?? 'GBP',
+      items: quote.items ?? quote.lineItems ?? [],
+    };
+  }, [quote]);
+
+  if (loading) {
+    return (
+      <div className="review-summary review-summary--loading" aria-busy="true">
+        <p>Calculating your quote…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="review-summary review-summary--error" role="alert">
+        <p>We couldn't load your quote summary. Please try again.</p>
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return null;
+  }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-white mb-4">
-        Summary
-      </h2>
-
-      {error && (
-        <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6">
-          Error: {error}
-        </div>
+    <div className="review-summary">
+      <h2>Review</h2>
+      {summary.items.length > 0 && (
+        <ul className="review-summary__items">
+          {summary.items.map((item, i) => (
+            <li key={i} className="review-summary__item">
+              <span className="review-summary__label">{item.label ?? item.name}</span>
+              <span className="review-summary__value">
+                {summary.currency} {Number(item.amount ?? item.price ?? 0).toFixed(2)}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
-
-      {/* ✅ Use the clean breakdown array from Django! */}
-      <table className="w-full text-gray-200 mb-6 bg-black/60 rounded-xl overflow-hidden">
-        <thead className="bg-gray-800">
-          <tr>
-            <th className="px-4 py-3 text-left">Item</th>
-            <th className="px-4 py-3 text-center">Qty</th>
-            {/* ❌ Price column commented out – uncomment when needed
-            <th className="px-4 py-3 text-right">Total</th>
-            */}
-          </tr>
-        </thead>
-        <tbody className={`transition-opacity ${loading ? "opacity-50" : "opacity-100"}`}>
-          {breakdown.length === 0 ? (
-            <tr>
-              <td colSpan="2" className="px-4 py-4 text-center text-gray-400">
-                No items selected yet.
-              </td>
-            </tr>
-          ) : (
-            breakdown.map((line, idx) => (
-              <tr key={idx} className="border-t border-gray-800/50">
-                <td className="px-4 py-3">{line.name}</td>
-                <td className="px-4 py-3 text-center">{line.quantity || "-"}</td>
-                {/* ❌ Price cell commented out
-                <td className={`px-4 py-3 text-right ${line.total < 0 ? 'text-green-400' : ''}`}>
-                  {line.total < 0 ? "-" : ""}£{Math.abs(line.total).toFixed(2)}
-                </td>
-                */}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-
-      {/* ❌ Quote Summary block (subtotal, fees, discount, final price) – commented out */}
-      {/*
-      <div className="bg-black/60 p-4 rounded-xl text-white space-y-2">
-        <div className="flex justify-between text-gray-300">
-          <span>Subtotal:</span>
-          <span>£{subtotal.toFixed(2)}</span>
-        </div>
-
-        {fees > 0 && (
-          <div className="flex justify-between text-yellow-400/90">
-            <span>Additional Fees:</span>
-            <span>+ £{fees.toFixed(2)}</span>
-          </div>
-        )}
-
-        {discount > 0 && (
-          <div className="flex justify-between text-green-400">
-            <span>Discount Applied:</span>
-            <span>− £{discount.toFixed(2)}</span>
-          </div>
-        )}
-
-        <div className="flex justify-between text-xl font-bold pt-3 mt-2 border-t border-gray-700">
-          <span>Final Price:</span>
-          <span>£{finalTotal.toFixed(2)}</span>
-        </div>
+      <div className="review-summary__total">
+        <span>Total</span>
+        <strong>
+          {summary.currency} {Number(summary.total).toFixed(2)}
+        </strong>
       </div>
-      */}
-
-      {/* ❌ Discount Code Input – also commented out (because it affects pricing) */}
-      {/*
-      {!hideDiscountInput && (
-        <div className="mt-6">
-          <input
-            type="text"
-            value={discountCode}
-            onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-            placeholder="Enter discount code"
-            className="bg-gray-800/60 text-white px-4 py-3 rounded-lg w-full max-w-xs outline-none border border-gray-600 focus:border-blue-500 transition-colors"
-          />
-          {discount > 0 && (
-            <p className="text-green-400 mt-2 text-sm font-medium">Valid discount applied!</p>
-          )}
-        </div>
-      )}
-      */}
     </div>
   );
 }
