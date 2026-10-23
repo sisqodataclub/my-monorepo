@@ -1,0 +1,34 @@
+name: Fix Booking Summary First Load
+
+on:
+  push:
+    branches:
+      - fix/booking-summary-first-load
+
+permissions:
+  contents: write
+
+jobs:
+  decode-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: fix/booking-summary-first-load
+
+      - name: Decode qc_source.b64 into QuoteCheckout.jsx
+        run: |
+          base64 -d qc_source.b64 > apps/forms/frontend/src/components/QuoteCheckout.jsx
+          wc -c apps/forms/frontend/src/components/QuoteCheckout.jsx
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push
+        run: |
+          git add apps/forms/frontend/src/components/QuoteCheckout.jsx
+          git commit -m "Fix booking-summary first-load: QuoteCheckout.jsx via base64 decode" || echo "nothing to commit"
+          git push
