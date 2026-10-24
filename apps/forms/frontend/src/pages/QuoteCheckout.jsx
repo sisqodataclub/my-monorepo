@@ -82,11 +82,103 @@ export default function QuoteCheckout() {
 
   if (loading) return <GlassLayout><p>Loading your quote…</p></GlassLayout>;
   if (error) return <GlassLayout><p>{error}</p></GlassLayout>;
+  if (!quoteData) return <GlassLayout><p>Loading your quote…</p></GlassLayout>;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await api.post(`/api/cleaning-bookings/${quoteId}/confirm/`, {
+        booking_date: bookingDate,
+        timeslot,
+        payment_method: paymentMethod,
+        address,
+        postcode,
+        phone,
+        discount_code: discountCode,
+      });
+      setShowSuccess(true);
+    } catch (err) {
+      console.error(err);
+      setError("Could not confirm your booking. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <GlassLayout>
-      <h1>Complete your booking</h1>
-      {quoteData && <ReviewSummary quote={quoteData} />}
+      <div className="quote-checkout">
+        <h1>Complete your booking</h1>
+
+        <form onSubmit={handleSubmit}>
+          <BookingDatePicker
+            value={bookingDate}
+            onChange={setBookingDate}
+            blockedDates={blockedDates}
+          />
+
+          <TimeSlotSelector
+            value={timeslot}
+            onChange={setTimeslot}
+            partiallyBlockedSlots={partiallyBlockedSlots}
+          />
+
+          <div className="form-field">
+            <label>Address</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Postcode</label>
+            <input
+              type="text"
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Phone</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Discount code</label>
+            <input
+              type="text"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+            />
+          </div>
+
+          <ReviewSummary quoteData={quoteData} />
+
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Confirming…" : "Confirm booking"}
+          </button>
+        </form>
+      </div>
+
+      {showSuccess && (
+        <BookingSuccessModal
+          onClose={() => {
+            setShowSuccess(false);
+            navigate("/");
+          }}
+        />
+      )}
     </GlassLayout>
   );
 }
