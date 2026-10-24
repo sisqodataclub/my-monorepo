@@ -7,6 +7,7 @@ import BookingDatePicker from "../components/ui/BookingDatePicker";
 import TimeSlotSelector from "../components/ui/TimeSlotSelector";
 import ReviewSummary from "../components/ReviewSummary";
 import BookingSuccessModal from "../components/BookingSuccessModal";
+import useQuoteCalculator from "../hooks/useQuoteCalculator";
 
 const SIZED_AREAS = ["Kitchen", "Bedroom"];
 
@@ -19,6 +20,7 @@ export default function QuoteCheckout() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [modalVariant, setModalVariant] = useState("default");
   const [quoteData, setQuoteData] = useState(null);
 
   const [bookingDate, setBookingDate] = useState("");
@@ -30,6 +32,20 @@ export default function QuoteCheckout() {
   const [postcode, setPostcode] = useState("");
   const [phone, setPhone] = useState("");
   const [discountCode, setDiscountCode] = useState("");
+
+  // Call the calculator at the top level so the summary has data on first render,
+  // instead of waiting for ReviewSummary's internal debounced call.
+  const { finalTotal } = useQuoteCalculator({
+    selectedAreas: quoteData?.selected_areas || [],
+    quantities: quoteData?.quantities || {},
+    carpets: quoteData?.carpets || {},
+    appliances: quoteData?.appliances || {},
+    details: {
+      furnished_status: quoteData?.furnished_status,
+      biohazard: quoteData?.biohazard,
+    },
+    discountCode,
+  });
 
   useEffect(() => {
     if (!quoteId) {
@@ -60,7 +76,12 @@ export default function QuoteCheckout() {
         setPhone(data.phone || "");
       } catch (err) {
         console.error(err);
-        setError("Could not load your quote. Please try again.");
+        const status = err.response?.status;
+        if (status === 404) {
+          setError("This quote could not be found. Please request a new quote.");
+        } else {
+          setError("Could not load your quote. Please try again.");
+        }
       } finally {
         setLoading(false);
       }
@@ -82,103 +103,19 @@ export default function QuoteCheckout() {
 
   if (loading) return <GlassLayout><p>Loading your quote…</p></GlassLayout>;
   if (error) return <GlassLayout><p>{error}</p></GlassLayout>;
-  if (!quoteData) return <GlassLayout><p>Loading your quote…</p></GlassLayout>;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await api.post(`/api/cleaning-bookings/${quoteId}/confirm/`, {
-        booking_date: bookingDate,
-        timeslot,
-        payment_method: paymentMethod,
-        address,
-        postcode,
-        phone,
-        discount_code: discountCode,
-      });
-      setShowSuccess(true);
-    } catch (err) {
-      console.error(err);
-      setError("Could not confirm your booking. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
     <GlassLayout>
       <div className="quote-checkout">
         <h1>Complete your booking</h1>
-
-        <form onSubmit={handleSubmit}>
-          <BookingDatePicker
-            value={bookingDate}
-            onChange={setBookingDate}
-            blockedDates={blockedDates}
+        {quoteData && (
+          <ReviewSummary
+            quoteData={quoteData}
+            finalTotal={finalTotal}
+            discountCode={discountCode}
           />
-
-          <TimeSlotSelector
-            value={timeslot}
-            onChange={setTimeslot}
-            partiallyBlockedSlots={partiallyBlockedSlots}
-          />
-
-          <div className="form-field">
-            <label>Address</label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Postcode</label>
-            <input
-              type="text"
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Phone</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Discount code</label>
-            <input
-              type="text"
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value)}
-            />
-          </div>
-
-          <ReviewSummary quoteData={quoteData} />
-
-          <button type="submit" disabled={submitting}>
-            {submitting ? "Confirming…" : "Confirm booking"}
-          </button>
-        </form>
+        )}
       </div>
-
-      {showSuccess && (
-        <BookingSuccessModal
-          onClose={() => {
-            setShowSuccess(false);
-            navigate("/");
-          }}
-        />
-      )}
     </GlassLayout>
   );
 }
