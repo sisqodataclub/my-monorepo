@@ -85,54 +85,62 @@ export default function QuoteCheckout() {
         return;
       }
 
+      // 2) Best-effort: fetch blocked dates/slots. Failures here don't block the page.
+      try {
+        const [blockedRes, partialRes] = await Promise.all([
+          api.get("/api/blocked-dates/"),
+          api.get("/api/partially-blocked-slots/"),
+        ]);
+        setBlockedDates(blockedRes.data || []);
+        setPartiallyBlockedSlots(partialRes.data || {});
+      } catch (err) {
+        console.warn("Could not load blocked dates:", err);
+      }
+
       setLoading(false);
     };
 
     fetchData();
   }, [quoteId]);
 
+  // Re-fire the summary calculation when the tab becomes visible again.
+  // Background tabs throttle setTimeout, which can leave the summary empty
+  // on first load until the user refocuses the tab.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && quoteData) {
+        window.dispatchEvent(new CustomEvent("quote-summary-refresh"));
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
+    };
+  }, [quoteData]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (submitting) return;
-
+    if (!bookingDate || !timeslot || !paymentMethod) {
+      setError("Please select a date, time slot, and payment method.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
-
-    // If the booking was already confirmed when the page loaded, the user
-    // is re-pressing Confirm on a confirmed booking. The backend will still
-    // return 200 with status='confirmed', so we detect this client-side and
-    // swap the modal copy instead of showing the standard success message.
-    const alreadyConfirmed = quoteData?.status === "confirmed";
-
     try {
-      const res = await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
-        status: "confirmed",
-        booking_date: bookingDate,
-        timeslot,
+      await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
+        selected_datetime: { booking_date: bookingDate, timeslot },
         payment_method: paymentMethod,
-        address,
-        postcode,
+        property_details: { address, postcode },
         phone,
         discount_code: discountCode,
       });
-
-      // Belt-and-braces: also treat a returned status of 'confirmed' on a
-      // booking we already knew was confirmed as the 'already confirmed' case.
-      const returnedStatus = res?.data?.status;
-      const isAlreadyConfirmed = alreadyConfirmed || returnedStatus === "confirmed" && alreadyConfirmed;
-
-      setModalVariant(isAlreadyConfirmed ? "alreadyConfirmed" : "default");
+      setModalVariant("default");
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
-      const status = err.response?.status;
-      if (status === 404) {
-        setError("Could not confirm your booking. Please try again.");
-      } else if (status === 400) {
-        setError(err.response?.data?.detail || "Please check your booking details and try again.");
-      } else {
-        setError("Could not confirm your booking. Please try again.");
-      }
+      setError("Could not confirm your booking. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -141,8 +149,8 @@ export default function QuoteCheckout() {
   if (loading) {
     return (
       <GlassLayout>
-        <div className="flex items-center justify-center min-h-screen text-white">
-          Loading your quote…
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-white text-lg">Loading your quote…</p>
         </div>
       </GlassLayout>
     );
@@ -151,13 +159,13 @@ export default function QuoteCheckout() {
   if (error && !quoteData) {
     return (
       <GlassLayout>
-        <div className="flex flex-col items-center justify-center min-h-screen text-white gap-4 px-6">
-          <p className="text-red-400 text-center">{error}</p>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+          <p className="text-white text-lg">{error}</p>
           <button
             onClick={() => navigate("/")}
-            className="bg-[#915EFF] hover:bg-[#7c4dff] transition-colors rounded-lg px-6 py-2"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Back to home
+            Back to Home
           </button>
         </div>
       </GlassLayout>
@@ -166,98 +174,109 @@ export default function QuoteCheckout() {
 
   return (
     <GlassLayout>
-      <div className="max-w-3xl mx-auto px-4 py-10 text-white">
-        <h1 className="text-3xl font-bold mb-6">Confirm your booking</h1>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-white mb-6">Complete Your Booking</h1>
 
         {error && (
-          <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6">
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-white">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <BookingDatePicker
-            value={bookingDate}
-            onChange={setBookingDate}
-            blockedDates={blockedDates}
-            partiallyBlockedSlots={partiallyBlockedSlots}
-          />
-
-          <TimeSlotSelector value={timeslot} onChange={setTimeslot} />
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Payment method</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            >
-              <option value="">Select…</option>
-              <option value="card">Card</option>
-              <option value="cash">Cash</option>
-              <option value="bank">Bank transfer</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Address</label>
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <BookingDatePicker
+              value={bookingDate}
+              onChange={setBookingDate}
+              blockedDates={blockedDates}
             />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Postcode</label>
-            <input
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
+            <TimeSlotSelector
+              value={timeslot}
+              onChange={setTimeslot}
+              date={bookingDate}
+              partiallyBlockedSlots={partiallyBlockedSlots}
             />
+            <div>
+              <label className="block text-white mb-1">Payment Method</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
+              >
+                <option value="">Select…</option>
+                <option value="card">Card</option>
+                <option value="cash">Cash</option>
+                <option value="bank_transfer">Bank Transfer</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-white mb-1">Address</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-1">Postcode</label>
+              <input
+                type="text"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value)}
+                className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-1">Phone</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-1">Discount Code</label>
+              <input
+                type="text"
+                value={discountCode}
+                onChange={(e) => setDiscountCode(e.target.value)}
+                className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Phone</label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            />
+          <div>
+            {quoteData ? (
+              <ReviewSummary
+                quoteData={quoteData}
+                finalTotal={finalTotal}
+                discountCode={discountCode}
+              />
+            ) : (
+              <div className="p-6 bg-white/10 rounded-xl text-white">
+                <p>Loading your summary…</p>
+              </div>
+            )}
           </div>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-gray-300">Discount code</label>
-            <input
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value)}
-              className="bg-white/10 rounded-lg px-4 py-2 text-white"
-            />
-          </div>
-
-          <ReviewSummary
-            selectedAreas={quoteData?.selected_areas || []}
-            quantities={quoteData?.quantities || {}}
-            carpets={quoteData?.carpets || {}}
-            appliances={quoteData?.appliances || {}}
-            total={finalTotal}
-          />
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="bg-[#915EFF] hover:bg-[#7c4dff] transition-colors rounded-lg px-6 py-3 font-semibold disabled:opacity-50"
-          >
-            {submitting ? "Confirming…" : "Confirm booking"}
-          </button>
-        </form>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="mt-8 w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+        >
+          {submitting ? "Confirming…" : "Confirm Booking"}
+        </button>
       </div>
 
-      <BookingSuccessModal
-        show={showSuccess}
-        variant={modalVariant}
-        onClose={() => setShowSuccess(false)}
-      />
+      {showSuccess && (
+        <BookingSuccessModal
+          variant={modalVariant}
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
     </GlassLayout>
   );
 }
