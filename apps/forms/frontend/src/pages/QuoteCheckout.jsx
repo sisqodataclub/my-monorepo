@@ -9,8 +9,6 @@ import ReviewSummary from "../components/ReviewSummary";
 import BookingSuccessModal from "../components/BookingSuccessModal";
 import useQuoteCalculator from "../hooks/useQuoteCalculator";
 
-const SIZED_AREAS = ["Kitchen", "Bedroom"];
-
 export default function QuoteCheckout() {
   const [searchParams] = useSearchParams();
   const quoteId = searchParams.get("quote_id");
@@ -53,11 +51,9 @@ export default function QuoteCheckout() {
     }
 
     const fetchData = async () => {
-      // 1) Authoritative: fetch the quote first. If this fails, the page cannot work.
-      let data;
       try {
         const quoteRes = await api.get(`/api/cleaning-bookings/${quoteId}/`);
-        data = quoteRes.data;
+        const data = quoteRes.data;
 
         if (!data || typeof data !== "object") {
           setError("Could not load your quote. Please try again.");
@@ -66,7 +62,6 @@ export default function QuoteCheckout() {
         }
 
         setQuoteData(data);
-
         setBookingDate(data.selected_datetime?.booking_date || "");
         setTimeslot(data.selected_datetime?.timeslot || "");
         setPaymentMethod(data.payment_method || "");
@@ -85,7 +80,7 @@ export default function QuoteCheckout() {
         return;
       }
 
-      // 2) Best-effort: fetch blocked dates/slots. Failures here don't block the page.
+      // Best-effort: fetch blocked dates/slots. Failures here don't block the page.
       try {
         const [blockedRes, partialRes] = await Promise.all([
           api.get("/api/blocked-dates/"),
@@ -103,44 +98,41 @@ export default function QuoteCheckout() {
     fetchData();
   }, [quoteId]);
 
-  // Re-fire the summary calculation when the tab becomes visible again.
-  // Background tabs throttle setTimeout, which can leave the summary empty
-  // on first load until the user refocuses the tab.
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible" && quoteData) {
-        window.dispatchEvent(new CustomEvent("quote-summary-refresh"));
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("focus", handleVisibility);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("focus", handleVisibility);
-    };
-  }, [quoteData]);
-
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!bookingDate || !timeslot || !paymentMethod) {
-      setError("Please select a date, time slot, and payment method.");
+    e.preventDefault(); 
+    
+    if (!bookingDate || !timeslot || !paymentMethod || !address || !postcode || !phone) {
+      setError("Please fill in all required fields to confirm your booking.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+
     setSubmitting(true);
     setError(null);
+
+    const alreadyConfirmed = quoteData?.status === "confirmed";
+
     try {
-      await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
-        selected_datetime: { booking_date: bookingDate, timeslot },
+      const res = await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
+        status: "confirmed",
+        booking_date: bookingDate,
+        timeslot,
         payment_method: paymentMethod,
-        property_details: { address, postcode },
+        address,
+        postcode,
         phone,
         discount_code: discountCode,
       });
-      setModalVariant("default");
+
+      const returnedStatus = res?.data?.status;
+      const isAlreadyConfirmed = alreadyConfirmed || (returnedStatus === "confirmed" && alreadyConfirmed);
+
+      setModalVariant(isAlreadyConfirmed ? "alreadyConfirmed" : "default");
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
       setError("Could not confirm your booking. Please try again.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSubmitting(false);
     }
@@ -183,7 +175,7 @@ export default function QuoteCheckout() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <BookingDatePicker
               value={bookingDate}
@@ -197,21 +189,23 @@ export default function QuoteCheckout() {
               partiallyBlockedSlots={partiallyBlockedSlots}
             />
             <div>
-              <label className="block text-white mb-1">Payment Method</label>
+              <label className="block text-white mb-1">Payment Method *</label>
               <select
+                required
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
               >
-                <option value="">Select…</option>
-                <option value="card">Card</option>
-                <option value="cash">Cash</option>
-                <option value="bank_transfer">Bank Transfer</option>
+                <option value="" className="text-black">Select…</option>
+                <option value="card" className="text-black">Card</option>
+                <option value="cash" className="text-black">Cash</option>
+                <option value="bank_transfer" className="text-black">Bank Transfer</option>
               </select>
             </div>
             <div>
-              <label className="block text-white mb-1">Address</label>
+              <label className="block text-white mb-1">Address *</label>
               <input
+                required
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
@@ -219,8 +213,9 @@ export default function QuoteCheckout() {
               />
             </div>
             <div>
-              <label className="block text-white mb-1">Postcode</label>
+              <label className="block text-white mb-1">Postcode *</label>
               <input
+                required
                 type="text"
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value)}
@@ -228,9 +223,13 @@ export default function QuoteCheckout() {
               />
             </div>
             <div>
-              <label className="block text-white mb-1">Phone</label>
+              <label htmlFor="phone" className="block text-white mb-1">Phone *</label>
               <input
+                id="phone"
+                required
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
@@ -247,11 +246,11 @@ export default function QuoteCheckout() {
             </div>
           </div>
 
-          <div>
+          <div className="flex flex-col h-full">
             {quoteData ? (
               <ReviewSummary
                 quoteData={quoteData}
-                finalTotal={finalTotal}
+                finalTotal={finalTotal || quoteData?.total || 0}
                 discountCode={discountCode}
               />
             ) : (
@@ -259,16 +258,16 @@ export default function QuoteCheckout() {
                 <p>Loading your summary…</p>
               </div>
             )}
+            
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-8 w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+            >
+              {submitting ? "Confirming…" : "Confirm Booking"}
+            </button>
           </div>
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="mt-8 w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
-        >
-          {submitting ? "Confirming…" : "Confirm Booking"}
-        </button>
+        </form>
       </div>
 
       {showSuccess && (
