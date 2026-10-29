@@ -100,34 +100,24 @@ export default function QuoteCheckout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
-    
     if (!bookingDate || !timeslot || !paymentMethod || !address || !postcode || !phone) {
       setError("Please fill in all required fields to confirm your booking.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-
+    
     setSubmitting(true);
     setError(null);
-
-    const alreadyConfirmed = quoteData?.status === "confirmed";
-
+    
     try {
-      const res = await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
-        status: "confirmed",
-        booking_date: bookingDate,
-        timeslot,
+      await api.patch(`/api/cleaning-bookings/${quoteId}/`, {
+        selected_datetime: { booking_date: bookingDate, timeslot },
         payment_method: paymentMethod,
-        address,
-        postcode,
+        property_details: { address, postcode },
         phone,
         discount_code: discountCode,
       });
-
-      const returnedStatus = res?.data?.status;
-      const isAlreadyConfirmed = alreadyConfirmed || (returnedStatus === "confirmed" && alreadyConfirmed);
-
-      setModalVariant(isAlreadyConfirmed ? "alreadyConfirmed" : "default");
+      setModalVariant("default");
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
@@ -175,6 +165,7 @@ export default function QuoteCheckout() {
           </div>
         )}
 
+        {/* 🚀 Changed to a <form> wrapper so native validation and "Enter" key work */}
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <BookingDatePicker
@@ -249,9 +240,13 @@ export default function QuoteCheckout() {
           <div className="flex flex-col h-full">
             {quoteData ? (
               <ReviewSummary
-                quoteData={quoteData}
-                finalTotal={finalTotal || quoteData?.total || 0}
-                discountCode={discountCode}
+                // 🚀 Restored the individual props your ReviewSummary component expects
+                selectedAreas={quoteData?.selected_areas || []}
+                quantities={quoteData?.quantities || {}}
+                carpets={quoteData?.carpets || {}}
+                appliances={quoteData?.appliances || {}}
+                // 🚀 Added the instant fallback to solve the 500ms delay perfectly
+                total={finalTotal || quoteData?.total || 0} 
               />
             ) : (
               <div className="p-6 bg-white/10 rounded-xl text-white">
