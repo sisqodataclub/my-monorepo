@@ -1,5 +1,3 @@
-// try
-
 // src/pages/QuoteCheckout.jsx
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -33,7 +31,6 @@ export default function QuoteCheckout() {
   const [phone, setPhone] = useState("");
   const [discountCode, setDiscountCode] = useState("");
 
-  // 🚀 Pull 'loading' from the hook and rename it to 'isCalculating'
   const { finalTotal, loading: isCalculating } = useQuoteCalculator({
     selectedAreas: quoteData?.selected_areas || [],
     quantities: quoteData?.quantities || {},
@@ -83,6 +80,7 @@ export default function QuoteCheckout() {
         return;
       }
 
+      // Best-effort: fetch blocked dates/slots
       try {
         const [blockedRes, partialRes] = await Promise.all([
           api.get("/api/blocked-dates/"),
@@ -249,24 +247,14 @@ export default function QuoteCheckout() {
 
           <div className="flex flex-col h-full">
             {quoteData ? (
-              // 🚀 Replaces the table with a spinner while isCalculating is true
-              isCalculating ? (
-                <div className="p-6 bg-white/10 rounded-xl text-white flex flex-col items-center justify-center min-h-[250px]">
-                  <svg className="animate-spin h-10 w-10 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <p className="text-lg font-semibold">Calculating summary…</p>
-                </div>
-              ) : (
-                <ReviewSummary
-                  selectedAreas={quoteData.selected_areas || []}
-                  quantities={quoteData.quantities || {}}
-                  carpets={quoteData.carpets || {}}
-                  appliances={quoteData.appliances || {}}
-                  total={finalTotal || quoteData.total || 0} 
-                />
-              )
+              <ReviewSummary
+                selectedAreas={quoteData.selected_areas || []}
+                quantities={quoteData.quantities || {}}
+                carpets={quoteData.carpets || {}}
+                appliances={quoteData.appliances || {}}
+                // 🚀 Safely parse the database string into a number so it doesn't crash the table
+                total={finalTotal || parseFloat(quoteData.total) || 0} 
+              />
             ) : (
               <div className="p-6 bg-white/10 rounded-xl text-white">
                 <p>Loading your summary…</p>
@@ -275,7 +263,6 @@ export default function QuoteCheckout() {
             
             <button
               type="submit"
-              // 🚀 Keep button disabled while calculating
               disabled={submitting || isCalculating || (!finalTotal && !quoteData?.total)}
               className="mt-8 w-full py-3 bg-[#915EFF] hover:bg-[#7c4dff] text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
             >
