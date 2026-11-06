@@ -31,7 +31,8 @@ export default function QuoteCheckout() {
   const [phone, setPhone] = useState("");
   const [discountCode, setDiscountCode] = useState("");
 
-  const { finalTotal, loading: isCalculating } = useQuoteCalculator({
+  // 🚀 Added 'breakdown' so ReviewSummary gets the final item rows when the hook finishes
+  const { finalTotal, breakdown, loading: isCalculating } = useQuoteCalculator({
     selectedAreas: quoteData?.selected_areas || [],
     quantities: quoteData?.quantities || {},
     carpets: quoteData?.carpets || {},
@@ -248,12 +249,22 @@ export default function QuoteCheckout() {
           <div className="flex flex-col h-full">
             {quoteData ? (
               <ReviewSummary
+                // 🚀 Restored quoteData so the table has items instantly
+                quoteData={quoteData}
+                
+                // 🚀 Passing breakdown so it works smoothly after 500ms
+                breakdown={breakdown || []}
+                
+                // Passing these just in case your component still expects them
                 selectedAreas={quoteData.selected_areas || []}
                 quantities={quoteData.quantities || {}}
                 carpets={quoteData.carpets || {}}
                 appliances={quoteData.appliances || {}}
-                // 🚀 Safely parse the database string into a number so it doesn't crash the table
+                
+                // 🚀 Safe numeric fallbacks
+                finalTotal={finalTotal || parseFloat(quoteData.total) || 0}
                 total={finalTotal || parseFloat(quoteData.total) || 0} 
+                discountCode={discountCode}
               />
             ) : (
               <div className="p-6 bg-white/10 rounded-xl text-white">
