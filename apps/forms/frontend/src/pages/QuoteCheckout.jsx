@@ -20,6 +20,9 @@ export default function QuoteCheckout() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [modalVariant, setModalVariant] = useState("default");
   const [quoteData, setQuoteData] = useState(null);
+  
+  // 🚀 Controls the Summary Modal Pop Box
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   const [bookingDate, setBookingDate] = useState("");
   const [timeslot, setTimeslot] = useState("");
@@ -31,8 +34,8 @@ export default function QuoteCheckout() {
   const [phone, setPhone] = useState("");
   const [discountCode, setDiscountCode] = useState("");
 
-  // 🚀 Added 'breakdown' so ReviewSummary gets the final item rows when the hook finishes
-  const { finalTotal, breakdown, loading: isCalculating } = useQuoteCalculator({
+  // 🚀 Grab breakdown from the hook so the table has the final items ready
+  const { finalTotal, breakdown } = useQuoteCalculator({
     selectedAreas: quoteData?.selected_areas || [],
     quantities: quoteData?.quantities || {},
     carpets: quoteData?.carpets || {},
@@ -164,9 +167,12 @@ export default function QuoteCheckout() {
     );
   }
 
+  // 🚀 Safely parse the database total into a number to prevent crashes
+  const displayTotal = finalTotal || parseFloat(quoteData?.total) || 0;
+
   return (
     <GlassLayout>
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8 relative">
         <h1 className="text-3xl font-bold text-white mb-6">Complete Your Booking</h1>
 
         {error && (
@@ -176,6 +182,8 @@ export default function QuoteCheckout() {
         )}
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Left Column: Form Inputs */}
           <div className="space-y-4">
             <BookingDatePicker
               value={bookingDate}
@@ -246,42 +254,71 @@ export default function QuoteCheckout() {
             </div>
           </div>
 
+          {/* Right Column: Checkout Card */}
           <div className="flex flex-col h-full">
-            {quoteData ? (
-              <ReviewSummary
-                // 🚀 Restored quoteData so the table has items instantly
-                quoteData={quoteData}
-                
-                // 🚀 Passing breakdown so it works smoothly after 500ms
-                breakdown={breakdown || []}
-                
-                // Passing these just in case your component still expects them
-                selectedAreas={quoteData.selected_areas || []}
-                quantities={quoteData.quantities || {}}
-                carpets={quoteData.carpets || {}}
-                appliances={quoteData.appliances || {}}
-                
-                // 🚀 Safe numeric fallbacks
-                finalTotal={finalTotal || parseFloat(quoteData.total) || 0}
-                total={finalTotal || parseFloat(quoteData.total) || 0} 
-                discountCode={discountCode}
-              />
-            ) : (
-              <div className="p-6 bg-white/10 rounded-xl text-white">
-                <p>Loading your summary…</p>
+            <div className="bg-white/10 rounded-xl p-6 border border-white/20 flex flex-col h-full shadow-lg">
+              <h2 className="text-xl font-semibold text-white mb-6">Booking Overview</h2>
+              
+              <div className="flex justify-between items-center mb-6">
+                <span className="text-gray-300 text-lg">Estimated Total</span>
+                <span className="text-3xl font-bold text-white">
+                  £{displayTotal.toFixed(2)}
+                </span>
               </div>
-            )}
-            
-            <button
-              type="submit"
-              disabled={submitting || isCalculating || (!finalTotal && !quoteData?.total)}
-              className="mt-8 w-full py-3 bg-[#915EFF] hover:bg-[#7c4dff] text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
-            >
-              {submitting ? "Confirming…" : isCalculating ? "Calculating..." : "Confirm Booking"}
-            </button>
+
+              {/* 🚀 Button to open the Pop Box modal */}
+              <button
+                type="button"
+                onClick={() => setShowSummaryModal(true)}
+                className="w-full py-2 mb-6 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors border border-white/20"
+              >
+                View Summary Breakdown
+              </button>
+
+              <div className="mt-auto pt-4 border-t border-white/10">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-4 bg-[#915EFF] hover:bg-[#7c4dff] text-white rounded-lg font-semibold text-lg transition-colors disabled:opacity-50"
+                >
+                  {submitting ? "Confirming Booking…" : "Confirm Booking"}
+                </button>
+              </div>
+            </div>
           </div>
         </form>
       </div>
+
+      {/* 🚀 The Pop Box Modal for the ReviewSummary */}
+      {showSummaryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#1a1a2e] border border-white/20 rounded-xl w-full max-w-lg relative max-h-[90vh] overflow-y-auto shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setShowSummaryModal(false)}
+              className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 rounded-full w-8 h-8 flex items-center justify-center z-10"
+            >
+              ✕
+            </button>
+            
+            {/* 🚀 Render the table with all the ready data */}
+            <div className="p-2 mt-8">
+              {quoteData ? (
+                <ReviewSummary
+                  quoteData={quoteData}
+                  breakdown={breakdown || []}
+                  selectedAreas={quoteData.selected_areas || []}
+                  quantities={quoteData.quantities || {}}
+                  carpets={quoteData.carpets || {}}
+                  appliances={quoteData.appliances || {}}
+                  total={displayTotal} 
+                  discountCode={discountCode}
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSuccess && (
         <BookingSuccessModal
