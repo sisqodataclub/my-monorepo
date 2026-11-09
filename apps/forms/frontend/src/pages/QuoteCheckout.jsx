@@ -5,9 +5,7 @@ import api from "../api";
 import GlassLayout from "../components/ui/GlassLayout";
 import BookingDatePicker from "../components/ui/BookingDatePicker";
 import TimeSlotSelector from "../components/ui/TimeSlotSelector";
-import ReviewSummary from "../components/ReviewSummary";
 import BookingSuccessModal from "../components/BookingSuccessModal";
-import useQuoteCalculator from "../hooks/useQuoteCalculator";
 
 export default function QuoteCheckout() {
   const [searchParams] = useSearchParams();
@@ -20,9 +18,6 @@ export default function QuoteCheckout() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [modalVariant, setModalVariant] = useState("default");
   const [quoteData, setQuoteData] = useState(null);
-  
-  // 🚀 Controls the Summary Modal Pop Box
-  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   const [bookingDate, setBookingDate] = useState("");
   const [timeslot, setTimeslot] = useState("");
@@ -32,20 +27,6 @@ export default function QuoteCheckout() {
   const [address, setAddress] = useState("");
   const [postcode, setPostcode] = useState("");
   const [phone, setPhone] = useState("");
-  const [discountCode, setDiscountCode] = useState("");
-
-  // 🚀 Grab breakdown from the hook so the table has the final items ready
-  const { finalTotal, breakdown } = useQuoteCalculator({
-    selectedAreas: quoteData?.selected_areas || [],
-    quantities: quoteData?.quantities || {},
-    carpets: quoteData?.carpets || {},
-    appliances: quoteData?.appliances || {},
-    details: {
-      furnished_status: quoteData?.furnished_status,
-      biohazard: quoteData?.biohazard,
-    },
-    discountCode,
-  });
 
   useEffect(() => {
     if (!quoteId) {
@@ -124,7 +105,6 @@ export default function QuoteCheckout() {
         payment_method: paymentMethod,
         property_details: { address, postcode },
         phone,
-        discount_code: discountCode,
       });
 
       const returnedStatus = res?.data?.status;
@@ -167,8 +147,8 @@ export default function QuoteCheckout() {
     );
   }
 
-  // 🚀 Safely parse the database total into a number to prevent crashes
-  const displayTotal = finalTotal || parseFloat(quoteData?.total) || 0;
+  // Safely parse the total directly from the database response
+  const displayTotal = parseFloat(quoteData?.total) || 0;
 
   return (
     <GlassLayout>
@@ -243,42 +223,24 @@ export default function QuoteCheckout() {
                 className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
               />
             </div>
-            <div>
-              <label className="block text-white mb-1">Discount Code</label>
-              <input
-                type="text"
-                value={discountCode}
-                onChange={(e) => setDiscountCode(e.target.value)}
-                className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
-              />
-            </div>
           </div>
 
-          {/* Right Column: Checkout Card */}
+          {/* Right Column: Clean Checkout Card */}
           <div className="flex flex-col h-full">
             <div className="bg-white/10 rounded-xl p-6 border border-white/20 flex flex-col h-full shadow-lg">
               <h2 className="text-xl font-semibold text-white mb-6">Booking Overview</h2>
               
               <div className="flex justify-between items-center mb-6">
-                <span className="text-gray-300 text-lg">Estimated Total</span>
+                <span className="text-gray-300 text-lg">Total Amount</span>
                 <span className="text-3xl font-bold text-white">
                   £{displayTotal.toFixed(2)}
                 </span>
               </div>
 
-              {/* 🚀 Button to open the Pop Box modal */}
-              <button
-                type="button"
-                onClick={() => setShowSummaryModal(true)}
-                className="w-full py-2 mb-6 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors border border-white/20"
-              >
-                View Summary Breakdown
-              </button>
-
               <div className="mt-auto pt-4 border-t border-white/10">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || displayTotal === 0}
                   className="w-full py-4 bg-[#915EFF] hover:bg-[#7c4dff] text-white rounded-lg font-semibold text-lg transition-colors disabled:opacity-50"
                 >
                   {submitting ? "Confirming Booking…" : "Confirm Booking"}
@@ -289,37 +251,6 @@ export default function QuoteCheckout() {
         </form>
       </div>
 
-      {/* 🚀 The Pop Box Modal for the ReviewSummary */}
-      {showSummaryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#1a1a2e] border border-white/20 rounded-xl w-full max-w-lg relative max-h-[90vh] overflow-y-auto shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setShowSummaryModal(false)}
-              className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 rounded-full w-8 h-8 flex items-center justify-center z-10"
-            >
-              ✕
-            </button>
-            
-            {/* 🚀 Render the table with all the ready data */}
-            <div className="p-2 mt-8">
-              {quoteData ? (
-                <ReviewSummary
-                  quoteData={quoteData}
-                  breakdown={breakdown || []}
-                  selectedAreas={quoteData.selected_areas || []}
-                  quantities={quoteData.quantities || {}}
-                  carpets={quoteData.carpets || {}}
-                  appliances={quoteData.appliances || {}}
-                  total={displayTotal} 
-                  discountCode={discountCode}
-                />
-              ) : null}
-            </div>
-          </div>
-        </div>
-      )}
-
       {showSuccess && (
         <BookingSuccessModal
           variant={modalVariant}
@@ -329,3 +260,5 @@ export default function QuoteCheckout() {
     </GlassLayout>
   );
 }
+
+
