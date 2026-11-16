@@ -5,7 +5,6 @@ import api from "../api";
 import GlassLayout from "../components/ui/GlassLayout";
 import BookingDatePicker from "../components/ui/BookingDatePicker";
 import TimeSlotSelector from "../components/ui/TimeSlotSelector";
-import BookingSuccessModal from "../components/BookingSuccessModal";
 
 export default function QuoteCheckout() {
   const [searchParams] = useSearchParams();
@@ -15,8 +14,7 @@ export default function QuoteCheckout() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [modalVariant, setModalVariant] = useState("default");
+  const [justConfirmed, setJustConfirmed] = useState(false);
   const [quoteData, setQuoteData] = useState(null);
 
   const [bookingDate, setBookingDate] = useState("");
@@ -49,7 +47,8 @@ export default function QuoteCheckout() {
         setQuoteData(data);
         setBookingDate(data.selected_datetime?.booking_date || "");
         setTimeslot(data.selected_datetime?.timeslot || "");
-        setPaymentMethod(data.payment_method || "");
+        // Clear legacy "card" value if present on an older quote
+        setPaymentMethod(data.payment_method === "card" ? "" : (data.payment_method || ""));
         setAddress(data.property_details?.address || "");
         setPostcode(data.property_details?.postcode || "");
         setPhone(data.phone || "");
@@ -104,12 +103,12 @@ export default function QuoteCheckout() {
         phone,
       });
 
-      setModalVariant("default");
-      setShowSuccess(true);
+      setJustConfirmed(true);
       setQuoteData((prev) => ({ ...prev, status: "confirmed" }));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error(err);
-      setError("Could not confirm your booking. Please try again.");
+      setError("Could not confirm your booking. Please try again or contact us below.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSubmitting(false);
@@ -129,8 +128,18 @@ export default function QuoteCheckout() {
   if (error && !quoteData) {
     return (
       <GlassLayout>
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-4 text-center">
           <p className="text-white text-lg">{error}</p>
+          <p className="text-gray-300 text-sm">
+            Need help? Email{" "}
+            <a href="mailto:clean@ddeepcleaningservices.com" className="text-blue-400 underline">
+              clean@ddeepcleaningservices.com
+            </a>{" "}
+            or call / WhatsApp{" "}
+            <a href="tel:07459416262" className="text-blue-400 underline">
+              07459 416262
+            </a>
+          </p>
           <button
             onClick={() => navigate("/")}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -142,7 +151,8 @@ export default function QuoteCheckout() {
     );
   }
 
-  if (quoteData && quoteData.status === "confirmed" && !showSuccess) {
+  // Full-screen confirmation receipt (shows both immediately after submit AND if reopened later)
+  if (quoteData && quoteData.status === "confirmed") {
     return (
       <GlassLayout>
         <div className="flex items-center justify-center min-h-screen px-4 py-8">
@@ -152,9 +162,13 @@ export default function QuoteCheckout() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
             </div>
-            <h2 className="text-3xl font-bold text-white mb-4">Booking Already Confirmed</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">
+              {justConfirmed ? "Booking Confirmed!" : "Booking Already Confirmed"}
+            </h2>
             <p className="text-gray-200 mb-8 text-lg leading-relaxed">
-              This booking is already secured. Please check your email for the booking details and receipt.
+              {justConfirmed
+                ? "Thank you! Your booking has been confirmed. Please check your email for your booking details and receipt."
+                : "This booking is already secured. Please check your email for the booking details and receipt."}
             </p>
 
             <div className="bg-black/20 rounded-xl p-6 text-left mb-8 border border-white/10">
@@ -225,7 +239,6 @@ export default function QuoteCheckout() {
                 className="w-full p-2 rounded-lg bg-white/10 text-white border border-white/20"
               >
                 <option value="" className="text-black">Select…</option>
-                <option value="card" className="text-black">Card</option>
                 <option value="cash" className="text-black">Cash</option>
                 <option value="bank_transfer" className="text-black">Bank Transfer</option>
               </select>
@@ -276,7 +289,7 @@ export default function QuoteCheckout() {
                 </span>
               </div>
 
-              <div className="mt-auto pt-4 border-t border-white/10">
+              <div className="mt-auto pt-4 border-t border-white/10 space-y-4">
                 <button
                   type="submit"
                   disabled={submitting || displayTotal === 0}
@@ -284,21 +297,34 @@ export default function QuoteCheckout() {
                 >
                   {submitting ? "Confirming Booking…" : "Confirm Booking"}
                 </button>
+
+                <div className="bg-black/20 rounded-lg p-4 border border-white/10 text-sm text-gray-300">
+                  <p className="font-medium text-white mb-1">Having trouble confirming your booking?</p>
+                  <p>
+                    Contact us via email at{" "}
+                    <a
+                      href="mailto:clean@ddeepcleaningservices.com"
+                      className="text-blue-400 hover:text-blue-300 underline"
+                    >
+                      clean@ddeepcleaningservices.com
+                    </a>{" "}
+                    or call / WhatsApp{" "}
+                    <a
+                      href="tel:07459416262"
+                      className="text-blue-400 hover:text-blue-300 underline"
+                    >
+                      07459 416262
+                    </a>
+                    .
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </form>
       </div>
-
-      {showSuccess && (
-        <BookingSuccessModal
-          variant={modalVariant}
-          onClose={() => setShowSuccess(false)}
-        />
-      )}
     </GlassLayout>
   );
 }
-
 
 
