@@ -5,7 +5,7 @@ import api from "../api";
 import GlassLayout from "../components/ui/GlassLayout";
 import BookingDatePicker from "../components/ui/BookingDatePicker";
 import TimeSlotSelector from "../components/ui/TimeSlotSelector";
-import BookingSuccessModal from "../components/BookingSuccessModal"; // 🚀 Modal is back!
+import BookingSuccessModal from "../components/BookingSuccessModal";
 
 export default function QuoteCheckout() {
   const [searchParams] = useSearchParams();
@@ -83,8 +83,8 @@ export default function QuoteCheckout() {
   }, [quoteId]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
-    
+    e.preventDefault();
+
     if (!bookingDate || !timeslot || !paymentMethod || !address || !postcode || !phone) {
       setError("Please fill in all required fields to confirm your booking.");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -104,13 +104,9 @@ export default function QuoteCheckout() {
         phone,
       });
 
-      // 🚀 Trigger the modal to show!
       setModalVariant("default");
       setShowSuccess(true);
-      
-      // Update local status so when the modal closes, the receipt screen appears underneath
-      setQuoteData(prev => ({ ...prev, status: "confirmed" }));
-
+      setQuoteData((prev) => ({ ...prev, status: "confirmed" }));
     } catch (err) {
       console.error(err);
       setError("Could not confirm your booking. Please try again.");
@@ -146,7 +142,6 @@ export default function QuoteCheckout() {
     );
   }
 
-  // 🚀 THE INTERCEPT: Only skips the form if the modal is NOT currently showing
   if (quoteData && quoteData.status === "confirmed" && !showSuccess) {
     return (
       <GlassLayout>
@@ -157,11 +152,11 @@ export default function QuoteCheckout() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
             </div>
-            <h2 className="text-3xl font-bold text-white mb-4">Booking Confirmed</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">Booking Already Confirmed</h2>
             <p className="text-gray-200 mb-8 text-lg leading-relaxed">
-              This booking is secured. Please check your email for the booking details and receipt.
+              This booking is already secured. Please check your email for the booking details and receipt.
             </p>
-            
+
             <div className="bg-black/20 rounded-xl p-6 text-left mb-8 border border-white/10">
               <h3 className="text-white font-semibold mb-4">Need help or need to make changes?</h3>
               <div className="space-y-3 text-gray-300">
@@ -192,7 +187,6 @@ export default function QuoteCheckout() {
     );
   }
 
-  // Safely parse the total directly from the database response
   const displayTotal = parseFloat(quoteData?.total) || 0;
 
   return (
@@ -207,11 +201,13 @@ export default function QuoteCheckout() {
         )}
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
           <div className="space-y-4">
             <BookingDatePicker
               value={bookingDate}
-              onChange={setBookingDate}
+              onChange={(d) => {
+                setBookingDate(d?.booking_date ?? d);
+                setTimeslot("");
+              }}
               blockedDates={blockedDates}
             />
             <TimeSlotSelector
@@ -272,7 +268,7 @@ export default function QuoteCheckout() {
           <div className="flex flex-col h-full">
             <div className="bg-white/10 rounded-xl p-6 border border-white/20 flex flex-col h-full shadow-lg">
               <h2 className="text-xl font-semibold text-white mb-6">Booking Overview</h2>
-              
+
               <div className="flex justify-between items-center mb-6">
                 <span className="text-gray-300 text-lg">Total Amount</span>
                 <span className="text-3xl font-bold text-white">
@@ -294,8 +290,6 @@ export default function QuoteCheckout() {
         </form>
       </div>
 
-      {/* 🚀 Render the success modal. When the user closes it, setShowSuccess becomes false, 
-          which instantly triggers the full-screen intercept block above! */}
       {showSuccess && (
         <BookingSuccessModal
           variant={modalVariant}
@@ -305,3 +299,6 @@ export default function QuoteCheckout() {
     </GlassLayout>
   );
 }
+
+
+
