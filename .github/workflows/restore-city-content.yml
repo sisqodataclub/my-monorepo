@@ -1,0 +1,35 @@
+name: restore-city-content
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/restore-city-content.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/salford-slug-dynamic-content-v2
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Write cityContent.ts from _orig_cityContent.ts
+        run: |
+          python3 - <<'PY'
+import pathlib
+src = pathlib.Path('_orig_cityContent.ts')
+dst = pathlib.Path('apps/ddeep/app/components/landing/cityContent.ts')
+dst.write_bytes(src.read_bytes())
+print('wrote', dst, dst.stat().st_size)
+PY
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add 'apps/ddeep/app/components/landing/cityContent.ts'
+          git commit -m 'restore: cityContent.ts from _orig_cityContent.ts (63447B)' || echo 'nothing to commit'
+          git push origin HEAD:fix/salford-slug-dynamic-content-v2
