@@ -355,7 +355,7 @@ export const cityContent: Record<string, CityContent> = {
     ],
   },
 
-  salford: {
+  'salford-quays': {
     name: "Salford",
     intro:
       "Salford stretches from the regenerated Quays to the terraces of Ordsall and the family streets of Swinton and Walkden, and we clean across all of it. MediaCityUK apartments, Salford Quays waterside flats and student housing around the University of Salford all get the same vetted, insured D DEEP team.",
@@ -418,7 +418,7 @@ export const cityContent: Record<string, CityContent> = {
       },
     ],
   },
-  trafford: {
+  'trafford-park': {
     name: "Trafford",
     intro:
       "Trafford takes in everything from the terraces of Stretford and Old Trafford to the leafy family streets of Sale, Timperley and Hale. We clean across the borough — matchday lets near Old Trafford, family homes in Urmston, and professional apartments in Altrincham's town centre.",
