@@ -28,6 +28,8 @@ export interface CityContent {
   landmarks: string[];
   /** Short line about local coverage / response for this city. */
   coverageNote: string;
+  /** Optional extra rich-content sections rendered on the city hub page. */
+  dynamicSections?: { heading: string; body: string }[];
   /** Per-service body blurb overrides, keyed by service slug. */
   serviceBlurbs: Record<string, string>;
   /** City-specific FAQs (distinct from the shared service FAQs). */
@@ -380,6 +382,23 @@ export const cityContent: Record<string, CityContent> = {
     ],
     coverageNote:
       "Covering M3, M5, M6, M7, M27, M28, M30 and M50, from Salford Quays apartments to family homes in Worsley and Walkden, with same-week slots.",
+    dynamicSections: [
+      {
+        heading: "Why Salford Quays",
+        body:
+          "Salford Quays has become one of the North West's most sought-after places to live and work, and it needs a cleaning team that understands its mix of high-spec waterside apartments, busy MediaCityUK studios and older Ordsall terraces. Our Salford Quays cleaners are vetted, insured and briefed on building access, concierge rules and lift bookings, so regular, deep and end-of-tenancy cleans run without a hitch whether you're in a Quays penthouse or a family home a few streets back.",
+      },
+      {
+        heading: "Recent Projects in Salford",
+        body:
+          "Over the past year we've completed regular cleans for MediaCityUK apartment residents, end-of-tenancy turnarounds for landlords around the University of Salford, deep cleans for new-build flats on the Quays waterfront, and out-of-hours kitchen deep cleans for bars and restaurants along Chapel Street. We've also handled after-builders cleans on regeneration sites around Ordsall and Pendleton, and summer student-accommodation changeovers timed to the academic calendar.",
+      },
+      {
+        heading: "Local Coverage Across Salford",
+        body:
+          "From M3 and M50 on the Quays to M27, M28 and M30 around Swinton, Walkden and Worsley, our Salford team covers the whole borough with same-week slots. We know the access quirks of high-rise Quays buildings, the parking realities around MediaCityUK and the tight turnarounds landlords need in the student belt, and we quote most Salford jobs within 24 hours.",
+      },
+    ],
     serviceBlurbs: {
       "regular-cleaning":
         "Weekly and fortnightly cleans for Salford homes, from MediaCityUK apartments with floor-to-ceiling glass to family houses in Monton and Worsley.",
