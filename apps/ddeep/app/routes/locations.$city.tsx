@@ -139,6 +139,20 @@ export default function LocationHub() {
         </section>
       )}
 
+      {/* Dynamic Sections (per-city long-form content) */}
+      {pageContent?.dynamicSections?.length ? (
+        <section className="py-16 px-6 max-w-7xl mx-auto">
+          <div className="space-y-8">
+            {pageContent.dynamicSections.map((section, idx) => (
+              <div key={idx} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                <h2 className="text-2xl font-black text-slate-900 mb-4">{section.heading}</h2>
+                <p className="text-slate-600 text-lg leading-relaxed">{section.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* Services Listing Section with Header */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
