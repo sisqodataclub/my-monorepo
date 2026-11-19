@@ -1,0 +1,92 @@
+name: add-dynamic-sections
+on:
+  push:
+    branches:
+      - fix/salford-slug-dynamic-content-v2
+    paths:
+      - '.github/workflows/add-dynamic-sections.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/salford-slug-dynamic-content-v2
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Insert dynamic sections into locations.$city.tsx
+        run: |
+          python3 - <<'PY'
+          p = 'apps/ddeep/app/routes/locations.$city.tsx'
+          s = open(p, encoding='utf-8').read()
+          before = len(s)
+          marker = '      <HomeReviews />'
+          assert marker in s, 'HomeReviews marker not found'
+          block = '''      {/* Dynamic testimonials (rotating) */}
+      {pageContent && pageContent.faqs?.length ? (
+        <section className="py-16 px-6 max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-8 text-center">
+            What {cityName} Customers Ask
+          </h2>
+          <div className="space-y-4">
+            {pageContent.faqs.slice(0, 4).map((faq, idx) => (
+              <details key={idx} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <summary className="font-bold text-slate-900 cursor-pointer">{faq.question}</summary>
+                <p className="mt-3 text-slate-600">{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Neighbourhood / postcode coverage block */}
+      {pageContent ? (
+        <section className="py-16 px-6 max-w-7xl mx-auto">
+          <div className="bg-gradient-to-br from-green-50 to-white rounded-3xl p-10 border border-green-100">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">
+              Neighbourhoods &amp; Postcodes We Cover in {cityName}
+            </h2>
+            <p className="text-slate-600 text-lg mb-6">
+              {pageContent.coverageNote || `We cover all major neighbourhoods across ${cityName}.`}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(pageContent.areas || []).map((area, idx) => (
+                <span key={idx} className="px-4 py-2 rounded-full bg-white border border-green-200 text-green-800 text-sm font-semibold shadow-sm">
+                  {area}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Service-specific highlights strip */}
+      <section className="py-12 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { icon: <FaShieldAlt />, label: 'Vetted & Insured' },
+            { icon: <FaLeaf />, label: 'Eco-Friendly Products' },
+            { icon: <FaCertificate />, label: '5-Star Rated' },
+            { icon: <FaMapMarkerAlt />, label: `Local to ${cityName}` },
+          ].map((h, idx) => (
+            <div key={idx} className="flex flex-col items-center gap-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-center">
+              <div className="text-green-600 text-2xl">{h.icon}</div>
+              <span className="text-sm font-bold text-slate-800">{h.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+'''
+          s = s.replace(marker, block + marker, 1)
+          open(p, 'w', encoding='utf-8').write(s)
+          print('locations.$city.tsx', before, '->', len(s))
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'code-auditor-bot'
+          git config user.email 'bot@example.com'
+          git add 'apps/ddeep/app/routes/locations.$city.tsx'
+          git diff --cached --quiet || git commit -m 'feat(ddeep): add dynamic testimonials, coverage block, highlights strip to city page'
+          git push origin HEAD:fix/salford-slug-dynamic-content-v2
