@@ -140,15 +140,26 @@ export default function LocationHub() {
       )}
 
       {/* Dynamic Sections (per-city long-form content) */}
-      {pageContent?.dynamicSections?.length ? (
+      {pageContent?.dynamicSections && Object.keys(pageContent.dynamicSections).length > 0 ? (
         <section className="py-16 px-6 max-w-7xl mx-auto">
           <div className="space-y-8">
-            {pageContent.dynamicSections.map((section, idx) => (
-              <div key={idx} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                <h2 className="text-2xl font-black text-slate-900 mb-4">{section.heading}</h2>
-                <p className="text-slate-600 text-lg leading-relaxed">{section.body}</p>
-              </div>
-            ))}
+            {Object.entries(pageContent.dynamicSections)
+              .filter(([, body]) => typeof body === 'string' && body.trim().length > 0)
+              .map(([key, body]) => {
+                const headings: Record<string, string> = {
+                  story: 'Our Story',
+                  process: 'Our Process',
+                  areas: 'Areas We Serve',
+                  reviews: 'What Clients Say',
+                };
+                const heading = headings[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
+                return (
+                  <div key={key} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                    <h2 className="text-2xl font-black text-slate-900 mb-4">{heading}</h2>
+                    <p className="text-slate-600 text-lg leading-relaxed">{body}</p>
+                  </div>
+                );
+              })}
           </div>
         </section>
       ) : null}
