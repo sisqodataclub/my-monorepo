@@ -1,0 +1,36 @@
+name: fix-salford-slugs
+on:
+  push:
+    branches:
+      - fix/salford-slug-dynamic-content-v2
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/salford-slug-dynamic-content-v2
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Rename slugs in cityContent.ts
+        run: |
+          python3 - <<'PY'
+          import re
+          p = 'apps/ddeep/app/components/landing/cityContent.ts'
+          s = open(p, encoding='utf-8').read()
+          before = len(s)
+          s = re.sub(r"(^|\n)(\s*)salford:\s*\{", r"\1\2'salford-quays': {", s, count=1)
+          s = re.sub(r"(^|\n)(\s*)trafford:\s*\{", r"\1\2'trafford-park': {", s, count=1)
+          open(p, 'w', encoding='utf-8').write(s)
+          print('cityContent.ts', before, '->', len(s))
+          assert "'salford-quays'" in s, 'salford-quays key missing'
+          assert "'trafford-park'" in s, 'trafford-park key missing'
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'code-auditor-bot'
+          git config user.email 'bot@example.com'
+          git add apps/ddeep/app/components/landing/cityContent.ts
+          git diff --cached --quiet || git commit -m 'fix(ddeep): rename salford/trafford keys to salford-quays/trafford-park'
+          git push origin HEAD:fix/salford-slug-dynamic-content-v2
