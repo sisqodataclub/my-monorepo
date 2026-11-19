@@ -9,17 +9,27 @@ jobs:
   patch:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout branch
+        uses: actions/checkout@v4
         with:
           ref: fix/salford-slug-dynamic-content-v2
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
       - name: Add Salford dynamic sections
+        shell: bash
         run: |
-          python3 - <<'PY'
+          set -euo pipefail
+          cat > /tmp/patch_salford.py <<'PYEOF'
+          import re
           p = 'apps/ddeep/app/routes/locations.$city.tsx'
           s = open(p, encoding='utf-8').read()
-          marker = '      <HomeReviews />'
-          assert marker in s, 'anchor HomeReviews not found'
+          if 'Salford Dynamic Content Sections' in s:
+              print('already present; nothing to do')
+              raise SystemExit(0)
+          m = re.search(r'^[ \t]*<HomeReviews\s*/>[ \t]*$', s, re.M)
+          if not m:
+              raise SystemExit('anchor <HomeReviews /> not found')
+          marker = m.group(0)
           block = '''      {/* Salford Dynamic Content Sections (additive) */}
       {citySlug === "salford-quays" && (
         <section className="py-16 px-6 max-w-7xl mx-auto">
@@ -44,16 +54,22 @@ jobs:
       )}
 
 '''
-          if 'Salford Dynamic Content Sections' not in s:
-              s = s.replace(marker, block + marker, 1)
+          s = s.replace(marker, block + marker, 1)
           open(p, 'w', encoding='utf-8').write(s)
-          assert 'Salford Dynamic Content Sections' in s, 'insert failed'
+          assert 'Salford Dynamic Content Sections' in s
           print('patched locations.$city.tsx')
-          PY
-      - name: Commit
+          PYEOF
+          python3 /tmp/patch_salford.py
+      - name: Commit and push
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name 'code-auditor-bot'
           git config user.email 'bot@example.com'
           git add 'apps/ddeep/app/routes/locations.$city.tsx'
-          git diff --cached --quiet || git commit -m 'feat(ddeep): add Salford dynamic content sections to city page'
-          git push origin HEAD:fix/salford-slug-dynamic-content-v2
+          if git diff --cached --quiet; then
+            echo 'no changes to commit'
+            exit 0
+          fi
+          git commit -m 'feat(ddeep): add Salford dynamic content sections to city page'
+          git push origin HEAD:refs/heads/fix/salford-slug-dynamic-content-v2
