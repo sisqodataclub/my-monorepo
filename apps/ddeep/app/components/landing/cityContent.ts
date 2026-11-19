@@ -28,12 +28,12 @@ export interface CityContent {
   landmarks: string[];
   /** Short line about local coverage / response for this city. */
   coverageNote: string;
-  /** Optional extra rich-content sections rendered on the city hub page. */
-  dynamicSections?: { heading: string; body: string }[];
   /** Per-service body blurb overrides, keyed by service slug. */
   serviceBlurbs: Record<string, string>;
   /** City-specific FAQs (distinct from the shared service FAQs). */
   faqs: CityFAQ[];
+  /** Optional long-form dynamic sections rendered on the city page when present. */
+  dynamicSections?: { story?: string; process?: string; areas?: string; reviews?: string };
 }
 
 export const cityContent: Record<string, CityContent> = {
@@ -357,7 +357,7 @@ export const cityContent: Record<string, CityContent> = {
     ],
   },
 
-  "salford-quays": {
+  'salford-quays': {
     name: "Salford",
     intro:
       "Salford stretches from the regenerated Quays to the terraces of Ordsall and the family streets of Swinton and Walkden, and we clean across all of it. MediaCityUK apartments, Salford Quays waterside flats and student housing around the University of Salford all get the same vetted, insured D DEEP team.",
@@ -382,23 +382,6 @@ export const cityContent: Record<string, CityContent> = {
     ],
     coverageNote:
       "Covering M3, M5, M6, M7, M27, M28, M30 and M50, from Salford Quays apartments to family homes in Worsley and Walkden, with same-week slots.",
-    dynamicSections: [
-      {
-        heading: "Why Salford Quays",
-        body:
-          "Salford Quays has become one of the North West's most sought-after places to live and work, and it needs a cleaning team that understands its mix of high-spec waterside apartments, busy MediaCityUK studios and older Ordsall terraces. Our Salford Quays cleaners are vetted, insured and briefed on building access, concierge rules and lift bookings, so regular, deep and end-of-tenancy cleans run without a hitch whether you're in a Quays penthouse or a family home a few streets back.",
-      },
-      {
-        heading: "Recent Projects in Salford",
-        body:
-          "Over the past year we've completed regular cleans for MediaCityUK apartment residents, end-of-tenancy turnarounds for landlords around the University of Salford, deep cleans for new-build flats on the Quays waterfront, and out-of-hours kitchen deep cleans for bars and restaurants along Chapel Street. We've also handled after-builders cleans on regeneration sites around Ordsall and Pendleton, and summer student-accommodation changeovers timed to the academic calendar.",
-      },
-      {
-        heading: "Local Coverage Across Salford",
-        body:
-          "From M3 and M50 on the Quays to M27, M28 and M30 around Swinton, Walkden and Worsley, our Salford team covers the whole borough with same-week slots. We know the access quirks of high-rise Quays buildings, the parking realities around MediaCityUK and the tight turnarounds landlords need in the student belt, and we quote most Salford jobs within 24 hours.",
-      },
-    ],
     serviceBlurbs: {
       "regular-cleaning":
         "Weekly and fortnightly cleans for Salford homes, from MediaCityUK apartments with floor-to-ceiling glass to family houses in Monton and Worsley.",
@@ -436,8 +419,18 @@ export const cityContent: Record<string, CityContent> = {
           "Most Salford quotes are issued within 24 hours of your enquiry, and we can usually offer a first clean within the same week across M3-M50.",
       },
     ],
+    dynamicSections: {
+      story:
+        "Salford is not one place but several stitched together by the Ship Canal. On the Quays, glass towers at MediaCityUK rise where the Victorian docks used to load cotton; ten minutes inland, Ordsall's red-brick terraces and the Peel Park campus feel like a different century. We clean across that whole spread — the concierge high-rises at Salford Quays, the student lets off Frederick Road, and the family semis out towards Worsley and Boothstown. It's the same vetted, insured team whichever postcode you're in, but the job itself changes: a Quays apartment with floor-to-ceiling glass needs different care from a 1930s terrace in Monton with original coving and a coal-fire hearth.",
+      process:
+        "Every Salford clean starts with a short walkthrough — in person for larger jobs, or a video survey for standard domestic cleans — so we can quote against what's actually there rather than a generic size band. For Quays and MediaCityUK apartments we book lift access and check concierge rules before the visit so nothing stalls on the day. Regular clients get the same cleaner each visit where possible; deep cleans and end-of-tenancy jobs are two-person teams with a written checklist covering limescale, oven interiors, skirting, and inside-window glass. Student changeovers around Peel Park are scheduled to the academic calendar, with a fixed turnaround slot between tenancies.",
+      areas:
+        "We work the full Salford spread: Salford Quays and MediaCityUK (M50), Ordsall and Pendleton (M5/M6), Eccles and Monton (M30), Swinton and Pendlebury (M27), Walkden and Boothstown (M28), Worsley (M28), and Broughton (M7). The Quays and MediaCityUK jobs are usually weekday-daytime for offices and early-evening for apartments; the residential streets in Worsley, Monton and Swinton are mostly weekday mornings and Saturday slots. If you're on the border with Trafford or Manchester we'll still quote — just tell us the postcode when you enquire.",
+      reviews:
+        "Salford clients tend to mention two things: reliability on the Quays high-rises (where a missed slot means a wasted concierge booking) and how much the deep clean actually shifts on older Ordsall and Pendleton terraces. Landlords around the University of Salford use us for the summer changeover because the checklist is written down and the deposit-standard clean is consistent flat to flat. We don't cherry-pick postcodes — a Boothstown semi gets the same team and the same checklist as a MediaCityUK penthouse.",
+    },
   },
-  "trafford-park": {
+  'trafford-park': {
     name: "Trafford",
     intro:
       "Trafford takes in everything from the terraces of Stretford and Old Trafford to the leafy family streets of Sale, Timperley and Hale. We clean across the borough — matchday lets near Old Trafford, family homes in Urmston, and professional apartments in Altrincham's town centre.",
