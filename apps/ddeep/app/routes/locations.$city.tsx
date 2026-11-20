@@ -61,6 +61,19 @@ export default function LocationHub() {
     },
   };
 
+  const faqSchema =
+    pageContent?.faqs && pageContent.faqs.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: pageContent.faqs.map((f) => ({
+            "@type": "Question",
+            name: f.question,
+            acceptedAnswer: { "@type": "Answer", text: f.answer },
+          })),
+        }
+      : null;
+
   return (
     <main className="w-full bg-slate-50 min-h-screen">
       {/* SEO Schema Injection */}
@@ -69,6 +82,13 @@ export default function LocationHub() {
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(locationSchema) }}
       />
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
 
       {/* Enhanced Hero Section */}
       <section className="relative w-full min-h-[60vh] flex flex-col items-center justify-center py-28 px-6 overflow-hidden">
