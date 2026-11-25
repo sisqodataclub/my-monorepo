@@ -355,6 +355,16 @@ export const cityContent: Record<string, CityContent> = {
           "Yes. The new apartment blocks around Stockport Market Place and the town centre are regular jobs for us, including concierge buildings.",
       },
     ],
+    dynamicSections: {
+      story:
+        "Manchester is a city of reinvention, and its housing stock shows it. The red-brick mills of Ancoats and the Northern Quarter have become loft apartments with original iron columns and floor-to-ceiling windows; a mile out, the Victorian terraces of Levenshulme, Withington and Chorlton still have their original coving, sash windows and coal-fire hearths. We clean across that whole spread — concierge blocks in M1-M4, student lets off the Oxford Road corridor, and family semis out towards Didsbury and Chorlton. It's the same vetted, insured team whichever postcode you're in, but the job changes: a glass-fronted Northern Quarter apartment needs different care from a 1900s terrace in Levenshulme with hard-water limescale and original plaster.",
+      process:
+        "Every Manchester clean starts with a short walkthrough — in person for larger jobs, or a video survey for standard domestic cleans — so we quote against what's actually there rather than a generic size band. For city-centre apartment blocks in M1-M4 we book concierge access and check parking rules before the visit so nothing stalls on the day. Regular clients get the same cleaner each visit where possible; deep cleans and end-of-tenancy jobs are two-person teams with a written checklist covering limescale, oven interiors, skirting, and inside-window glass. Student changeovers around Fallowfield and Withington are scheduled to the academic calendar, with a fixed turnaround slot between tenancies.",
+      areas:
+        "We work the full Manchester spread: the City Centre and Northern Quarter (M1-M4), Ancoats and New Islington (M4), Hulme and Moss Side (M15), Fallowfield and Rusholme (M14), Withington (M20), Levenshulme (M19), Chorlton (M21), and Didsbury (M20). City-centre and Northern Quarter jobs are usually weekday-daytime for offices and early-evening for apartments; the residential streets in Didsbury, Chorlton and Levenshulme are mostly weekday mornings and Saturday slots. If you're on the border with Salford or Trafford we'll still quote — just tell us the postcode when you enquire.",
+      reviews:
+        "Manchester clients tend to mention two things: reliability in the city-centre high-rises (where a missed slot means a wasted concierge booking) and how much the deep clean actually shifts on older Ancoats and Levenshulme terraces. Landlords around the Oxford Road corridor use us for the summer changeover because the checklist is written down and the deposit-standard clean is consistent flat to flat. We don't cherry-pick postcodes — a Levenshulme terrace gets the same team and the same checklist as a Northern Quarter penthouse.",
+    },
   },
 
   'salford-quays': {
