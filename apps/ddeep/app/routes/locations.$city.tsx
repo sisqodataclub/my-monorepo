@@ -7,6 +7,7 @@ import { getSeoMeta } from "../utils/seo";
 import HomeCTA from "../components/home/HomeCTA";
 import HomeReviews from "../components/home/HomeReviews";
 import HomeGallery from "../components/home/HomeGallery"; // ✅ 1. Imported HomeGallery
+import { HomeFAQ } from "../components/HomeFAQ";
 import { FaArrowRight, FaMapMarkerAlt, FaShieldAlt, FaLeaf, FaCertificate, FaCheckCircle } from "react-icons/fa";
 import HeroImage from "../assets/bg.jpg";
 
@@ -42,6 +43,18 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 export default function LocationHub() {
   const { cityName, citySlug, availableServices, pageContent } = useLoaderData<typeof loader>();
 
+  const businessAddress = {
+    streetAddress: "48a Gill Street",
+    addressLocality: "Manchester",
+    postalCode: "M9 4FZ",
+    addressRegion: "North West",
+    addressCountry: "GB",
+  };
+
+  const businessName = "D DEEP Cleaning Services";
+  const businessPhone = "07459416262";
+  const businessUrl = "https://www.ddeepcleaningservices.com";
+
   const locationSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -50,29 +63,73 @@ export default function LocationHub() {
     url: `https://www.ddeepcleaningservices.com/locations/${citySlug}/`,
     provider: {
       "@type": "LocalBusiness",
-      name: "D DEEP Cleaning Services",
-      url: "https://www.ddeepcleaningservices.com",
-      telephone: "07459416262",
+      name: businessName,
+      url: businessUrl,
+      telephone: businessPhone,
       address: {
         "@type": "PostalAddress",
-        addressRegion: "North West",
-        addressCountry: "GB",
+        ...businessAddress,
       },
     },
   };
 
-  const faqSchema =
-    pageContent?.faqs && pageContent.faqs.length > 0
-      ? {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: pageContent.faqs.map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }
-      : null;
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://www.ddeepcleaningservices.com/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Locations",
+        item: "https://www.ddeepcleaningservices.com/locations/",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: cityName,
+        item: `https://www.ddeepcleaningservices.com/locations/${citySlug}/`,
+      },
+    ],
+  };
+
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    serviceType: "Cleaning service",
+    areaServed: {
+      "@type": "City",
+      name: cityName,
+    },
+    provider: {
+      "@type": "LocalBusiness",
+      name: businessName,
+      url: businessUrl,
+      telephone: businessPhone,
+      address: {
+        "@type": "PostalAddress",
+        ...businessAddress,
+      },
+    },
+    url: `https://www.ddeepcleaningservices.com/locations/${citySlug}/`,
+  };
+
+  const faqSchema = pageContent?.faqs?.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: pageContent.faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: { "@type": "Answer", text: faq.answer },
+        })),
+      }
+    : null;
 
   return (
     <main className="w-full bg-slate-50 min-h-screen">
@@ -159,31 +216,6 @@ export default function LocationHub() {
         </section>
       )}
 
-      {/* Dynamic Sections (per-city long-form content) */}
-      {pageContent?.dynamicSections && Object.keys(pageContent.dynamicSections).length > 0 ? (
-        <section className="py-16 px-6 max-w-7xl mx-auto">
-          <div className="space-y-8">
-            {Object.entries(pageContent.dynamicSections)
-              .filter(([, body]) => typeof body === 'string' && body.trim().length > 0)
-              .map(([key, body]) => {
-                const headings: Record<string, string> = {
-                  story: 'Our Story',
-                  process: 'Our Process',
-                  areas: 'Areas We Serve',
-                  reviews: 'What Clients Say',
-                };
-                const heading = headings[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
-                return (
-                  <div key={key} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                    <h2 className="text-2xl font-black text-slate-900 mb-4">{heading}</h2>
-                    <p className="text-slate-600 text-lg leading-relaxed">{body}</p>
-                  </div>
-                );
-              })}
-          </div>
-        </section>
-      ) : null}
-
       {/* Services Listing Section with Header */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
@@ -215,6 +247,58 @@ export default function LocationHub() {
               </div>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* Service Blurbs (per-city, data-driven) */}
+      {pageContent?.serviceBlurbs && Object.keys(pageContent.serviceBlurbs).length > 0 && (
+        <section className="py-20 px-6 max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
+              What We Clean in {cityName}
+            </h2>
+            <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mb-4" />
+            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+              Local detail on how each of our services adapts to {cityName} homes and businesses.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Object.entries(pageContent.serviceBlurbs).map(([slug, blurb]) => {
+              const title = slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+              return (
+                <div key={slug} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                  <h3 className="text-xl font-black text-slate-900 mb-3">{title}</h3>
+                  <p className="text-slate-600 leading-relaxed">{blurb}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Map Embed */}
+      <section className="py-16 px-6 max-w-7xl mx-auto">
+        <div className="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm overflow-hidden">
+          {/* TODO(MAP): replace src with the real Google Maps embed URL for the {cityName} service area */}
+          <div className="w-full h-[400px] rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 text-center px-6">
+            <div>
+              <p className="font-bold text-slate-700 mb-2">Map placeholder — {cityName} service area</p>
+              <p className="text-sm">TODO(MAP): insert Google Maps iframe embed URL here.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Visible NAP Block */}
+      <section className="py-12 px-6 max-w-7xl mx-auto">
+        <div className="bg-slate-900 text-white rounded-3xl p-8 md:p-10">
+          <h2 className="text-2xl font-black mb-4">Contact D DEEP Cleaning Services — {cityName}</h2>
+          <ul className="space-y-2 text-slate-200">
+            <li><span className="font-semibold text-white">Business:</span> {businessName}</li>
+            <li><span className="font-semibold text-white">Phone:</span> <a href={`tel:${businessPhone}`} className="text-green-400 hover:underline">{businessPhone}</a></li>
+            {/* TODO(NAP): replace placeholder address with the real registered address */}
+            <li><span className="font-semibold text-white">Address:</span> {businessAddress.streetAddress}, {businessAddress.addressLocality}, {businessAddress.postalCode}, {businessAddress.addressRegion}, {businessAddress.addressCountry}</li>
+          </ul>
         </div>
       </section>
 
