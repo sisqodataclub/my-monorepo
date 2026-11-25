@@ -32,6 +32,8 @@ export interface CityContent {
   serviceBlurbs: Record<string, string>;
   /** City-specific FAQs (distinct from the shared service FAQs). */
   faqs: CityFAQ[];
+  /** Optional long-form dynamic sections rendered on the city page when present. */
+  dynamicSections?: { story?: string; process?: string; areas?: string; reviews?: string };
 }
 
 export const cityContent: Record<string, CityContent> = {
@@ -82,56 +84,31 @@ export const cityContent: Record<string, CityContent> = {
     },
     faqs: [
       {
-        question: "How much does cleaning cost in Manchester?",
-        answer:
-          "Prices depend on the size of the property, the type of clean (regular, deep, end-of-tenancy), and any extras like oven or carpet cleaning. We give a fixed, no-obligation quote upfront — request a free quote and we'll price your Manchester home or office exactly.",
-      },
-      {
-        question: "What affects the price of a cleaning service in Manchester?",
-        answer:
-          "The main factors are property size, number of rooms and bathrooms, current condition, and whether it's a one-off deep clean or a recurring visit. Access and parking in city-centre blocks (M1-M4) can also affect scheduling, and we'll confirm everything in your free quote.",
-      },
-      {
-        question: "Do you offer a free quote for Manchester cleans?",
-        answer:
-          "Yes — every Manchester job starts with a free, no-obligation quote. Tell us your postcode and the type of clean and we'll come back with a fixed price, usually the same day.",
-      },
-      {
-        question: "Can you do same-day or emergency cleans in Manchester?",
-        answer:
-          "Because Manchester is our base, we can often offer same-day slots for urgent end-of-tenancy or pre-viewing cleans in the city centre, and same-week slots across M1-M21. Call us and we'll tell you the earliest available time.",
-      },
-      {
-        question: "What's included in a deep clean in Manchester?",
-        answer:
-          "Our deep clean covers inside cupboards, skirting boards, limescale removal on tiles and taps, inside the oven and fridge, and thorough bathroom and kitchen detailing. It's built for Manchester's mix of period terraces and new-build apartments where dust and hard-water limescale build up.",
-      },
-      {
-        question: "Can you help me get my deposit back with an end-of-tenancy clean?",
-        answer:
-          "Yes — our end-of-tenancy cleans follow a landlord-ready checklist covering ovens, appliances, limescale, and inside windows, timed around Manchester's student changeover in Fallowfield, Withington and Hulme. We aim to meet the standard letting agents check against so you get your deposit back.",
-      },
-      {
-        question: "Are your Manchester cleaners insured and DBS-checked?",
-        answer:
-          "Yes — every D DEEP cleaner working in Manchester is fully insured and DBS-checked. We're a vetted local team, not a marketplace of freelancers, so you get the same trusted people each visit.",
-      },
-      {
-        question: "Which Manchester areas do you cover?",
-        answer:
-          "We cover the whole of Manchester including Ancoats, the Northern Quarter, Didsbury, Chorlton, Fallowfield, Levenshulme, Withington, Hulme and the city centre (M1-M21). If you're not sure whether we reach your postcode, just ask when you request your quote.",
-      },
-      {
-        question: "What is your cancellation policy?",
-        answer:
-          "We ask for at least 24 hours' notice to cancel or reschedule a Manchester clean so we can offer the slot to someone else. Last-minute cancellations may incur a small fee — full terms are confirmed when you book.",
-      },
-      {
         question: "Do you clean apartments in Manchester city centre with concierge access?",
         answer:
           "Yes. We regularly clean in M1-M4 apartment blocks and are used to booking in with concierge, collecting keys, and working around building access rules in the Northern Quarter and Ancoats.",
       },
+      {
+        question: "Can you clean student houses in Fallowfield and Withington?",
+        answer:
+          "Yes — the Oxford Road student corridor is one of our busiest areas. We handle end-of-term and summer turnaround cleans for shared student houses in Fallowfield, Withington and Rusholme.",
+      },
+      {
+        question: "How quickly can you get to a Manchester postcode?",
+        answer:
+          "Because Manchester is our base, we can usually offer same-week slots across M1-M21 and often same-day for urgent end-of-tenancy cleans in the city centre.",
+      },
     ],
+    dynamicSections: {
+      story:
+        "Manchester rewards a cleaner who reads the building as well as the postcode. In the Northern Quarter you are working around exposed brick, cast-iron columns and mill windows in converted warehouses; ten minutes south in Didsbury it is Victorian villas with sash windows, high ceilings and original fireplaces. Ancoats has gone from textile mills to glass-fronted apartment blocks in a decade, and the same street can hold a concierge tower and a 1900s terrace. We clean across that whole spread — city-centre apartments in M1-M4, the student corridor around Fallowfield and Withington, family homes in Chorlton and Didsbury, and the terraces out through Levenshulme and Moss Side. Same vetted, insured D DEEP team whichever postcode you are in, but the job changes: a Northern Quarter loft with industrial glazing needs different care from a Chorlton semi with a coal-fire hearth and original coving.",
+      process:
+        "Every Manchester clean starts with a short walkthrough — in person for larger jobs, or a video survey for standard domestic cleans — so we quote against what is actually there rather than a generic size band. For city-centre apartments and Northern Quarter conversions we check concierge and fob access, and book lift or service-lift slots before the visit so nothing stalls on the day. Regular clients get the same cleaner each visit where possible; deep cleans and end-of-tenancy jobs are two-person teams working to a written checklist covering limescale, oven interiors, skirting, internal glass and the awkward bits behind radiators. Student changeovers around Fallowfield and Withington are scheduled to the academic calendar with a fixed turnaround slot between tenancies, and matchday Saturdays around Old Trafford and the Etihad are avoided where parking or access would be tight.",
+      areas:
+        "We work the full Manchester spread: the city centre and Northern Quarter (M1-M4), Ancoats and New Islington (M4), Hulme and Moss Side (M15/M14), Fallowfield and Withington (M14/M20), Levenshulme (M19), Chorlton (M21), Didsbury (M20), and the M11-M13 corridor out through Openshaw and Gorton. City-centre and Northern Quarter jobs are usually weekday-daytime for offices and early-evening for apartments; family homes in Chorlton and Didsbury tend to book weekday mornings; student lets around Fallowfield and Withington cluster around term start, end of tenancy and the summer changeover window.",
+      reviews:
+        "Manchester clients tend to mention three things in reviews: that the same cleaner turns up each visit, that we turn up when we said we would, and that we deal with the bits they had quietly given up on — the inside of the oven, the limescale on the shower screen, the skirting behind the sofa. City-centre and Northern Quarter apartment clients often flag how easy the concierge and access side is; Didsbury and Chorlton homeowners tend to flag the care taken with original features and period fittings. End-of-tenancy and student changeover reviews focus on turnaround speed and deposit-safe results. We collect reviews after each clean and share the full set on request.",
+    },
   },
 
   liverpool: {
@@ -388,9 +365,19 @@ export const cityContent: Record<string, CityContent> = {
           "Yes. The new apartment blocks around Stockport Market Place and the town centre are regular jobs for us, including concierge buildings.",
       },
     ],
+    dynamicSections: {
+      story:
+        "Manchester is a city of reinvention, and its housing stock shows it. The red-brick mills of Ancoats and the Northern Quarter have become loft apartments with original iron columns and floor-to-ceiling windows; a mile out, the Victorian terraces of Levenshulme, Withington and Chorlton still have their original coving, sash windows and coal-fire hearths. We clean across that whole spread — concierge blocks in M1-M4, student lets off the Oxford Road corridor, and family semis out towards Didsbury and Chorlton. It's the same vetted, insured team whichever postcode you're in, but the job changes: a glass-fronted Northern Quarter apartment needs different care from a 1900s terrace in Levenshulme with hard-water limescale and original plaster.",
+      process:
+        "Every Manchester clean starts with a short walkthrough — in person for larger jobs, or a video survey for standard domestic cleans — so we quote against what's actually there rather than a generic size band. For city-centre apartment blocks in M1-M4 we book concierge access and check parking rules before the visit so nothing stalls on the day. Regular clients get the same cleaner each visit where possible; deep cleans and end-of-tenancy jobs are two-person teams with a written checklist covering limescale, oven interiors, skirting, and inside-window glass. Student changeovers around Fallowfield and Withington are scheduled to the academic calendar, with a fixed turnaround slot between tenancies.",
+      areas:
+        "We work the full Manchester spread: the City Centre and Northern Quarter (M1-M4), Ancoats and New Islington (M4), Hulme and Moss Side (M15), Fallowfield and Rusholme (M14), Withington (M20), Levenshulme (M19), Chorlton (M21), and Didsbury (M20). City-centre and Northern Quarter jobs are usually weekday-daytime for offices and early-evening for apartments; the residential streets in Didsbury, Chorlton and Levenshulme are mostly weekday mornings and Saturday slots. If you're on the border with Salford or Trafford we'll still quote — just tell us the postcode when you enquire.",
+      reviews:
+        "Manchester clients tend to mention two things: reliability in the city-centre high-rises (where a missed slot means a wasted concierge booking) and how much the deep clean actually shifts on older Ancoats and Levenshulme terraces. Landlords around the Oxford Road corridor use us for the summer changeover because the checklist is written down and the deposit-standard clean is consistent flat to flat. We don't cherry-pick postcodes — a Levenshulme terrace gets the same team and the same checklist as a Northern Quarter penthouse.",
+    },
   },
 
-  "salford-quays": {
+  'salford-quays': {
     name: "Salford",
     intro:
       "Salford stretches from the regenerated Quays to the terraces of Ordsall and the family streets of Swinton and Walkden, and we clean across all of it. MediaCityUK apartments, Salford Quays waterside flats and student housing around the University of Salford all get the same vetted, insured D DEEP team.",
@@ -452,8 +439,18 @@ export const cityContent: Record<string, CityContent> = {
           "Most Salford quotes are issued within 24 hours of your enquiry, and we can usually offer a first clean within the same week across M3-M50.",
       },
     ],
+    dynamicSections: {
+      story:
+        "Salford is not one place but several stitched together by the Ship Canal. On the Quays, glass towers at MediaCityUK rise where the Victorian docks used to load cotton; ten minutes inland, Ordsall's red-brick terraces and the Peel Park campus feel like a different century. We clean across that whole spread — the concierge high-rises at Salford Quays, the student lets off Frederick Road, and the family semis out towards Worsley and Boothstown. It's the same vetted, insured team whichever postcode you're in, but the job itself changes: a Quays apartment with floor-to-ceiling glass needs different care from a 1930s terrace in Monton with original coving and a coal-fire hearth.",
+      process:
+        "Every Salford clean starts with a short walkthrough — in person for larger jobs, or a video survey for standard domestic cleans — so we can quote against what's actually there rather than a generic size band. For Quays and MediaCityUK apartments we book lift access and check concierge rules before the visit so nothing stalls on the day. Regular clients get the same cleaner each visit where possible; deep cleans and end-of-tenancy jobs are two-person teams with a written checklist covering limescale, oven interiors, skirting, and inside-window glass. Student changeovers around Peel Park are scheduled to the academic calendar, with a fixed turnaround slot between tenancies.",
+      areas:
+        "We work the full Salford spread: Salford Quays and MediaCityUK (M50), Ordsall and Pendleton (M5/M6), Eccles and Monton (M30), Swinton and Pendlebury (M27), Walkden and Boothstown (M28), Worsley (M28), and Broughton (M7). The Quays and MediaCityUK jobs are usually weekday-daytime for offices and early-evening for apartments; the residential streets in Worsley, Monton and Swinton are mostly weekday mornings and Saturday slots. If you're on the border with Trafford or Manchester we'll still quote — just tell us the postcode when you enquire.",
+      reviews:
+        "Salford clients tend to mention two things: reliability on the Quays high-rises (where a missed slot means a wasted concierge booking) and how much the deep clean actually shifts on older Ordsall and Pendleton terraces. Landlords around the University of Salford use us for the summer changeover because the checklist is written down and the deposit-standard clean is consistent flat to flat. We don't cherry-pick postcodes — a Boothstown semi gets the same team and the same checklist as a MediaCityUK penthouse.",
+    },
   },
-  "trafford-park": {
+  'trafford-park': {
     name: "Trafford",
     intro:
       "Trafford takes in everything from the terraces of Stretford and Old Trafford to the leafy family streets of Sale, Timperley and Hale. We clean across the borough — matchday lets near Old Trafford, family homes in Urmston, and professional apartments in Altrincham's town centre.",

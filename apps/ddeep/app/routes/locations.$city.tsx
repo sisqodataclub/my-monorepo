@@ -216,6 +216,31 @@ export default function LocationHub() {
         </section>
       )}
 
+      {/* Dynamic Sections (per-city long-form content) */}
+      {pageContent?.dynamicSections && Object.keys(pageContent.dynamicSections).length > 0 ? (
+        <section className="py-16 px-6 max-w-7xl mx-auto">
+          <div className="space-y-8">
+            {Object.entries(pageContent.dynamicSections)
+              .filter(([, body]) => typeof body === 'string' && body.trim().length > 0)
+              .map(([key, body]) => {
+                const headings: Record<string, string> = {
+                  story: 'Our Story',
+                  process: 'Our Process',
+                  areas: 'Areas We Serve',
+                  reviews: 'What Clients Say',
+                };
+                const heading = headings[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
+                return (
+                  <div key={key} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                    <h2 className="text-2xl font-black text-slate-900 mb-4">{heading}</h2>
+                    <p className="text-slate-600 text-lg leading-relaxed">{body}</p>
+                  </div>
+                );
+              })}
+          </div>
+        </section>
+      ) : null}
+
       {/* Services Listing Section with Header */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
