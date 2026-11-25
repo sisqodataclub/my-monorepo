@@ -98,6 +98,46 @@ export const cityContent: Record<string, CityContent> = {
         answer:
           "Because Manchester is our base, we can usually offer same-week slots across M1-M21 and often same-day for urgent end-of-tenancy cleans in the city centre.",
       },
+      {
+        question: "Do you offer end-of-tenancy cleaning in Manchester, and will it pass a landlord inspection?",
+        answer:
+          "Yes. Our end-of-tenancy cleans are built around the standard letting-agent checklist — oven interior, inside cupboards and wardrobes, limescale removal, skirting boards, internal windows and any marks on walls. We work to a written schedule and can revisit anything an agent flags within 48 hours at no extra cost.",
+      },
+      {
+        question: "What is included in a deep clean, and how is it different from a regular clean?",
+        answer:
+          "A deep clean covers everything a regular clean does plus the jobs that get skipped week to week: oven and hob interiors, extractor filters, limescale on showers and taps, skirting boards, door frames, inside windows, behind and under furniture, and inside cupboards. It typically takes two cleaners three to five hours depending on property size.",
+      },
+      {
+        question: "Do you clean offices and commercial spaces in Manchester city centre?",
+        answer:
+          "Yes — we clean offices around Spinningfields, Deansgate, the Northern Quarter and out to Salford Quays. We work around your core hours (early morning, evening or weekend), supply our own kit, and can set up a regular contract with the same team each visit so nothing gets missed.",
+      },
+      {
+        question: "Are your cleaners DBS-checked and insured?",
+        answer:
+          "Every D DEEP cleaner is DBS-checked, fully insured and directly employed — we do not subcontract. That matters for concierge buildings, offices and student accommodation where access and safeguarding are checked, and we can supply DBS certificates on request.",
+      },
+      {
+        question: "Can you do same-day or emergency cleans in Manchester?",
+        answer:
+          "Often yes. Because Manchester is our base we hold same-day capacity for urgent end-of-tenancy turnarounds, last-minute viewings and pre-arrival guest cleans. Call before midday and we can usually get a team out the same day across M1-M21, subject to availability.",
+      },
+      {
+        question: "How much does cleaning cost in Manchester, and do you charge by the hour or by the job?",
+        answer:
+          "Regular domestic cleans are quoted hourly with a minimum visit, deep cleans and end-of-tenancy cleans are quoted as a fixed price against the property, and office contracts are priced per visit or per month. We give a firm quote after a short walkthrough or video survey — no size-band guesswork and no hidden extras.",
+      },
+      {
+        question: "Which Manchester areas do you cover?",
+        answer:
+          "We cover the full Manchester spread: the city centre and Northern Quarter (M1-M4), Ancoats, Hulme and Moss Side (M14/M15), Fallowfield and Withington (M14/M20), Levenshulme (M19), Chorlton (M21), Didsbury (M20), Salford and Salford Quays (M3/M5/M6/M50), and out through the M11-M13 corridor to Openshaw and Gorton.",
+      },
+      {
+        question: "What happens if I am not happy with the clean?",
+        answer:
+          "Tell us within 24 hours and we will send a team back to put it right at no extra charge — that is our satisfaction guarantee. For regular clients we will also swap the cleaner if the fit is not right, no awkwardness and no penalty.",
+      },
     ],
     dynamicSections: {
       story:
