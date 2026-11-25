@@ -289,6 +289,8 @@ export default function LocationHub() {
         </div>
       </section>
 
+      <HomeFAQ faqs={pageContent.faqs} />
+
       {/* Visible NAP Block */}
       <section className="py-12 px-6 max-w-7xl mx-auto">
         <div className="bg-slate-900 text-white rounded-3xl p-8 md:p-10">
@@ -296,7 +298,6 @@ export default function LocationHub() {
           <ul className="space-y-2 text-slate-200">
             <li><span className="font-semibold text-white">Business:</span> {businessName}</li>
             <li><span className="font-semibold text-white">Phone:</span> <a href={`tel:${businessPhone}`} className="text-green-400 hover:underline">{businessPhone}</a></li>
-            {/* TODO(NAP): replace placeholder address with the real registered address */}
             <li><span className="font-semibold text-white">Address:</span> {businessAddress.streetAddress}, {businessAddress.addressLocality}, {businessAddress.postalCode}, {businessAddress.addressRegion}, {businessAddress.addressCountry}</li>
           </ul>
         </div>
