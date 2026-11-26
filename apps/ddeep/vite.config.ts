@@ -74,19 +74,26 @@ export default defineConfig({
         });
 
         // 4. Hyper-Local Service pages (/services/[service]/in/[city]/)
-        // Restricted to Manchester + Stockport to match live architecture
-        // (city-service pages 301-redirect for all other cities).
+        // Restricted to Manchester + Stockport AND to the six kept service
+        // combos. Every other service x city combo 301-redirects to the
+        // generic /services/<service>/ page, so it must not appear here.
         const sitemapCities = ["manchester", "stockport"];
-        Object.keys(servicesContent)
-          .filter((slug) => slug !== "tc")
-          .forEach((serviceSlug) => {
-            sitemapCities.forEach((citySlug) => {
-              pages.push({
-                url: `/services/${serviceSlug}/in/${citySlug}/`,
-                priority: "0.6",
-              });
+        const sitemapServices = [
+          "end-of-tenancy-cleaning",
+          "deep-cleaning",
+          "regular-cleaning",
+          "office-cleaning",
+          "carpet-cleaning",
+          "student-accommodation",
+        ];
+        sitemapServices.forEach((serviceSlug) => {
+          sitemapCities.forEach((citySlug) => {
+            pages.push({
+              url: `/services/${serviceSlug}/in/${citySlug}/`,
+              priority: "0.6",
             });
           });
+        });
 
         // Generate the XML
         const sitemapXML = `<?xml version="1.0" encoding="UTF-8"?>
