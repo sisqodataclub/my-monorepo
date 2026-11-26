@@ -42,16 +42,19 @@ export const cityContent: Record<string, CityContent> = {
     intro:
       "This is our home city, and we clean everything from Victorian terraces in Levenshulme to glass-fronted apartments in the Northern Quarter — covering M1 to M21 across Greater Manchester. City-centre concierge buildings, student halls around Fallowfield, and busy family homes in Didsbury all get the same vetted, insured D DEEP team.",
     areas: [
-      "Ancoats",
-      "Northern Quarter",
-      "Didsbury",
-      "Chorlton",
-      "Fallowfield",
-      "Levenshulme",
-      "Withington",
       "City Centre",
+      "Northern Quarter",
+      "Ancoats",
+      "New Islington",
       "Hulme",
       "Moss Side",
+      "Fallowfield",
+      "Withington",
+      "Levenshulme",
+      "Chorlton",
+      "Didsbury",
+      "Openshaw",
+      "Gorton",
       "Moston",
       "Harpurhey",
       "Cheetham Hill",
@@ -146,11 +149,11 @@ export const cityContent: Record<string, CityContent> = {
     ],
     dynamicSections: {
       story:
-        "This city rewards a cleaner who reads the building as well as the postcode. In the Northern Quarter you are working around exposed brick, cast-iron columns and mill windows in converted warehouses; ten minutes south in Didsbury it is Victorian villas with sash windows, high ceilings and original fireplaces. Ancoats has gone from textile mills to glass-fronted apartment blocks in a decade, and the same street can hold a concierge tower and a 1900s terrace. We clean across that whole spread — city-centre apartments in M1-M4, the student corridor around Fallowfield and Withington, family homes in Chorlton and Didsbury, and the terraces out through Levenshulme and Moss Side. North of the centre the work carries on through Moston, Harpurhey and Cheetham Hill, where solid pre-war terraces and busy family homes need a different, more hands-on clean, and out east past the city boundary we cover Middleton and Oldham, from town-centre terraces to the Saddleworth edge. Same vetted, insured D DEEP team whichever postcode you are in, but the job changes: a Northern Quarter loft with industrial glazing needs different care from a Chorlton semi with a coal-fire hearth and original coving, and a Cheetham Hill terrace asks for something else again.",
+        "This city rewards a cleaner who reads the building as well as the postcode. In the Northern Quarter you are working around exposed brick, cast-iron columns and mill windows in converted warehouses; ten minutes south in Didsbury it is Victorian villas with sash windows, high ceilings and original fireplaces. Ancoats has gone from textile mills to glass-fronted apartment blocks in a decade, and the same street can hold a concierge tower and a 1900s terrace. We clean across that whole spread — city-centre apartments in M1-M4, the student corridor around Fallowfield and Withington, family homes in Chorlton and Didsbury, and the terraces out through Levenshulme and Moss Side, plus Moston, Harpurhey, Cheetham Hill, Middleton and out to Oldham. Same vetted, insured D DEEP team whichever postcode you are in, but the job changes: a Northern Quarter loft with industrial glazing needs different care from a Chorlton semi with a coal-fire hearth and original coving.",
       process:
         "Every clean here starts with a short walkthrough — in person for larger jobs, or a video survey for standard domestic cleans — so we quote against what is actually there rather than a generic size band. For city-centre apartments and Northern Quarter conversions we check concierge and fob access, and book lift or service-lift slots before the visit so nothing stalls on the day. Regular clients get the same cleaner each visit where possible; deep cleans and end-of-tenancy jobs are two-person teams working to a written checklist covering limescale, oven interiors, skirting, internal glass and the awkward bits behind radiators. Student changeovers around Fallowfield and Withington are scheduled to the academic calendar with a fixed turnaround slot between tenancies, and matchday Saturdays around Old Trafford and the Etihad are avoided where parking or access would be tight.",
       areas:
-        "We work the full local spread: the city centre and Northern Quarter (M1-M4), Ancoats and New Islington (M4), Hulme and Moss Side (M15/M14), Fallowfield and Withington (M14/M20), Levenshulme (M19), Chorlton (M21), Didsbury (M20), and the M11-M13 corridor out through Openshaw and Gorton. City-centre and Northern Quarter jobs are usually weekday-daytime for offices and early-evening for apartments; family homes in Chorlton and Didsbury tend to book weekday mornings; student lets around Fallowfield and Withington cluster around term start, end of tenancy and the summer changeover window.",
+        "We work the full local spread: the city centre and Northern Quarter (M1-M4), Ancoats and New Islington (M4), Hulme and Moss Side (M15/M14), Fallowfield and Withington (M14/M20), Levenshulme (M19), Chorlton (M21), Didsbury (M20), and the M11-M13 corridor out through Openshaw and Gorton — plus Moston (M40), Harpurhey (M9), Cheetham Hill (M8), Middleton (M24) and out to Oldham. City-centre and Northern Quarter jobs are usually weekday-daytime for offices and early-evening for apartments; family homes in Chorlton and Didsbury tend to book weekday mornings; student lets around Fallowfield and Withington cluster around term start, end of tenancy and the summer changeover window.",
       reviews:
         "Manchester clients tend to mention three things in reviews: that the same cleaner turns up each visit, that we turn up when we said we would, and that we deal with the bits they had quietly given up on — the inside of the oven, the limescale on the shower screen, the skirting behind the sofa. City-centre and Northern Quarter apartment clients often flag how easy the concierge and access side is; Didsbury and Chorlton homeowners tend to flag the care taken with original features and period fittings. End-of-tenancy and student changeover reviews focus on turnaround speed and deposit-safe results. We collect reviews after each clean and share the full set on request.",
     },
@@ -223,7 +226,7 @@ export const cityContent: Record<string, CityContent> = {
   didsbury: {
     name: "Didsbury",
     intro:
-      "Didsbury is one of Manchester's most sought-after suburbs, and its Victorian villas, converted flats and family homes need a cleaner who treats them properly. We work across East and West Didsbury, from the busy Burton Road strip to the quieter streets around Didsbury Park.",
+      "Didsbury isn't one place but three: Didsbury Village around Wilmslow Road, West Didsbury's Burton Road bar strip, and quieter East Didsbury toward Parrs Wood. Most of the housing stock is period — Victorian and Edwardian terraces and large family homes off School Lane and Stenner Lane — with Fletcher Moss Park & Gardens and Didsbury Park as the local green anchors. It's a professional, family-heavy M20 postcode, and we clean here the same way we'd want our own homes cleaned: carefully, and on a schedule that fits around school runs and commutes.",
     areas: [
       "East Didsbury",
       "West Didsbury",
@@ -244,26 +247,26 @@ export const cityContent: Record<string, CityContent> = {
       "the M20 and M19 commuter corridors into the city",
     ],
     coverageNote:
-      "Covering M20, M19 and M21, including East and West Didsbury, Didsbury Village, Burnage and Northenden.",
+      "Covering the whole of M20 plus the M19 and M21 borders — East Didsbury, West Didsbury, Didsbury Village, Parrs Wood, and the Burnage and Northenden edges — with same-week slots most weeks.",
     serviceBlurbs: {
       "regular-cleaning":
-        "Regular cleaning for Didsbury homes, from Victorian villas around the village to flats on the Burton Road strip.",
+        "Weekly and fortnightly cleans for West Didsbury family homes and Didsbury Village townhouses — scheduled around school runs on Wilmslow Road and commutes into town, with the same trusted cleaner each visit.",
       "deep-cleaning":
-        "Deep cleans for Didsbury's period housing stock — original sash windows, high ceilings and older kitchens that need a proper top-to-bottom reset.",
+        "Deep cleans for Didsbury's Victorian and Edwardian stock: sash windows, original coving and high ceilings, older range cookers, and the hard-water limescale that builds up in period bathrooms off Burton Road and Stenner Lane.",
       "end-of-tenancy-cleaning":
-        "End-of-tenancy cleans for Didsbury's rental flats and houses, with a deposit-friendly checklist for landlords and tenants.",
+        "End-of-tenancy cleans for Didsbury's rental flats and houses — including the Parrs Wood and East Didsbury apartment blocks — with a deposit-friendly checklist that letting agents along Wilmslow Road accept without a second visit.",
       "office-cleaning":
-        "Office cleaning for Didsbury's independent businesses and professional practices, scheduled around your opening hours.",
+        "Office and practice cleaning for the professional businesses around Didsbury Village and the Burton Road independents — dentists, solicitors, studios and clinics — scheduled around opening hours so patients and clients never see the mop.",
       "student-accommodation":
-        "Student accommodation cleaning for the shared houses around Didsbury and Withington used by Manchester's student population.",
+        "Student house cleaning for the shared terraces on the Withington and Fallowfield side of Didsbury, with summer changeover slots timed to the university contract calendar.",
       "appliances-cleaning":
-        "Oven and appliance cleaning for Didsbury kitchens, from period ranges to modern integrated ovens.",
+        "Oven, hob and extractor cleaning for Didsbury kitchens — from the range cookers in West Didsbury period homes to integrated ovens in the newer Parrs Wood apartments.",
       "carpet-cleaning":
-        "Carpet and upholstery cleaning for Didsbury homes, including the original floorboards-and-rugs look common in Victorian villas.",
+        "Carpet and upholstery cleaning for Didsbury homes, including the original floorboards-and-rugs look common in the Victorian and Edwardian villas around the village.",
       "bars-restaurants":
-        "Out-of-hours deep cleans for Burton Road and Didsbury Village bars and restaurants, so service is never interrupted.",
+        "Out-of-hours deep cleans for the Burton Road bar strip and Didsbury Village restaurants and cafés, so service is never interrupted and the kitchen passes its next inspection.",
       "post-construction":
-        "After-builders cleans for Didsbury's loft conversions, extensions and refurbished period homes.",
+        "After-builders cleans for Didsbury's loft conversions, side-return extensions and refurbished period homes — dust, plaster and paint residue cleared before you move back in.",
     },
     faqs: [
       {
