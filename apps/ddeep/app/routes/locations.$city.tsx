@@ -257,7 +257,7 @@ export default function LocationHub() {
           {availableServices.map((service, idx) => (
             <Link
               key={idx}
-              to={`/services/${service.slug}/in/${citySlug}/`}
+              to={(citySlug === 'manchester' || citySlug === 'stockport') ? `/services/${service.slug}/in/${citySlug}/` : `/services/${service.slug}/`}
               className="group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
             >
               <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
