@@ -241,65 +241,42 @@ export default function LocationHub() {
         </section>
       ) : null}
 
-      {/* Services Listing Section with Header */}
+      {/* Services Grid (merged: city-specific localDescription per card) */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
-            Our Cleaning Services in {cityName}
+            What We Clean in {cityName}
           </h2>
           <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mb-4" />
           <p className="text-slate-600 text-lg max-w-2xl mx-auto">
-            Explore our comprehensive range of specialized cleaning solutions tailored for homes and businesses in your area.
+            Local detail on how each of our services adapts to {cityName} homes and businesses.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {availableServices.map((service, idx) => (
-            <Link
-              key={idx}
-              to={(citySlug === 'manchester' || citySlug === 'stockport') ? `/services/${service.slug}/in/${citySlug}/` : `/services/${service.slug}/`}
-              className="group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
-            >
-              <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
-                <FaCheckCircle className="text-green-600 text-xl" />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-green-600 transition-colors">
-                {service.title}
-              </h3>
-              <p className="text-slate-500 mb-8 flex-grow">{service.description}</p>
-              <div className="inline-flex items-center gap-2 text-green-600 font-bold">
-                View Service <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-          ))}
+          {availableServices.map((service, idx) => {
+            const localDescription = pageContent?.serviceBlurbs?.[service.slug] ?? service.description;
+            return (
+              <Link
+                key={idx}
+                to={(citySlug === 'manchester' || citySlug === 'stockport') ? `/services/${service.slug}/in/${citySlug}/` : `/services/${service.slug}/`}
+                className="group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
+              >
+                <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+                  <FaCheckCircle className="text-green-600 text-xl" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-green-600 transition-colors">
+                  {service.title}
+                </h3>
+                <p className="text-slate-500 mb-8 flex-grow leading-relaxed">{localDescription}</p>
+                <div className="inline-flex items-center gap-2 text-green-600 font-bold">
+                  View Service <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
-
-      {/* Service Blurbs (per-city, data-driven) */}
-      {pageContent?.serviceBlurbs && Object.keys(pageContent.serviceBlurbs).length > 0 && (
-        <section className="py-20 px-6 max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">
-              What We Clean in {cityName}
-            </h2>
-            <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mb-4" />
-            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
-              Local detail on how each of our services adapts to {cityName} homes and businesses.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Object.entries(pageContent.serviceBlurbs).map(([slug, blurb]) => {
-              const title = slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-              return (
-                <div key={slug} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                  <h3 className="text-xl font-black text-slate-900 mb-3">{title}</h3>
-                  <p className="text-slate-600 leading-relaxed">{blurb}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
       {/* Map Embed */}
       <section className="py-16 px-6 max-w-7xl mx-auto">
