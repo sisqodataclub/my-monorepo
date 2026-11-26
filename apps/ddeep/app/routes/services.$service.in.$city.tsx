@@ -1,13 +1,11 @@
 // app/routes/services.$service.in.$city.tsx
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useLoaderData, redirect } from "react-router";
+import { useLoaderData } from "react-router";
 import { servicesContent } from "../components/landing/servicesContent";
 import { cityContent } from "../components/landing/cityContent";
 import DynamicServicePage from "../components/landing/dynamic";
 import InternalLinks from "../components/landing/InternalLinks";
 import { getSeoMeta } from "../utils/seo";
-
-const CITY_SERVICE_CITIES = new Set(["manchester", "stockport"]);
 
 function formatCityName(slug: string) {
   return slug
@@ -22,12 +20,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   if (!slug || !servicesContent[slug] || !citySlug) {
     throw new Response("Not Found", { status: 404 });
-  }
-
-  // Only manchester and stockport keep real city-service pages.
-  // All other cities 301-redirect to the core service page.
-  if (!CITY_SERVICE_CITIES.has(citySlug)) {
-    throw redirect(`/services/${slug}/`, { status: 301 });
   }
 
   const pageContent = cityContent[citySlug] ?? null;
@@ -93,4 +85,27 @@ export default function CityServiceRoute() {
         mainEntity: serviceData.faqs.map((faq) => ({
           "@type": "Question",
           name: faq.question,
-          acceptedAnswer: { "@type": "Answer", text: f
+          acceptedAnswer: { "@type": "Answer", text: faq.answer },
+        })),
+      }
+    : null;
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
+      <DynamicServicePage data={{ ...localizedData, cityName, pageContent }} />
+      <InternalLinks serviceSlug={slug} citySlug={citySlug} cityName={cityName} />
+    </>
+  );
+}
