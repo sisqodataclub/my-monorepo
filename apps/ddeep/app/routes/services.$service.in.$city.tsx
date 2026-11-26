@@ -1,11 +1,15 @@
 // app/routes/services.$service.in.$city.tsx
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, redirect } from "react-router";
 import { servicesContent } from "../components/landing/servicesContent";
 import { cityContent } from "../components/landing/cityContent";
 import DynamicServicePage from "../components/landing/dynamic";
 import InternalLinks from "../components/landing/InternalLinks";
 import { getSeoMeta } from "../utils/seo";
+
+// Hyper-local city-service pages are only live for these two cities.
+// All other cities 301-redirect to the generic service page.
+const LIVE_CITY_SERVICE_CITIES = new Set(["manchester", "stockport"]);
 
 function formatCityName(slug: string) {
   return slug
@@ -20,6 +24,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   if (!slug || !servicesContent[slug] || !citySlug) {
     throw new Response("Not Found", { status: 404 });
+  }
+
+  // Retired city-service URL -> permanent 301 to the generic service page.
+  if (!LIVE_CITY_SERVICE_CITIES.has(citySlug)) {
+    throw redirect(`/services/${slug}/`, { status: 301 });
   }
 
   const pageContent = cityContent[citySlug] ?? null;
@@ -48,16 +57,14 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 export default function CityServiceRoute() {
   const { serviceData, cityName, slug, citySlug, pageContent } = useLoaderData<typeof loader>();
 
-  // Override the service data so the page becomes city‑specific
   const localizedData = {
     ...serviceData,
     heroTitle: `${serviceData.heroTitle} in ${cityName}`,
     heroSubtitle: `${serviceData.heroSubtitle} Professional local cleaners serving ${cityName}.`,
     ctaSecondaryText: `Trusted by homes and businesses across ${cityName}.`,
-    cities: [],   // ← removes the generic “Available in…” line
+    cities: [],
   };
 
-  // Structured data (Service + optional FAQ) for this city page
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
