@@ -15,7 +15,7 @@ export const HomeFAQ: React.FC<HomeFAQProps> = ({ faqs = [] }) => {
   return (
     <section className="w-full max-w-4xl mx-auto px-6 py-24">
       <div className="text-center mb-12">
-        <PageTitle title="Frequently Asked Questions" />
+        <PageTitle title="Frequently Asked Questions" level="h2" />
         <p className="mt-4 text-slate-500 font-medium">
           Everything you need to know about our professional services.
         </p>
