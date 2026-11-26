@@ -1,8 +1,9 @@
 // app/routes/locations.$city.tsx
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useLoaderData, Link } from "react-router";
+import { useLoaderData, Link, redirect } from "react-router";
 import { servicesContent } from "../components/landing/servicesContent";
 import { cityContent } from "../components/landing/cityContent";
+import { targetCities } from "../utils/locations";
 import { getSeoMeta } from "../utils/seo";
 import HomeCTA from "../components/home/HomeCTA";
 import HomeReviews from "../components/home/HomeReviews";
@@ -18,6 +19,13 @@ function formatCityName(slug: string) {
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const citySlug = params.city;
   if (!citySlug) throw new Response("Not Found", { status: 404 });
+
+  // Retired city hub -> permanent 301 to the homepage.
+  // Only the 17 targetCities keep a live /locations/<city>/ page.
+  if (!targetCities.includes(citySlug)) {
+    throw redirect("/", { status: 301 });
+  }
+
   const cityName = formatCityName(citySlug);
 
   const pageContent = cityContent[citySlug] ?? null;
