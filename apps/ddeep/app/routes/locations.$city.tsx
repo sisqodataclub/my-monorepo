@@ -217,27 +217,135 @@ export default function LocationHub() {
         </section>
       )}
 
-      {/* Dynamic Sections (per-city long-form content) */}
+      {/* Dynamic Sections (per-city long-form content) — distinct premium treatments per section */}
       {pageContent?.dynamicSections && Object.keys(pageContent.dynamicSections).length > 0 ? (
-        <section className="py-16 px-6 max-w-7xl mx-auto">
-          <div className="space-y-8">
-            {Object.entries(pageContent.dynamicSections)
-              .filter(([, body]) => typeof body === 'string' && body.trim().length > 0)
-              .map(([key, body]) => {
-                const headings: Record<string, string> = {
-                  story: 'Our Story',
-                  process: 'Our Process',
-                  areas: 'Areas We Serve',
-                  reviews: 'What Clients Say',
-                };
-                const heading = headings[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
-                return (
-                  <div key={key} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                    <h2 className="text-2xl font-black text-slate-900 mb-4">{heading}</h2>
-                    <p className="text-slate-600 text-lg leading-relaxed">{body}</p>
+        <section className="py-20 px-6 max-w-7xl mx-auto">
+          <div className="space-y-12">
+            {(() => {
+              const ds = pageContent.dynamicSections as Record<string, string | undefined>;
+
+              // --- Our Story: premium prose card with gradient header + accent border ---
+              const story = typeof ds.story === 'string' ? ds.story.trim() : '';
+              const storyBlock = story ? (
+                <article
+                  key="story"
+                  className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_10px_40px_-15px_rgba(15,23,42,0.15)]"
+                >
+                  <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+                  <div className="px-6 py-10 sm:px-12 sm:py-14">
+                    <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-emerald-600">
+                      Our Story
+                    </span>
+                    <h2 className="mt-3 text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                      Why {cityName}
+                    </h2>
+                    <div className="mt-6 border-l-4 border-emerald-500/70 pl-5 sm:pl-6">
+                      <p className="text-lg sm:text-xl leading-loose text-slate-700">{story}</p>
+                    </div>
                   </div>
-                );
-              })}
+                </article>
+              ) : null;
+
+              // --- Our Process: numbered steps ---
+              const processRaw = typeof ds.process === 'string' ? ds.process.trim() : '';
+              const processSteps = processRaw
+                ? processRaw
+                    .split(/(?<=[.!?])\s+/)
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 0)
+                : [];
+              const processBlock = processSteps.length > 0 ? (
+                <article key="process" className="rounded-3xl bg-slate-900 px-6 py-10 sm:px-12 sm:py-14 text-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.5)]">
+                  <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+                    Our Process
+                  </span>
+                  <h2 className="mt-3 text-3xl sm:text-4xl font-black tracking-tight">
+                    How we work in {cityName}
+                  </h2>
+                  <ol className="mt-8 space-y-5">
+                    {processSteps.map((step, i) => (
+                      <li key={i} className="flex items-start gap-4">
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-slate-900">
+                          {i + 1}
+                        </span>
+                        <p className="text-base sm:text-lg leading-relaxed text-slate-200">{step}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </article>
+              ) : null;
+
+              // --- Areas We Serve: chips / pills ---
+              const areasRaw = typeof ds.areas === 'string' ? ds.areas.trim() : '';
+              const areasList = areasRaw
+                ? areasRaw
+                    .split(/[,;]|\s+and\s+/i)
+                    .map((a) => a.trim())
+                    .filter((a) => a.length > 0 && a.length < 60)
+                : [];
+              const areasBlock = areasList.length > 0 ? (
+                <article key="areas" className="rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-10 sm:px-12 sm:py-14">
+                  <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-emerald-600">
+                    Areas We Serve
+                  </span>
+                  <h2 className="mt-3 text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    Postcodes we cover
+                  </h2>
+                  <div className="mt-8 flex flex-wrap gap-2.5">
+                    {areasList.map((area, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-emerald-400 hover:text-emerald-700"
+                      >
+                        <FaMapMarkerAlt className="mr-2 h-3 w-3 text-emerald-500" />
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ) : null;
+
+              // --- What Clients Say: testimonial cards ---
+              const reviewsRaw = typeof ds.reviews === 'string' ? ds.reviews.trim() : '';
+              const reviewQuotes = reviewsRaw
+                ? reviewsRaw
+                    .split(/(?<=[.!?])\s+/)
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 25)
+                    .slice(0, 4)
+                : [];
+              const reviewsBlock = reviewQuotes.length > 0 ? (
+                <article key="reviews">
+                  <span className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-emerald-600">
+                    What Clients Say
+                  </span>
+                  <h2 className="mt-3 text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    Reviews from {cityName}
+                  </h2>
+                  <div className="mt-8 grid gap-6 sm:grid-cols-2">
+                    {reviewQuotes.map((quote, i) => (
+                      <figure
+                        key={i}
+                        className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)]"
+                      >
+                        <span className="absolute -top-3 left-6 text-5xl font-black leading-none text-emerald-500/30 select-none">
+                          &ldquo;
+                        </span>
+                        <blockquote className="mt-4">
+                          <p className="text-base italic leading-relaxed text-slate-700">{quote}</p>
+                        </blockquote>
+                        <figcaption className="mt-4 flex items-center gap-2 text-sm text-slate-500">
+                          <span className="h-1 w-6 rounded-full bg-emerald-500" />
+                          Verified {cityName} client
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                </article>
+              ) : null;
+
+              return [storyBlock, processBlock, areasBlock, reviewsBlock];
+            })()}
           </div>
         </section>
       ) : null}
@@ -254,24 +362,24 @@ export default function LocationHub() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
           {availableServices.map((service, idx) => {
             const localDescription = pageContent?.serviceBlurbs?.[service.slug] ?? service.description;
             return (
               <Link
                 key={idx}
                 to={(citySlug === 'manchester' || citySlug === 'stockport') ? `/services/${service.slug}/in/${citySlug}/` : `/services/${service.slug}/`}
-                className="group relative flex flex-col bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-8px_rgba(15,23,42,0.10)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_20px_40px_-12px_rgba(15,23,42,0.18)] hover:-translate-y-1 hover:border-green-200 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                className="group relative flex flex-col min-h-[44px] bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 ring-1 ring-transparent shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.12)] transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-green-200 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_18px_40px_-16px_rgba(22,163,74,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
               >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25 flex items-center justify-center mb-6 ring-1 ring-white/40">
-                  <FaCheckCircle className="text-white text-xl" />
+                <div className="w-11 h-11 shrink-0 bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl flex items-center justify-center mb-5 ring-1 ring-green-100">
+                  <FaCheckCircle className="text-green-600 text-lg" />
                 </div>
-                <h3 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 mb-3 group-hover:text-green-700 transition-colors">
+                <h3 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 mb-2.5 group-hover:text-green-700 transition-colors duration-200">
                   {service.title}
                 </h3>
-                <p className="text-slate-500 text-sm md:text-base leading-relaxed mb-8 flex-grow">{localDescription}</p>
-                <div className="mt-auto pt-5 border-t border-slate-100 inline-flex items-center gap-2 text-green-700 font-semibold text-sm md:text-base min-h-[44px] group-hover:gap-3 transition-all">
-                  View Service <FaArrowRight className="transition-transform group-hover:translate-x-1" />
+                <p className="text-[15px] text-slate-500 mb-6 flex-grow leading-relaxed">{localDescription}</p>
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 pt-4 border-t border-slate-100">
+                  View Service <FaArrowRight className="text-xs transition-transform duration-200 group-hover:translate-x-1" />
                 </div>
               </Link>
             );
