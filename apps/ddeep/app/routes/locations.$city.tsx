@@ -35,7 +35,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) return [{ title: "Not Found | D DEEP Cleaning" }];
   return getSeoMeta({
     title: `Cleaning Services in ${data.cityName} | 5★ D DEEP`,
-    description: `Expert domestic and commercial cleaning services in ${data.cityName}. From end of tenancy to deep cleaning and office cleaning. Fully vetted professionals. Book today.`,
+    description: `Looking for trusted cleaners in ${data.cityName}? D DEEP delivers 5-star end of tenancy, deep and office cleaning with vetted, insured local teams. Get a fast quote.`,
     url: `https://www.ddeepcleaningservices.com/locations/${data.citySlug}/`,
   });
 };
@@ -59,8 +59,9 @@ export default function LocationHub() {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `Cleaning Services in ${cityName} | D DEEP Cleaning Services`,
-    description: `Expert domestic and commercial cleaning services in ${cityName}. Fully vetted professionals.`,
+    description: `Expert domestic and commercial cleaning services in ${cityName}. Fully vetted, insured professionals with local teams across ${cityName}.`,
     url: `https://www.ddeepcleaningservices.com/locations/${citySlug}/`,
+    about: { "@type": "Thing", name: `Cleaning services in ${cityName}` },
     provider: {
       "@type": "LocalBusiness",
       name: businessName,
