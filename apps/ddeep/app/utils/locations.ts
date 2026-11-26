@@ -10,8 +10,6 @@ export const targetCities = [
   "oldham", 
   "rochdale",
   "preston", 
-  "blackburn", 
-  "burnley", 
   "warrington", 
   "wigan", 
   "chorley",
