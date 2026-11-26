@@ -40,7 +40,7 @@ export const cityContent: Record<string, CityContent> = {
   manchester: {
     name: "Manchester",
     intro:
-      "Manchester is our home city, and we clean everything from Victorian terraces in Levenshulme to glass-fronted apartments in the Northern Quarter. City-centre concierge buildings, student halls around Fallowfield, and busy family homes in Didsbury all get the same vetted, insured D DEEP team.",
+      "Manchester is our home city, and we clean everything from Victorian terraces in Levenshulme to glass-fronted apartments in the Northern Quarter — covering M1 to M21 across Greater Manchester. City-centre concierge buildings, student halls around Fallowfield, and busy family homes in Didsbury all get the same vetted, insured D DEEP team.",
     areas: [
       "Ancoats",
       "Northern Quarter",
@@ -64,11 +64,11 @@ export const cityContent: Record<string, CityContent> = {
       "Same-week slots across M1-M21, with city-centre parking and concierge access already worked out for M1-M4 apartment blocks.",
     serviceBlurbs: {
       "regular-cleaning":
-        "Weekly and fortnightly cleans for Manchester homes — from Northern Quarter apartments with hard-to-reach mezzanine floors to family houses in Chorlton and Didsbury.",
+        "Weekly and fortnightly cleans for Manchester homes — from Northern Quarter apartments with hard-to-reach mezzanine floors to family houses in Chorlton, Didsbury and Sale, with flexible M-postcode scheduling.",
       "deep-cleaning":
         "Deep cleans built for Manchester's mix of period terraces and new-build apartments: limescale on hard water in older Ancoats stock, and builder's dust in recent Northern Quarter conversions.",
       "end-of-tenancy-cleaning":
-        "End-of-tenancy cleans timed around Manchester's student contract changeover in Fallowfield, Withington and Hulme, with landlord-ready checklists.",
+        "End-of-tenancy cleans timed around Manchester's student contract changeover in Fallowfield, Withington, Hulme and Rusholme, with landlord-ready checklists accepted by letting agents across Greater Manchester.",
       "office-cleaning":
         "Contract office cleaning for Manchester city-centre offices and Spinningfields workspaces, scheduled around your core hours.",
       "student-accommodation":
