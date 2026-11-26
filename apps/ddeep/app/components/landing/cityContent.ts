@@ -52,6 +52,11 @@ export const cityContent: Record<string, CityContent> = {
       "City Centre",
       "Hulme",
       "Moss Side",
+      "Moston",
+      "Harpurhey",
+      "Cheetham Hill",
+      "Middleton",
+      "Oldham",
     ],
     landmarks: [
       "Piccadilly and Victoria stations",
@@ -141,7 +146,7 @@ export const cityContent: Record<string, CityContent> = {
     ],
     dynamicSections: {
       story:
-        "This city rewards a cleaner who reads the building as well as the postcode. In the Northern Quarter you are working around exposed brick, cast-iron columns and mill windows in converted warehouses; ten minutes south in Didsbury it is Victorian villas with sash windows, high ceilings and original fireplaces. Ancoats has gone from textile mills to glass-fronted apartment blocks in a decade, and the same street can hold a concierge tower and a 1900s terrace. We clean across that whole spread — city-centre apartments in M1-M4, the student corridor around Fallowfield and Withington, family homes in Chorlton and Didsbury, and the terraces out through Levenshulme and Moss Side. Same vetted, insured D DEEP team whichever postcode you are in, but the job changes: a Northern Quarter loft with industrial glazing needs different care from a Chorlton semi with a coal-fire hearth and original coving.",
+        "This city rewards a cleaner who reads the building as well as the postcode. In the Northern Quarter you are working around exposed brick, cast-iron columns and mill windows in converted warehouses; ten minutes south in Didsbury it is Victorian villas with sash windows, high ceilings and original fireplaces. Ancoats has gone from textile mills to glass-fronted apartment blocks in a decade, and the same street can hold a concierge tower and a 1900s terrace. We clean across that whole spread — city-centre apartments in M1-M4, the student corridor around Fallowfield and Withington, family homes in Chorlton and Didsbury, and the terraces out through Levenshulme and Moss Side. North of the centre the work carries on through Moston, Harpurhey and Cheetham Hill, where solid pre-war terraces and busy family homes need a different, more hands-on clean, and out east past the city boundary we cover Middleton and Oldham, from town-centre terraces to the Saddleworth edge. Same vetted, insured D DEEP team whichever postcode you are in, but the job changes: a Northern Quarter loft with industrial glazing needs different care from a Chorlton semi with a coal-fire hearth and original coving, and a Cheetham Hill terrace asks for something else again.",
       process:
         "Every clean here starts with a short walkthrough — in person for larger jobs, or a video survey for standard domestic cleans — so we quote against what is actually there rather than a generic size band. For city-centre apartments and Northern Quarter conversions we check concierge and fob access, and book lift or service-lift slots before the visit so nothing stalls on the day. Regular clients get the same cleaner each visit where possible; deep cleans and end-of-tenancy jobs are two-person teams working to a written checklist covering limescale, oven interiors, skirting, internal glass and the awkward bits behind radiators. Student changeovers around Fallowfield and Withington are scheduled to the academic calendar with a fixed turnaround slot between tenancies, and matchday Saturdays around Old Trafford and the Etihad are avoided where parking or access would be tight.",
       areas:

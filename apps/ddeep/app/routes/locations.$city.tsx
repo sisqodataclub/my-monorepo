@@ -254,24 +254,24 @@ export default function LocationHub() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {availableServices.map((service, idx) => {
             const localDescription = pageContent?.serviceBlurbs?.[service.slug] ?? service.description;
             return (
               <Link
                 key={idx}
                 to={(citySlug === 'manchester' || citySlug === 'stockport') ? `/services/${service.slug}/in/${citySlug}/` : `/services/${service.slug}/`}
-                className="group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col"
+                className="group relative flex flex-col bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-8px_rgba(15,23,42,0.10)] hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_20px_40px_-12px_rgba(15,23,42,0.18)] hover:-translate-y-1 hover:border-green-200 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
               >
-                <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
-                  <FaCheckCircle className="text-green-600 text-xl" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25 flex items-center justify-center mb-6 ring-1 ring-white/40">
+                  <FaCheckCircle className="text-white text-xl" />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-green-600 transition-colors">
+                <h3 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 mb-3 group-hover:text-green-700 transition-colors">
                   {service.title}
                 </h3>
-                <p className="text-slate-500 mb-8 flex-grow leading-relaxed">{localDescription}</p>
-                <div className="inline-flex items-center gap-2 text-green-600 font-bold">
-                  View Service <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+                <p className="text-slate-500 text-sm md:text-base leading-relaxed mb-8 flex-grow">{localDescription}</p>
+                <div className="mt-auto pt-5 border-t border-slate-100 inline-flex items-center gap-2 text-green-700 font-semibold text-sm md:text-base min-h-[44px] group-hover:gap-3 transition-all">
+                  View Service <FaArrowRight className="transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>
             );
