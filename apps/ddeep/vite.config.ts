@@ -74,10 +74,13 @@ export default defineConfig({
         });
 
         // 4. Hyper-Local Service pages (/services/[service]/in/[city]/)
+        // Restricted to Manchester + Stockport to match live architecture
+        // (city-service pages 301-redirect for all other cities).
+        const sitemapCities = ["manchester", "stockport"];
         Object.keys(servicesContent)
           .filter((slug) => slug !== "tc")
           .forEach((serviceSlug) => {
-            targetCities.forEach((citySlug) => {
+            sitemapCities.forEach((citySlug) => {
               pages.push({
                 url: `/services/${serviceSlug}/in/${citySlug}/`,
                 priority: "0.6",
