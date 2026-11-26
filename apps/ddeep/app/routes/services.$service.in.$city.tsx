@@ -11,6 +11,18 @@ import { getSeoMeta } from "../utils/seo";
 // All other cities 301-redirect to the generic service page.
 const LIVE_CITY_SERVICE_CITIES = new Set(["manchester", "stockport"]);
 
+// Within Manchester + Stockport, only these six service combos keep a
+// dedicated hyper-local page. Every other service x city combo 301-redirects
+// to the generic /services/<service>/ page (same pattern as retired cities).
+const LIVE_CITY_SERVICES = new Set([
+  "end-of-tenancy-cleaning",
+  "deep-cleaning",
+  "regular-cleaning",
+  "office-cleaning",
+  "carpet-cleaning",
+  "student-accommodation",
+]);
+
 function formatCityName(slug: string) {
   return slug
     .split("-")
@@ -27,7 +39,14 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   }
 
   // Retired city-service URL -> permanent 301 to the generic service page.
+  // Also covers cities that never had hyper-local pages.
   if (!LIVE_CITY_SERVICE_CITIES.has(citySlug)) {
+    throw redirect(`/services/${slug}/`, { status: 301 });
+  }
+
+  // Within the two live cities, only the six kept service combos stay live.
+  // Every other service x {manchester, stockport} combo 301-redirects.
+  if (!LIVE_CITY_SERVICES.has(slug)) {
     throw redirect(`/services/${slug}/`, { status: 301 });
   }
 
