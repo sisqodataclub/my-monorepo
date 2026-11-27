@@ -217,22 +217,30 @@ export default function DynamicServicePage({
         <ServiceHero data={data} />
       </StoryCard>
 
-      {/* Unique per-city body copy — only rendered when cityContent exists. */}
+      {/* 2. Intro — unique per-city body copy. */}
       {data.pageContent && <CityContentSection content={data.pageContent} />}
 
-      {/* What’s Included & Why Choose Us */}
+      {/* 3. What’s Included & Why Choose Us */}
       <StoryCard className="bg-slate-50">
         <ServiceFeatures data={data} />
       </StoryCard>
 
+      {/* 5. How it works / process */}
       <HomeProcess />
-      <HomeAreas />
-      <HomeReviews />
-      <HomeGallery />
 
-      {/* Dynamic city FAQs — rendered AFTER the Recent Transactions (reviews/gallery) block. */}
+      {/* 6. Reviews / testimonials */}
+      <HomeReviews />
+
+      {/* 7. FAQ (city-specific when available) */}
       <HomeFAQ faqs={data.pageContent?.faqs ?? data.faqs} />
 
+      {/* 8. Service areas — Manchester + nearby */}
+      <HomeAreas />
+
+      {/* Gallery */}
+      <HomeGallery />
+
+      {/* 9. Final CTA + booking */}
       <HomeCTA />
     </main>
   );
