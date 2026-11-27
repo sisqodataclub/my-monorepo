@@ -65,7 +65,15 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string; pageCo
     : "";
 
   // Unique per-page H1 comes from cityContent when present.
-  const heading = data.pageContent?.h1 ?? `${data.heroTitle} ${locationText}`;
+  // The route already appends " in <City>" to heroTitle on hyper-local pages,
+  // so guard against appending the location a second time.
+  const heroTitleAlreadyLocalised =
+    !!data.cityName &&
+    new RegExp(`\\bin\\s+${data.cityName}\\s*$`, "i").test(data.heroTitle);
+  const baseHeading = heroTitleAlreadyLocalised
+    ? data.heroTitle
+    : `${data.heroTitle} ${locationText}`.trim();
+  const heading = data.pageContent?.h1 ?? baseHeading;
 
   return (
     <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
