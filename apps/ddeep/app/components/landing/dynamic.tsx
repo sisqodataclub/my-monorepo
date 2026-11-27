@@ -65,15 +65,7 @@ function ServiceHero({ data }: { data: ServiceData & { cityName?: string; pageCo
     : "";
 
   // Unique per-page H1 comes from cityContent when present.
-  // The route already appends " in <City>" to heroTitle on hyper-local pages,
-  // so guard against appending the location a second time.
-  const heroTitleAlreadyLocalised =
-    !!data.cityName &&
-    new RegExp(`\\bin\\s+${data.cityName}\\s*$`, "i").test(data.heroTitle);
-  const baseHeading = heroTitleAlreadyLocalised
-    ? data.heroTitle
-    : `${data.heroTitle} ${locationText}`.trim();
-  const heading = data.pageContent?.h1 ?? baseHeading;
+  const heading = data.pageContent?.h1 ?? `${data.heroTitle} ${locationText}`;
 
   return (
     <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
@@ -205,6 +197,53 @@ function CityContentSection({ content }: { content: CityContent }) {
   );
 }
 
+/* ================= PRICING SECTION ================= */
+const PRICING_TIERS = [
+  { size: "1 Bedroom", price: "from £100", detail: "Studio / 1-bed flat or apartment" },
+  { size: "2 Bedrooms", price: "from £140", detail: "2-bed house or apartment" },
+  { size: "3 Bedrooms", price: "from £180", detail: "3-bed house or larger flat" },
+  { size: "4+ Bedrooms", price: "from £230", detail: "4-bed+ house, HMO or large property" },
+];
+
+function PricingSection({ cityName }: { cityName?: string }) {
+  return (
+    <section id="pricing" className="w-full max-w-5xl mx-auto px-6 py-24">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">Deep Cleaning Prices</h2>
+        <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mb-6" />
+        <p className="text-slate-500 text-lg md:text-xl max-w-3xl mx-auto">
+          Transparent, fixed-price deep cleans{cityName ? ` in ${cityName}` : ""} — starting from £100. Final price confirmed after a short walkthrough or video survey.
+        </p>
+      </div>
+
+      <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-sm bg-white">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50">
+              <th className="px-6 py-4 text-sm font-black uppercase tracking-wide text-slate-700">Property size</th>
+              <th className="px-6 py-4 text-sm font-black uppercase tracking-wide text-slate-700">Typical coverage</th>
+              <th className="px-6 py-4 text-sm font-black uppercase tracking-wide text-slate-700 text-right">Deep clean</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PRICING_TIERS.map((tier, i) => (
+              <tr key={i} className="border-t border-slate-100 hover:bg-green-50/40 transition-colors">
+                <td className="px-6 py-5 font-bold text-slate-900">{tier.size}</td>
+                <td className="px-6 py-5 text-slate-600 text-sm">{tier.detail}</td>
+                <td className="px-6 py-5 text-right font-black text-green-700">{tier.price}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mt-8 text-center text-slate-500 text-sm">
+        Prices are a starting guide and depend on condition, add-ons (oven, carpets, inside cupboards) and access. Get a firm quote before you book.
+      </p>
+    </section>
+  );
+}
+
 /* ================= MAIN DYNAMIC PAGE ================= */
 export default function DynamicServicePage({
   data,
@@ -217,30 +256,24 @@ export default function DynamicServicePage({
         <ServiceHero data={data} />
       </StoryCard>
 
-      {/* 2. Intro — unique per-city body copy. */}
+      {/* Unique per-city body copy — only rendered when cityContent exists. */}
       {data.pageContent && <CityContentSection content={data.pageContent} />}
 
-      {/* 3. What’s Included & Why Choose Us */}
+      {/* What’s Included & Why Choose Us */}
       <StoryCard className="bg-slate-50">
         <ServiceFeatures data={data} />
       </StoryCard>
 
-      {/* 5. How it works / process */}
+      <PricingSection cityName={data.cityName} />
+
       <HomeProcess />
-
-      {/* 6. Reviews / testimonials */}
-      <HomeReviews />
-
-      {/* 7. FAQ (city-specific when available) */}
-      <HomeFAQ faqs={data.pageContent?.faqs ?? data.faqs} />
-
-      {/* 8. Service areas — Manchester + nearby */}
       <HomeAreas />
-
-      {/* Gallery */}
+      <HomeReviews />
       <HomeGallery />
 
-      {/* 9. Final CTA + booking */}
+      {/* Dynamic city FAQs — rendered AFTER the Recent Transactions (reviews/gallery) block. */}
+      <HomeFAQ faqs={data.pageContent?.faqs ?? data.faqs} />
+
       <HomeCTA />
     </main>
   );
