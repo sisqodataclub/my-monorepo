@@ -64,11 +64,23 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) return [{ title: "Not Found | D DEEP Cleaning" }];
 
-  const { slug, citySlug, cityName, serviceData } = data;
+  const { slug, citySlug, cityName, serviceData, pageContent } = data;
+
+  // Per-city/service SEO overrides (e.g. Manchester deep-cleaning) take
+  // precedence; every other city/service falls back to the generic template.
+  const seoOverride = pageContent?.serviceSeo?.[slug];
+
+  const title =
+    seoOverride?.title ??
+    `${serviceData.heroTitle} in ${cityName} | 5★ D DEEP`;
+  const description =
+    seoOverride?.description ??
+    `Professional ${serviceData.heroTitle.toLowerCase()} in ${cityName}. ${serviceData.heroSubtitle} Fully insured, vetted cleaners. Book your free quote today.`;
 
   return getSeoMeta({
-    title: `${serviceData.heroTitle} in ${cityName} | 5★ D DEEP`,
-    description: `Professional ${serviceData.heroTitle.toLowerCase()} in ${cityName}. ${serviceData.heroSubtitle} Fully insured, vetted cleaners. Book your free quote today.`,
+    title,
+    description,
+    keywords: seoOverride?.keywords,
     url: `https://www.ddeepcleaningservices.com/services/${slug}/in/${citySlug}/`,
   });
 };
