@@ -44,7 +44,7 @@ export const cityContent: Record<string, CityContent> = {
   manchester: {
     name: "Manchester",
     intro:
-      "D DEEP is a Manchester company, not a national franchise — our base at 48a Gill Street, M9 puts a vetted two-person deep-cleaning team within 30 minutes of most M-postcodes. We work the city's real housing stock: Victorian terraces in Levenshulme and Withington with original sash windows and decades of coal-smoke grime, converted mill apartments in the Northern Quarter where builder's dust settles into exposed brick, and the Ancoats new-builds where hard water has already started furring up the shower glass. One fixed price, one written checklist, no hourly creep.",
+      "D DEEP is a Manchester company, not a national franchise — a vetted two-person deep-cleaning team that reaches most M-postcodes within 30 minutes. We work the city's real housing stock: Victorian terraces in Levenshulme and Withington with original sash windows and decades of coal-smoke grime, converted mill apartments in the Northern Quarter where builder's dust settles into exposed brick, and the Ancoats new-builds where hard water has already started furring up the shower glass. One fixed price, one written checklist, no hourly creep.",
     areas: [
       "City Centre",
       "Northern Quarter",
