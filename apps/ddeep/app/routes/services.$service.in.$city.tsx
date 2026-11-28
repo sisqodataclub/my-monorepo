@@ -101,20 +101,22 @@ export default function CityServiceRoute() {
   // Localise feature cards: prefix each card title with the city so it is not
   // byte-identical across cities, and swap the generic 4th card items for
   // city-specific coverage details when we have them.
-  const localFeatureCards = serviceData.featureCards.map((card, idx) => {
-    if (idx === serviceData.featureCards.length - 1 && city) {
-      return {
-        ...card,
-        title: `${card.title} in ${cityName}`,
-        items: [
-          ...card.items.slice(0, 2),
-          `Covering ${city.areas.slice(0, 4).join(", ")}`,
-          city.coverageNote,
-        ],
-      };
-    }
-    return { ...card, title: `${card.title} — ${cityName}` };
-  });
+  const localFeatureCards = cityServiceOverride?.featureCards
+    ? cityServiceOverride.featureCards
+    : serviceData.featureCards.map((card, idx) => {
+        if (idx === serviceData.featureCards.length - 1 && city) {
+          return {
+            ...card,
+            title: `${card.title} in ${cityName}`,
+            items: [
+              ...card.items.slice(0, 2),
+              `Covering ${city.areas.slice(0, 4).join(", ")}`,
+              city.coverageNote,
+            ],
+          };
+        }
+        return { ...card, title: `${card.title} — ${cityName}` };
+      });
 
   // Why-choose-us points: prefer the per-city/per-service override (unique
   // Manchester copy), then fall back to the generic city-localised list.

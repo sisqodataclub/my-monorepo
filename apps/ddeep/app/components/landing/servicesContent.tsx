@@ -27,7 +27,7 @@ export interface ServiceData {
 // has a Manchester override; other services fall back to the shared copy above.
 export const serviceCityOverrides: Record<
   string,
-  Record<string, { heroSubtitle?: string; ctaPrimaryText?: string; whyChooseUs?: string[] }>
+  Record<string, { heroSubtitle?: string; ctaPrimaryText?: string; whyChooseUs?: string[]; featureCards?: FeatureCard[] }>
 > = {
   "deep-cleaning": {
     manchester: {
@@ -42,6 +42,44 @@ export const serviceCityOverrides: Record<
         "Heavy-degreaser treatment for Fallowfield and Withington student kitchens",
         "Detail work on Victorian sash windows, deep skirting and behind radiators in Levenshulme and Withington terraces",
         "Fixed price agreed up front — no hourly creep, no surprises",
+      ],
+      featureCards: [
+        {
+          title: "Living Areas & Workspaces",
+          items: [
+            "Dust and wipe all surfaces in Ancoats new-builds and Northern Quarter mill apartments",
+            "Vacuum carpets and rugs, including stair runners in Levenshulme Victorian terraces",
+            "Mop hard floors — LVT and tile in city-centre flats, original boards in period homes",
+            "Empty bins, replace liners and reset every room before we leave",
+          ],
+        },
+        {
+          title: "Kitchen Cleaning",
+          items: [
+            "Degrease worktops, splashbacks and extractor hoods — heavy build-up in Fallowfield student kitchens",
+            "Wipe appliance exteriors and clean inside the microwave and fridge on request",
+            "Descale sinks and taps for M-postcode hard water (Ancoats, New Islington, city centre)",
+            "Disinfect high-touch handles, switches and cupboard fronts",
+          ],
+        },
+        {
+          title: "Bathrooms & Toilets",
+          items: [
+            "Descale showers, glass screens and tiles — Manchester hard water leaves limescale fast",
+            "Clean and disinfect toilets, baths and basins to a hygienic finish",
+            "Polish mirrors and chrome, including Northern Quarter loft en-suites",
+            "Disinfect bathroom floors and grout lines, including behind the toilet",
+          ],
+        },
+        {
+          title: "Professional Standards",
+          items: [
+            "Manchester-based, DBS-checked team — no national-franchise subcontracting",
+            "Fixed price agreed up front — no hourly creep, no surprises",
+            "Fully insured, with HEPA extraction for Northern Quarter mill-conversion dust",
+            "Eco-friendly products available; tailored checklist for every property",
+          ],
+        },
       ],
     },
   },
