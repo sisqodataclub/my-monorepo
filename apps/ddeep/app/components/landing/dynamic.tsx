@@ -1,1 +1,1 @@
-__READ_FROM_TMP__
+__PUSH_FROM_LOCAL__
