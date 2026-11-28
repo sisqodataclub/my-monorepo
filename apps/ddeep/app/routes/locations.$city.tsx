@@ -411,7 +411,7 @@ export default function LocationHub() {
         </div>
       </section>
 
-      <HomeFAQ faqs={pageContent.faqs} />
+      <HomeFAQ faqs={pageContent?.faqs ?? []} />
 
       {/* Visible NAP Block */}
       <section className="py-12 px-6 max-w-7xl mx-auto">
