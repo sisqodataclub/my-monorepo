@@ -22,6 +22,31 @@ export interface ServiceData {
   whyChooseUs: string[]; // Unique value proposition points per service
 }
 
+// Per-city overrides for service copy, so the same service page reads differently
+// in each city. Keyed by service slug, then city slug. Currently only deep-cleaning
+// has a Manchester override; other services fall back to the shared copy above.
+export const serviceCityOverrides: Record<
+  string,
+  Record<string, { heroSubtitle?: string; ctaPrimaryText?: string; whyChooseUs?: string[] }>
+> = {
+  "deep-cleaning": {
+    manchester: {
+      heroSubtitle:
+        "Manchester deep cleaning built for the city's real housing stock — Victorian terraces in Levenshulme and Withington, Northern Quarter mill apartments, Ancoats new-builds and Fallowfield student houses. Fixed price, DBS-checked, based at 48a Gill Street, M9.",
+      ctaPrimaryText:
+        "From Ancoats limescale to Northern Quarter builder's dust to Fallowfield student grease — our Manchester deep clean resets the whole property, not just the surfaces you can see.",
+      whyChooseUs: [
+        "Manchester-based team at 48a Gill Street, M9 — not a national call centre",
+        "Hard-water descaling tuned for M-postcode water (Ancoats, New Islington, city centre)",
+        "HEPA extraction for Northern Quarter mill-conversion builder's dust",
+        "Heavy-degreaser treatment for Fallowfield and Withington student kitchens",
+        "Detail work on Victorian sash windows, deep skirting and behind radiators in Levenshulme and Withington terraces",
+        "Fixed price agreed up front — no hourly creep, no surprises",
+      ],
+    },
+  },
+};
+
 export const servicesContent: Record<string, ServiceData> = {
   "regular-cleaning": {
     heroTitle: "Reliable Regular Cleaning",
